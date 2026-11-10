@@ -2,7 +2,7 @@
 
 ### Requirement: Only new concerts are kept
 
-SearchNewConcerts SHALL search from the current date (Concert.Search), then drop events already known among the Artist's upcoming Concerts (DiscoveredSeries.FilterNewSeries over Concert.ListUpcomingByArtist), then drop every event whose local date and normalized listed venue name match one of the Artist's pending ConcertCandidates, whatever its start time. A series left with no events SHALL be dropped. The RejectedConcert and SuppressedConcerts SHALL NOT be consulted here.
+SearchNewConcerts SHALL search from the current time (Concert.Search, which leaves out events dated before the current date at their Venue), then drop events already known among the Artist's upcoming Concerts (DiscoveredSeries.FilterNewSeries over Concert.ListUpcomingByArtist at the same time), then drop every event whose local date and normalized listed venue name match one of the Artist's pending ConcertCandidates, whatever its start time. A series left with no events SHALL be dropped. The RejectedConcert and SuppressedConcerts SHALL NOT be consulted here.
 
 #### Scenario: Already in the catalog
 - **WHEN** a found event matches an upcoming Concert of the Artist

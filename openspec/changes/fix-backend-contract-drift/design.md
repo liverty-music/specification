@@ -6,7 +6,7 @@ See proposal.md - Why. The audit compared every port doc comment in `backend/int
 |---|---|---|
 | Stale doc comment | The spec and the code agree; the Go doc says something else or leaves the behaviour out | Rewrite the doc comment from the spec |
 | Code breaks a spec | The spec states a rule the code does not keep | Change the code; add the missing scenario |
-| Spec silent | Neither the spec nor the doc says what happens | Not in this change; listed under Open Questions |
+| Spec silent | Neither the spec nor the doc says what happens | Decided by the user and specified here (Decisions) |
 | Project rule broken | No spec is broken, but the code breaks a rule of the backend's AGENTS.md "Review criteria" | Change the code to follow the rule |
 
 Code that breaks a spec today:
@@ -17,7 +17,7 @@ Code that breaks a spec today:
 A second audit (the re-audit) read every usecase, adapter and infrastructure file and added these:
 
 - **Code breaks a spec:**
-  - `adapter/pb/order.go` (`FromOrder`, lines 50-55) maps the source as "the Checkout, otherwise the LotteryEntry". An Order whose source is a ResaleEntry is therefore announced as paid with `lottery_entry_id` set to an empty id, although `entity/v1` has `resale_entry_id`. `entity/order/issue` says the paid announcement carries the Order. The confirmation email and push read the Order again by id, so they are not affected; the analytics consumer records no source for such an Order (see Open Questions).
+  - `adapter/pb/order.go` (`FromOrder`, lines 50-55) maps the source as "the Checkout, otherwise the LotteryEntry". An Order whose source is a ResaleEntry is therefore announced as paid with `lottery_entry_id` set to an empty id, although `entity/v1` has `resale_entry_id`. `entity/order/issue` says the paid announcement carries the Order. The confirmation email and push read the Order again by id, so they are not affected; the analytics consumer records no source for such an Order (see "A resale Order is its own analytics source").
   - `organizerUseCase.AssociateArtist` reads the Organizer, checks that it is not deactivated, and then calls `OrganizerRepository.AssociateArtist` in a separate transaction. A Deactivate that commits in between lets a deactivated Organizer gain an Artist, which `usecase/organizer/associate-artist` forbids ("the Organizer's roster is fixed because it is deactivated"). The AGENTS.md rule for a write that checks a condition requires the check and the write in one transaction.
 - **A promise kept only by luck:** `UserRepository.UpdateHome` reads the User without a lock, then inserts a Home when the User has none. Two concurrent first calls both insert, and one Home row is left unreferenced. The User still ends with one Home, so no spec is broken, but the same AGENTS.md rule applies.
 - **Project rules broken** (AGENTS.md "Review criteria"):
@@ -35,7 +35,7 @@ Checked in the re-audit and found not to be defects:
 | `OrganizerRepository.SetStatus` sets the status with no compare-and-set | Its only caller is Deactivate, which may move an Organizer to Deactivated from any state; Provisioning to Active already uses `CompareAndSetStatus` | None |
 | The cancellation and refund emails have no "send time" guard, unlike the confirmation and lottery-loss emails | Each is sent in a recorded workflow step of a workflow named after the Order (`orderNoticeWorkflowID`), so a rerun sends nothing a second time, as `send-event-cancelled` requires | None |
 | `gemini.EventDraft.Country` is parsed and never read | The discovered event has no country attribute in its spec; the admin area code carries the country. Dead code, not a broken contract | Removal in `move-decisions-into-entities`, with the other Concert.Search code it touches |
-| Concert.Search removes repeated events by a symmetric key, and two events with no start time collapse to one, while `DiscoveredSeries.FilterNewSeries` treats an unknown start time asymmetrically | Each follows its own spec (`entity/concert/search` "Search removes repeated events", `entity/discovered-series/filter-new-series`) | None; the normalization differences are an Open Question |
+| Concert.Search removes repeated events by a symmetric key, and two events with no start time collapse to one, while `DiscoveredSeries.FilterNewSeries` treats an unknown start time asymmetrically | Each follows its own spec (`entity/concert/search` "Search removes repeated events", `entity/discovered-series/filter-new-series`) | The normalization differences are decided in "An unannounced venue is a missing venue" |
 
 ## Goals / Non-Goals
 
@@ -47,7 +47,7 @@ Checked in the re-audit and found not to be defects:
 **Non-Goals:**
 
 - Moving rules between layers, splitting functions or changing test infrastructure: those belong to `restructure-backend-responsibilities` (layers, errors and the clock), `move-decisions-into-entities` (rules moved into entities, function size) and `speed-up-and-fill-backend-tests`. This change edits comments, the behaviour fixes and the rule fixes above, so it can merge before them and they rebase on correct comments and signatures.
-- Deciding behaviour the specs leave open (Open Questions).
+- Product behaviour beyond the decisions recorded below. The questions the audit raised were decided by the user (2026-11-10) and are in Decisions.
 
 ## Decisions
 
@@ -101,11 +101,53 @@ Alternatives considered: setting the token before publishing (breaks the Series 
 
 ### Upcoming concerts are their own operation
 
-`Concert.ListUpcomingByArtist(ctx, artistID)` is added and `ListByArtist` loses its flag; its three callers (`concertUseCase.ListByArtist`, `SearchNewConcerts`, `ticketSaleDiscoveryUseCase.DiscoverForArtist`) call the one they mean. The SQL keeps its two queries. Which day "the current date" is stays as today; see Open Questions.
+`Concert.ListUpcomingByArtist(ctx, artistID)` is added and `ListByArtist` loses its flag; its three callers (`concertUseCase.ListByArtist`, `SearchNewConcerts`, `ticketSaleDiscoveryUseCase.DiscoverForArtist`) call the one they mean. The SQL keeps its two queries. Which day "the current date" is: see "The current date is the Venue's".
 
 ### Optional personal details are pointers
 
-`User.FullName` and `User.PhoneNumber` become `*string`, and `UserRepository.UpdatePersonalDetails` takes `*string` for each. The rdb layer maps nil to NULL and NULL to nil. `adapter/pb` and the usecases that read the two fields check nil instead of `""`. The time zone is left out: no spec names it (see Open Questions).
+`User.FullName` and `User.PhoneNumber` become `*string`, and `UserRepository.UpdatePersonalDetails` takes `*string` for each. The rdb layer maps nil to NULL and NULL to nil. `adapter/pb` and the usecases that read the two fields check nil instead of `""`. The time zone is left out: it is a string the notification code reads with a fallback, and "The User's time zone is specified, not removed" covers it.
+
+### A refund is recorded only against a paid Order
+
+`RefundRepository.CommitRefund` keeps its no-op success for an Order that is already Refunded, which the spec relies on for a repeated refund. For a Pending or Void Order, and for an id with no Order, it now fails (FailedPrecondition and NotFound). Its only caller, `orderUseCase.Refund`, refuses any Order that is not Paid before it moves money (`order_refund_uc.go:39-50`), and a Paid Order never becomes Pending or Void, so these cases arise only from a bug or a race after the provider refund. A failure ends the refund workflow and pages an admin, which is what such a state needs; a silent success would hide a refund the database does not show.
+
+### CreateDraft refuses a taken id
+
+`SeriesRepository.CreateDraft` inserts the Series with `ON CONFLICT (id) DO NOTHING` and then stores the DRAFT Events, so a taken id adds Events to someone else's Series. It now fails with AlreadyExists and stores nothing, as a create does elsewhere in the repositories. The usecase draws a fresh id with `entity.NewID`, so this cannot happen today; the rule closes the path for any future caller.
+
+### The current date is the Venue's
+
+An Event's local date is the date at its Venue, so "today" for comparing it is the current date at that Venue. One entity function returns a Venue's time zone and the current date at a Venue; every comparison of an Event's date with "now" goes through it. The Venue has no time zone attribute, no spec requires one, and AGENTS.md forbids a column no spec uses, so the function returns Asia/Tokyo for every Venue. The specs say "the current date at its Venue" (`entity/venue` "Current date at a venue"), not "Japan time", so overseas support changes data, not the rule.
+
+Applied in this change: the Concert.Search past-date filter (`searcher.go:911`, which cut the day at UTC midnight), `Concert.ListUpcomingByArtist` and the other queries that used the database's `CURRENT_DATE` (`ListByFollower`'s default, the TicketJourney upcoming ordering), each now given a date computed in Go, and the entity helpers that compute an Event's day:
+
+| Helper | About an Event's day? | Action |
+|---|---|---|
+| `Event.HasPassedAt` (`event.go:228`) | Yes, compares the Event's local date with today | Uses the function |
+| `AdmissionWindowOf` close (`scanner.go:193`, 04:00 the day after the Event) | Yes | Uses the function |
+| `ResaleDeadlineAt` (`resale_listing.go:61`, 12:00 on the Event's day) | The day is the Event's | The day uses the function |
+| The daily 12:00 resale draw in `IsResaleDrawAt` and `NextResaleDrawTime` (`resale_entry.go:197`, `:218`) | No: the platform's draw schedule, "12:00 Japan time" in `entity/resale-entry` | Unchanged |
+| `JapanDate` in `TicketSale.IsResultDateOnOrAfterEnd` (`ticket_sale.go:201`) | No: TicketSale times are "entered and shown in Japan time" (`entity/ticket-sale`), the Organizer's zone, not the Venue's | Unchanged |
+| `JapanDate` in the artist refresh rotation (`artist_uc.go:548`) | No: the platform's daily job, "05:00 Japan time" | Unchanged |
+| Notification and passkey email times (`notification_message.go`, `mail/passkey_change.go`) | No: shown in the fan's time zone | Unchanged |
+
+Specs that state an Event-day rule in Japan time (`entity/scanner` admission window, `entity/resale-listing` deadline, `usecase/user/list-deletion-blockers`) keep their wording: with every Venue in Asia/Tokyo the result is the same. Overseas support would need: a time zone on the Venue (or derived from its admin area's country), the function reading it, the multi-venue queries comparing each row with the date at its own Venue (`(now AT TIME ZONE v.time_zone)::date` in SQL, since one date no longer fits all rows), those three specs reworded to the Venue's date, and a decision whether the 12:00 resale draw follows the Venue.
+
+### An unannounced venue is a missing venue
+
+`entity/venue` already treats a listed name that is blank after normalization as missing, and `usecase/concert/create-from-discovered` skips such an event. The Gemini searcher had its own normalization that also recognised "TBA" and similar markers, but only in its repeat-removal key, so an event at "TBA" reached creation and became a Venue named "TBA". The markers move into the one normalization in the entity (`entity.NormalizeVenueName`), so such an event is skipped like a blank one. The searcher's key starts from that normalization and ignores whitespace, middle dots and Latin letter case, as `entity/concert/search` lists. Its other rules (a prefecture in parentheses, a hard-coded venue rename) are not product rules: they stay only where the A/B evaluation matches model output to hand-written fixtures. The marker list is exact-match on the whole name (after ignoring whitespace, punctuation and letter case), plus any name containing 某所, so a real venue whose name contains a marker word keeps its name.
+
+### A resale Order is its own analytics source
+
+The `order.paid` event records `source` as `lottery_entry`, `checkout` or `resale_entry`, with exactly the matching id, following the shape the first two already have. The specification's `docs/analytics/event-catalog.md` had no `order.paid` row; this change adds it with all three sources, so the event list is reviewed against the catalog as that document requires.
+
+### The User's time zone is specified, not removed
+
+`users.time_zone` is read by the notification texts (`entity/notification`: "in the fan's time zone, falling back to Asia/Tokyo") and is part of `entity/v1.User` (`time_zone = 14`). Only the entity/user table lacked it. The row is added to the `entity/user` Purpose table; nothing in the code changes beyond a doc comment and a test of the fallback.
+
+### ResaleEntry.Create with an unknown start time is not a defect here
+
+`ResaleEntry.Create` fails with FailedPrecondition when the Event's start time is unknown. `usecase/ticket-sale/create` already refuses a TicketSale for an Event with no start time ("Start time not yet announced"), and `entity/event` fixes the start time once a TicketSale names the Event, so a resale entry for such an Event cannot be reached. The unreachable check is removed by `move-decisions-into-entities`, which moves the entry's eligibility into the entity; the spec does not change.
 
 ## Risks / Trade-offs
 
@@ -125,15 +167,4 @@ Rollback: a new forward migration restores `UNIQUE (email)` and the two plain in
 
 ## Open Questions
 
-None that change this plan. The behaviours below are left open by the specs; the code keeps them as they are, and each is reported to the user for a separate decision.
-
-- `Order.CommitRefund` on an Order that is Pending or Void, or on an id with no Order: it changes nothing and returns success. The spec covers only an Order already Refunded.
-- `Series.CreateDraft` with an id an existing Series already has: the Series row is not inserted (`ON CONFLICT (id) DO NOTHING`) and the DRAFT Events are added to the existing Series. The spec does not cover a taken id.
-- `ResaleEntry.Create` for an Event whose start time is unknown: it fails with FailedPrecondition because no resale deadline can be computed. The spec does not say whether such an Event has resale at all.
-
-The re-audit added these:
-
-- **Which day is "the current date".** `Concert.Search` leaves out events dated before the search date, and `Concert.ListByArtist` with upcoming only (after this change, `Concert.ListUpcomingByArtist`) keeps Concerts dated on or after the current date. Neither spec names a time zone. The code cuts the day at UTC midnight: the searcher truncates the search time with `Truncate(24 * time.Hour)` (`searcher.go:911`), and the upcoming query uses the database's `CURRENT_DATE`. Between 00:00 and 09:00 Japan time, a concert of the previous Japanese day still counts as upcoming. `ticket-sale/discover-for-artist` already counts days in Japan time. Recommended: state Japan time in both specs and use `entity.JapanDate`.
-- **What a not-yet-announced venue is.** The specs keep a venue name as the source wrote it (`entity/concert/search`) and drop only a blank one (`entity/discovered-series/filter-new-series`). The searcher's repeat-removal key also maps "TBA", "未定", "某所" and similar markers to empty, lower-cases, strips a prefecture in parentheses, and maps "日本ガイシ" and "クロコくん" to one name; none of these is in the spec's list of notation differences. An event whose venue is "TBA" is therefore kept, and creating a Concert from it makes a Venue named "TBA". The two normalizations also differ: Search removes whitespace, the Venue spec collapses it to one space. Recommended: decide whether an unannounced venue is dropped at Search, and whether the two normalizations should be one.
-- **The analytics source of a resale Order.** After the mapping fix, the "order paid" signal can tell a resale Order apart, but no spec names the signal's properties; the analytics consumer records `lottery_entry` or `checkout` only.
-- **The User's time zone.** `users.time_zone` and `User.TimeZone` exist, but no spec names a time zone attribute of a User. AGENTS.md treats a column no spec uses as a violation. Recommended: decide whether to specify it or remove it.
+None. The questions the audit raised are decided above (2026-11-10).

@@ -20,13 +20,20 @@ An audit of the backend found interface doc comments that no longer describe wha
   - Replace the empty string meaning "absent" for a User's full name and phone number with pointers ("an optional value is a pointer").
   - Return apperr errors from the geo centroid resolver, which returns bare `fmt.Errorf` across the layer boundary, and give its port a doc comment.
   - Point the AGENTS.md check-then-act rule at a lock query that exists (it cites `checkoutLockTicketTypeQuery`, which is gone).
+- Decide what the specs left open, as the user approved on 2026-11-10:
+  - `Order.CommitRefund` fails for an Order that was never paid (FailedPrecondition) and for an unknown Order (NotFound), instead of returning success; an Order already Refunded stays a no-op.
+  - `Series.CreateDraft` fails with AlreadyExists for a taken id instead of adding DRAFT Events to the existing Series.
+  - "Today" for an Event is the current date at its Venue, computed by one entity function (Asia/Tokyo for every Venue today). Concert.Search no longer cuts the day at UTC midnight, and the upcoming-concert queries no longer use the database's date.
+  - A venue name that only says the venue is not yet announced ("TBA", "未定", "横浜某所" …) is a missing venue, so such an event is skipped like a blank one; the Venue's normalization becomes the only one, and Concert.Search's repeat removal starts from it.
+  - The `order.paid` analytics event records a resale Order with the source `resale_entry`.
+  - The User's time zone is added to the `entity/user` table (an IANA name; absent or unknown means Asia/Tokyo).
 - Add the scenarios the specs lack for the behaviour fixes.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `components/entity/concert/list-upcoming-by-artist`: the Concerts of one Artist from the current date onward, split from `Concert.ListByArtist`.
+- `components/entity/concert/list-upcoming-by-artist`: the Concerts of one Artist from the current date at their Venue onward, split from `Concert.ListByArtist`.
 
 ### Modified Capabilities
 
@@ -37,6 +44,11 @@ An audit of the backend found interface doc comments that no longer describe wha
 - `components/entity/order/issue`: the paid announcement carries the Order with its source, the ResaleEntry included.
 - `components/entity/organizer/associate-artist`: AssociateArtist fails with FailedPrecondition when the Organizer is deactivated, judged together with the link. `components/usecase/organizer/associate-artist` is unchanged: it still checks the Organizer it reads first.
 - `components/entity/concert/list-by-artist` (and its Purpose): ListByArtist lists Concerts of every date; the upcoming-only option moves to a new operation.
+- `components/entity/order/commit-refund`: CommitRefund fails for a Pending or Void Order and for an unknown one.
+- `components/entity/series/create-draft`: CreateDraft fails with AlreadyExists for a taken id and stores nothing.
+- `components/entity/venue`: the normalization treats a not-yet-announced venue as missing and is the only venue-name normalization; the current date at a Venue is defined.
+- `components/entity/concert/search`: the past-date filter uses the current date at each event's Venue; repeat removal starts from the Venue's normalization and also ignores letter case.
+- `components/entity/user` (Purpose): adds the time zone attribute row.
 - `components/usecase/concert/list-by-artist`, `components/usecase/concert/search-new-concerts`, `components/usecase/ticket-sale/discover-for-artist`: name the operation they call.
 
 The doc-comment rewrites change no spec: in each case the spec already states the behaviour the code has. The `UpdateHome` lock, the pointer fields and the geo errors change no spec either: they keep a promise the specs already make (one Home per User; an absent full name) or follow a code rule.
@@ -45,4 +57,6 @@ The doc-comment rewrites change no spec: in each case the spec already states th
 
 - backend: `adapter/pb` Order mapping; `OrganizerRepository.AssociateArtist` and its rdb transaction; `UserRepository.UpdateHome`; `ConcertRepository.ListByArtist` split into two methods and its three callers; the User entity's optional fields and every place that reads them (`adapter/pb`, usecases, rdb scans); `infrastructure/geo` errors; `AGENTS.md` Review criteria; `internal/entity` port doc comments (concert, artist, series, user, checkout, follow, lottery_entry, order, organizer, passkey, push_subscription, resale_listing, ticket, ticket_sale), `internal/usecase` doc comments (concert_uc, order_uc), `SeriesRepository.PublishEvents` signature and its rdb implementation, `seriesUseCase.Publish`, `UserRepository.Create` error mapping, `schema.sql` and one Atlas migration for the email index.
 - Production data: a read-only query on `users` before the migration; the migration fails if two rows already share an address in different letter case, so such rows must be resolved first.
+- backend, from the decisions: `RefundRepository.CommitRefund`, `SeriesRepository.CreateDraft`, a Venue time-zone function in `internal/entity` and its callers (`gemini.ConcertSearcher`, `ConcertRepository.ListUpcomingByArtist` and `ListByFollower`, the TicketJourney queries, `Event.HasPassedAt`, `AdmissionWindowOf`, `ResaleDeadlineAt`), `entity.NormalizeVenueName` and the searcher's repeat-removal key, the `order.paid` analytics properties.
+- specification: `docs/analytics/event-catalog.md` gains the `order.paid` row.
 - No proto or frontend change.
