@@ -131,7 +131,7 @@ Applied in this change: the Concert.Search past-date filter (`searcher.go:911`, 
 | `JapanDate` in the artist refresh rotation (`artist_uc.go:548`) | No: the platform's daily job, "05:00 Japan time" | Unchanged |
 | Notification and passkey email times (`notification_message.go`, `mail/passkey_change.go`) | No: shown in the fan's time zone | Unchanged |
 
-Specs that state an Event-day rule in Japan time (`entity/scanner` admission window, `entity/resale-listing` deadline, `usecase/user/list-deletion-blockers`) keep their wording: with every Venue in Asia/Tokyo the result is the same. Overseas support would need: a time zone on the Venue (or derived from its admin area's country), the function reading it, the multi-venue queries comparing each row with the date at its own Venue (`(now AT TIME ZONE v.time_zone)::date` in SQL, since one date no longer fits all rows), those three specs reworded to the Venue's date, and a decision whether the 12:00 resale draw follows the Venue.
+Specs that stated an Event-day rule in Japan time (`entity/scanner` admission window, `entity/resale-listing` deadline, `usecase/user/list-deletion-blockers`) are reworded to the time zone of the Event's Venue in this change; with every Venue in Asia/Tokyo the result is the same. Overseas support would need: a time zone on the Venue (or derived from its admin area's country), the function reading it, the multi-venue queries comparing each row with the date at its own Venue (`(now AT TIME ZONE v.time_zone)::date` in SQL, since one date no longer fits all rows) and a decision whether the 12:00 resale draw follows the Venue.
 
 ### An unannounced venue is a missing venue
 

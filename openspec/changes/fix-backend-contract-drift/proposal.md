@@ -37,6 +37,9 @@ An audit of the backend found interface doc comments that no longer describe wha
 
 ### Modified Capabilities
 
+- `components/entity/scanner`: the admission window uses the time zone of the event's Venue instead of Japan time (the same result while every Venue is in Asia/Tokyo).
+- `components/entity/resale-listing`: the resale deadline's 12:00 is in the time zone of the event's Venue.
+- `components/usecase/user/list-deletion-blockers`: an Upcoming ticket compares the Event's local date with the current date at its Venue.
 - `components/entity/user` (Purpose): the email attribute row states that no two Users share an address when letter case is ignored.
 - `components/entity/user/create`: Create rejects an email that matches a stored one when letter case is ignored.
 - `components/entity/series/publish-events`: PublishEvents stores the share token of an UNLISTED Series together with the publish.
