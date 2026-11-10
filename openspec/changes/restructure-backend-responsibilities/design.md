@@ -10,9 +10,11 @@ See proposal.md (Why). The measurements below were taken on backend `main` at `0
     - `auth.OrganizerPublicProcedures`, mentioned in a doc comment of `organizer_handler.go`.
     - `geo.PrefectureName`: `linkpreview/tags.go`.
     - `gcsstorage.VariantObjectKey`: `pb/series.go:37`.
-  - 21 infrastructure files import `internal/adapter/pb` to encode announcements (`pb.FromFollow`, `pb.FromCheckout` and others).
+  - 21 infrastructure files import `internal/adapter/pb` only to build `messaging.Announcement.Payload`, which is a `proto.Message` (`messaging/outbox.go:39`). For example, `issuance_repo.go:237` passes `pb.FromOrder(&paid)`.
   - `entity` and `usecase` import nothing outward.
-- **Handlers and the user repository.** `follow`, `concert`, `push_subscription`, `notification`, `wallet_public_key` and `ticket_journey` handlers call `userRepo.GetByProviderUserID`. `callerUserID` (`lottery_entry_handler.go:44`) calls `UserUseCase.ResolveCaller`, which returns the same User and the same NotFound.
+- **Handlers that skip the usecase layer.**
+  - `follow`, `concert`, `push_subscription`, `notification`, `wallet_public_key` and `ticket_journey` call `userRepo.GetByProviderUserID`. `callerUserID` (`lottery_entry_handler.go:44`) calls `UserUseCase.ResolveCaller`, which returns the same User and the same NotFound.
+  - `backend_organization_handler.go` and `backend_user_handler.go` call identity-provider ports directly.
 - **Entity errors.**
   - Most entity validators return `errors.New`. `user.go:35`, `user.go:70` and `settlement.go:136` say this is the rule.
   - Six entity files already import `go-apperr` (for example `event.go` `CheckChange` and `card_authorization.go`).
@@ -22,40 +24,60 @@ See proposal.md (Why). The measurements below were taken on backend `main` at `0
     - `resale_entry_uc.go:200,206`
     - `ticket_sale_uc.go:272,280,424`
     - `rdb/ticket_sale_search_repo.go:77`
+- **Custom errors outside `pkg/`.** go-apperr's `Is` compares the code only (`apperr.go`, `(*AppErr).Is`), so callers that must tell two errors of one code apart use their own sentinels:
+  - entity: `ErrScannerNotUsable` (`admission.go:34`), `ErrResaleListingCancelled` (`resale_listing.go:13`), `ErrUnsupportedImage` (`series_image_processor.go:12`), `ErrResaleWinNotRevertible` (`resale_entry.go:159`), `errInvalidAdmissionCode` (`admission_code.go:76`), `errBase45` (`admission_code.go:217`);
+  - usecase: `ErrUnknownScannerLinkToken` and `errScannerRefused` (`scanner_uc.go:19,24`), `errSubjectGone` (`notification_subject.go:29`), `ErrPasskeyAccountPending` (`passkey_uc.go:23`);
+  - infrastructure: `errInvalidJSON`, `errNoCandidates`, `errTooManyToolCalls`, `errNoText` (`gemini/searcher.go:30-51`), `errNonPublicAddress`, `errOffSiteRedirect`, `errTooManyRedirects` (`gemini/official_pages.go:42-48`), and the type `redeliveryError` (`messaging/redelivery.go:17`).
 - **Wall clock.** `identity_verification.go:97` and `ticket_sale_discovery.go:46` call `time.Now()`. `artist_uc`, `settlement_uc` and `lottery_entry_uc` inject a `Clock`, while ten usecase files call `time.Now()`.
-- **Fan visibility.** `rdb/event_conditions.go` holds `fanVisibleCondition`, `catalogEventCondition` and `seriesPublishStateColumn`. These restate `Event.IsPubliclyVisible` (`event.go:172`), `Concert.IsVisibleToFans` (`concert.go:34`) and `DerivePublishState` (`series.go:155`) in SQL.
-- **Function size.** An ad-hoc golangci-lint run reported funlen 29, gocognit 40 and cyclop 15 findings in non-test code. The config was funlen 60/40 with comments ignored, gocognit 20 and cyclop 15. The findings are spread over `cmd/`, `internal/{di,adapter,entity,usecase,infrastructure}` and `pkg/config`.
+- **Hand-written fakes.** 28 fake types in 11 usecase test files, for example `concert_creation_uc_test.go` `fakeConcertRepo`.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Every rule a usecase spec or entity spec states is computed in one place in Go, on the entity when no store is involved.
-- Usecase tests check orchestration only, and entity tests check rules as tables.
-- `make lint` enforces the layer direction and function size, so neither regresses.
+- Every import points inward, and `make lint` enforces it.
+- Every error that crosses a package boundary in `internal/` is an `apperr` error. A caller tells errors apart by code, or by code and reason.
+- Entities and usecases get the time from their caller or an injected `Clock`.
+- Usecase tests stub ports with the mockery mocks.
 
 **Non-Goals:**
-- Changing any outcome or error code a client observes. Doc-comment drift and spec violations found during the investigation are the separate change `fix-backend-contract-drift`, which also rewrites the ConcertRepository doc comments on visibility and DRAFT filtering (its task 3.1).
-- The identity service's `BackendOrganizationHandler` and `BackendUserHandler`. They call identity-provider ports directly by design: they are thin proxies for the admin console and carry no rule. Routing them through a pass-through usecase would add a layer with nothing in it.
+- Moving business rules onto entities, the SQL-versus-entity parity tests, and the function-size lint. These are the change `move-decisions-into-entities`, which follows this one: it builds on the layer rules, the error style and the clock set here.
+- Changing any outcome or error code a client observes. Doc-comment drift and spec violations are the change `fix-backend-contract-drift`.
 - Speeding up the rdb tests and covering untouched packages. That is the change `speed-up-and-fill-backend-tests`.
 
 ## Decisions
 
 ### Shared contracts move to packages both sides may import
 
-Each contract an adapter and an infrastructure package both use moves to the innermost place where both may import it. Defining it in the adapter does not work: the infrastructure side would then have to import the adapter.
+Each contract an adapter and an infrastructure package both use moves to the innermost place both may import, or becomes an interface the adapter declares.
 
 | Contract | New home | Why there |
 |---|---|---|
-| Event message: decode the protobuf payload, read `ce_subject`, mark a failure "redeliver after d" and read that mark | a new `pkg/` package (for example `pkg/eventmsg`) | Plumbing without business meaning. The redelivery mark is written by the consumer and read by the subscriber, so it must be one definition. |
+| Event message: decode the protobuf payload, read `ce_subject`, mark a failure "redeliver after d" and read that mark | a new `pkg/` package (for example `pkg/eventmsg`) | Plumbing without business meaning. The redelivery mark is written by the consumer and read by the subscriber, so it must be one definition. It carries a delay, so it stays a custom error type, which `pkg/` may declare. |
 | Signed-in caller on the request context (`Claims`, caller Organization id, their context accessors) | a new `pkg/` package (for example `pkg/authctx`) | The interceptors in `infrastructure/auth` write it and handlers read it. The interceptors themselves stay in infrastructure. |
 | Webhook token check | an interface declared in `internal/adapter/webhook`, satisfied structurally by `auth.WebhookValidator` | The adapter needs one method, and Go's structural typing needs no import from infrastructure. |
 | Prefecture code to name | `internal/entity`, next to `venue_normalize.go` | Domain vocabulary, not an external system. |
 | Series image variant URL | The object key stays in `infrastructure/gcp/storage`, where backend#485 put it (the key scheme belongs to the layer that owns object storage). The URL builder moves there too, and `adapter/pb` depends on an interface it declares (`SeriesImageURLs`), wired in `internal/di`. | The storage writer and the CDN URL builder must agree on the key, and only the storage package knows it. |
-| Entity to `entity/v1` mapping used by announcements (including the `ForAnnouncement` variants) | a new `internal/entitypb` that imports only `entity` and the generated types | `adapter/pb` and the rdb announcers both import it. |
 
-**Alternative considered:** an announcement-encoder interface injected into each repository. It was rejected because every announcing repository would need a new dependency, and the payload mapping is not a policy that varies per caller.
+### Announcements: the Outbox encodes through an interface
 
-backend `AGENTS.md` ("Announcements") must then name `internal/entitypb` instead of `internal/adapter/pb`.
+`messaging.Announcement.Payload` becomes the changed entity (or the entities of one type one operation changed together), not a `proto.Message`. `messaging` declares:
+
+```go
+// Encoder turns an announced entity into its entity/v1 message.
+type Encoder interface {
+    Encode(subject string, payload any) (proto.Message, error)
+}
+```
+
+`adapter/pb` implements it with a type switch over the announced entity types, choosing the `ForAnnouncement` variant for User and PushSubscription. It satisfies the interface structurally, so it imports nothing from `messaging`. `internal/di` passes it to `messaging.NewOutbox`. Repositories call `announce` with the entity as today, minus the `pb.From…` call.
+
+An entity type the encoder does not know fails the operation with Internal, and an `adapter/pb` table test runs every announced type through `Encode`.
+
+**Alternatives considered:**
+- A new `internal/entitypb` package that both sides import. Rejected: it sits outside the four layers and splits the entity-to-proto mapping across two packages.
+- An encoder injected into each repository. Rejected: every announcing repository would take a new dependency, while the Outbox is the one place every announcement passes.
+
+backend `AGENTS.md` ("Announcements") then says that a repository announces the entity and the Outbox encodes it through `adapter/pb`.
 
 ### depguard encodes the direction
 
@@ -65,95 +87,59 @@ backend `AGENTS.md` ("Announcements") must then name `internal/entitypb` instead
 - `internal/usecase` imports no `adapter`, `infrastructure` or `di`.
 - `internal/adapter` imports no `infrastructure` or `di`.
 - `internal/infrastructure` imports no `adapter` or `di`.
-- `internal/entitypb` imports only `entity` and the generated `entity/v1` types.
 - `pkg` imports no `internal`.
 
 `internal/di` and `cmd/` may import everything.
 
-### Handlers resolve the caller through UserUseCase
+### Handlers reach ports through usecases
 
-The six handlers take `usecase.UserUseCase` and call the shared `callerUserID`, or `ResolveCaller` where they need the whole User. The NotFound they return is unchanged.
+- The six fan handlers take `usecase.UserUseCase` and call the shared `callerUserID`, or `ResolveCaller` where they need the whole User. The NotFound they return is unchanged.
+- `BackendOrganizationHandler` and `BackendUserHandler` call a usecase that owns the identity-provider ports they use today. The usecase passes the calls through and returns the same codes.
 
-### Rules move to the entity that owns them
+### Errors: apperr everywhere, a reason where the code is not enough
 
-For each rule, the entity gains a method or a pure function, and every usecase that restated the rule calls it. A rule that needs a store read keeps the read in the usecase and passes the values in.
+Entity validators and guards return `apperr.New(codes.InvalidArgument | codes.FailedPrecondition, msg)` with the code each caller attaches today. Callers in `usecase` and `rdb` return them as they are. Where a caller still chooses a code for a foreign error, it uses `apperr.Wrap(err, code, msg)`, so the cause stays in the log. The comments at `user.go:35`, `user.go:70` and `settlement.go:136` are rewritten to state this rule.
 
-| Rule (spec that states it) | Today | On the entity |
+No custom sentinel error or custom error type remains in `internal/`. For each one, the deciding question is whether the code it travels with is already unique at the place a caller checks it.
+
+| Today | After | Why |
 |---|---|---|
-| 本人確認 gate on a sale, also for "any sale of the event" (`entity/ticket-sale`; the three authorize-card / start usecases) | `lottery_entry_uc.go:314`, `checkout_uc.go:255`, `resale_entry_uc.go:245`, `order_resale_workflow.go:258` | A guard taking the requirement and the fan's IdentityVerification (nil when none). The usecase still reads the verification and turns NotFound into "none". |
-| Purchaser full name and phone number required (`entity/user` Personal details; the three usecases) | `lottery_entry_uc.go:239`, `resale_entry_uc.go:202`, `checkout_uc.go:309` | One validator, so `ValidatePersonalDetails` keeps "absent is valid" for stored Users. |
-| Only an active Organizer serves (`entity/organizer`) | `organizer_uc.go:478,494,516,533,570,623` | One guard on Organizer. |
-| Refund of Tickets still Issued (`usecase/order/refund`) | `order_refund_uc.go:206` `unresoldAmount` | A pure computation over the Order and its Tickets. The usecase reads the Tickets. |
-| Settlement split invariants (`entity/settlement`: at least one split, each amount greater than 0) | `settlement_uc.go:234` `buildSplits` | Validation on Settlement. |
-| Publish readiness (`usecase/series/publish`) | `series_uc.go:730`, `eventVenueName` at `:755` duplicating `Concert.VenueName` (`concert.go:65`) | A guard on Series over its Events and performers. |
-| Deletion blockers (`usecase/user/list-deletion-blockers`) | `user_uc.go:593` | One predicate per record kind. The usecase reads, the entity classifies. |
-| Sale window against event start (`entity/ticket-sale`) | `ticket_sale_uc.go:231` `checkEndBeforeEvents`; `checkout_uc.go:206` `openFirstComeSale` | Methods on TicketSale taking the event start times or the instant. |
-| Reminder fire time and quiet hours (`usecase/ticket-sale/scan-due-reminders`) | `ticket_sale_reminder_uc.go:265` `scheduledFireTime` | Next to `ReminderStage.Anchor` on the entity, taking the time zone. |
-| Ticket sale search interval (`entity/ticket-sale-search`) | `ticket_sale_discovery_uc.go:26` `ticketSaleSearchDue` | On the TicketSaleSearch entity, separate from the reminders: it decides when a Series is searched again, not when a fan is reminded. |
-| Same performance (`entity/event`) | `concert_creation_uc.go:561,616`, `concert_candidate_uc.go:283`, entity `FilterNewSeries` (`concert.go:275`) | One venue-date-start key and one matcher on Event, used by all three. |
-| Draft-edit equality | `series_uc.go:509` `sameVenue`, `:521` `sameInstant` duplicating `sameOptionalTime` (`event.go:219`) | Event methods. |
+| `ErrScannerNotUsable` | PermissionDenied, code only | `TicketRepository.Admit` returns PermissionDenied only for an unusable scanner (`ticket_repo.go:122`); `ticket_uc.go:185` can check the code. |
+| `ErrUnsupportedImage` | InvalidArgument, code only | The image processor returns no other InvalidArgument; its other failures become Internal. |
+| `ErrResaleWinNotRevertible` | FailedPrecondition, code only | No production caller branches on it. |
+| `errInvalidAdmissionCode`, `errBase45` | InvalidArgument, code only | Used inside `admission_code.go` only. |
+| gemini `errNoCandidates`, `errTooManyToolCalls` | Unavailable at creation | `gemini/errors.go` maps them to Unavailable today. |
+| gemini `errInvalidJSON`, `errNoText` | Internal at creation | `gemini/errors.go` maps them to Internal today. |
+| gemini `errNonPublicAddress`, `errOffSiteRedirect`, `errTooManyRedirects` | FailedPrecondition at creation, code only | No production caller branches on them; only tests read them, through `export_test.go`, and will assert the code instead. |
+| `ErrResaleListingCancelled` | FailedPrecondition with reason `RESALE_LISTING_CANCELLED` | `IssuanceRepository.Issue` returns other FailedPreconditions too (`issuance_repo.go:311`), and `order_lottery_workflow.go:305` treats only this one as a result. |
+| `ErrUnknownScannerLinkToken`, `errScannerRefused` | PermissionDenied with reason `SCANNER_LINK_TOKEN_UNKNOWN` for the first; no reason for the second | The rate limiter in `di/provider.go:876` counts only unknown tokens. The reason must not reach the client, which must not tell the two refusals apart (`scanner_uc.go:21-23`). |
+| `errSubjectGone` | NotFound with reason `NOTIFICATION_SUBJECT_GONE` | Loading a subject reads several records, so NotFound alone does not say the subject is gone. |
+| `ErrPasskeyAccountPending` | NotFound with reason `PASSKEY_ACCOUNT_PENDING` | `RecordChange` can return other NotFounds; `passkey_workflow.go:72` waits only on this one. |
+| messaging `redeliveryError` | moves to the `pkg/` event message package | It carries a delay, which a code and a reason cannot. `pkg/` may declare it. |
 
-The four transition methods with no caller are used where their meaning matches:
+The reason comes from [pannpers/go-apperr#8](https://github.com/pannpers/go-apperr/issues/8). Until its release, the reason rows cannot be done; the code-only rows and every other section of this change do not depend on it and can land first.
 
-- A new `Order.CanBeCharged` (only a Pending Order is charged) replaces `order.Status != OrderStatusPending` at `order_lottery_workflow.go:338` and `order_resale_workflow.go:217`, which decide whether to charge and issue. `Order.CanBecomeVoid` governs the move to Void only and is not used for that check; `Order.CanBePaid` checks the payment details a Paid Order needs, not the status, so neither fits.
-- `Event.CanTransitionTo` guards publishing.
-- `Checkout.CanBecome` replaces the Held branch at `order_issue_uc.go:129`.
-- `ResaleEntry.IsWithdrawable` is used wherever a usecase decides withdrawal.
-
-A method that still has no caller after this is deleted, because dead rules mislead.
-
-Series cancellation of DRAFT Events stays as it is. `components/usecase/series/cancel-events` says a DRAFT Event given to a cancel is removed, not CANCELLED, which matches `Event.CanTransitionTo`.
-
-### Entity errors carry their code
-
-Validators and guards return `apperr.New(codes.InvalidArgument | codes.FailedPrecondition, msg)`, with the code each caller attaches today. Callers in `usecase` and `rdb` return them as they are.
-
-Sentinel errors that callers branch on with `errors.Is` stay sentinels: `ErrScannerNotUsable`, `ErrResaleListingCancelled`, `ErrUnsupportedImage` and `ErrResaleWinNotRevertible`. They are signals between layers, not answers to a client.
-
-The comments at `user.go:35`, `user.go:70` and `settlement.go:136` are rewritten to state this rule.
-
-Where a caller still has to choose a code for a foreign error, it uses `apperr.Wrap(err, code, msg)`, so the cause stays in the log.
-
-**Alternative considered:** named sentinel errors in the entity, mapped by each usecase. It was rejected because every new rule would need a mapping in every caller, and a missing mapping silently becomes Internal.
+One constraint goes back to go-apperr#8: the issue proposes sending the reason to Connect clients in an `ErrorInfo` detail. `SCANNER_LINK_TOKEN_UNKNOWN` must stay on the server. The implementation either uses a go-apperr option to keep a reason off the wire, or, if the release has none, raises it on the issue before relying on the release.
 
 ### Time comes from the caller
 
-`NewIdentityVerification` takes the verify time. `DiscoveredTicketSale.Validate` takes `now`. Usecases that call `time.Now()` read the injected `Clock` instead. Workflows keep reading time inside a step, as backend `AGENTS.md` "Durable workflows" requires.
+`NewIdentityVerification` takes the verify time. `DiscoveredTicketSale.Validate` takes `now`. Every usecase reads the injected `Clock` instead of `time.Now()`. Workflows keep reading time inside a step, as backend `AGENTS.md` "Durable workflows" requires.
 
-### Fan visibility: the entity owns the rule, SQL keeps the filter
+### Tests use the mockery mocks
 
-List queries must filter in SQL to page correctly, so the SQL predicate stays. Two things keep it from drifting:
+The 28 hand-written fake types are replaced with the mockery mocks (`make mocks`), as backend `AGENTS.md` review criteria require. A fake that holds state across calls becomes a mock with ordered expectations.
 
-- The doc comment of every SeriesRepository method that applies `fanVisibilityGuard`, `fanVisibleCondition` or `catalogEventCondition` states that it returns only what fans may see, or that it leaves DRAFT Events out. The ConcertRepository methods are rewritten by `fix-backend-contract-drift` (task 3.1).
-- One table test per such method seeds an Event in each combination: discovered or first-party; DRAFT, PUBLISHED or CANCELLED; PUBLIC or UNLISTED. It asserts that the method returns exactly the Events for which `Event.IsPubliclyVisible`, or the catalog rule, holds. `seriesPublishStateColumn` gets the same check against `DerivePublishState`.
+### The PR rule is removed
 
-### Function size
-
-`.golangci.yml` sets these limits:
-
-- funlen: 60 lines and 40 statements, with comments ignored.
-- gocognit: 20.
-- cyclop: 15.
-
-`_test.go` files are excluded. `cmd/` is included, the analysis CLIs too.
-
-Each existing violation is fixed by extracting a function per responsibility, not by mechanical slicing. Many usecase violations shrink on their own once the rules move to entities, so splitting happens after the move.
-
-If a function cannot be split without hurting clarity, its `//nolint` is proposed to the user with the reason and added only after they agree. Generated code and `internal/di` constructors are the likeliest candidates.
-
-### Tests
-
-- Each moved rule gets a table test on the entity that covers the scenarios of the spec stating it.
-- In usecase tests, cases that only re-checked a moved rule are reduced to one per usecase spec scenario.
-- Tests that use hand-written fakes are moved to the mockery mocks, as backend `AGENTS.md` review criteria require. There are 28 fake types in 11 files, for example `concert_creation_uc_test.go` `fakeConcertRepo`.
+The specification `README.md` step 4, the specification `AGENTS.md` workflow step 4 (`CLAUDE.md` is a link to it), and backend and frontend `AGENTS.md` line 20 each say "One PR per repository". No reason is recorded, and no gate depends on it: the archive gate reads the implementing repositories' `main`. The sentence is removed without a replacement, so a change may land in a repository through as many PRs as its review needs. This change's backend work may itself land as several PRs, one per tasks.md section.
 
 ## Risks / Trade-offs
 
-- **A large diff touching most of `internal/`** is hard to review and conflicts with parallel work. Mitigation: the backend AGENTS.md allows one PR per repository per change, so the work lands as one backend PR whose commits follow the sections of tasks.md (layering, then rules and errors, then lint and splitting). Each commit passes `make check` on its own, so the PR can be reviewed commit by commit.
-- **Moving a rule could change an outcome by accident**, for example when two duplicates of a rule differed slightly. Mitigation: before replacing duplicates, diff them. Where they differ, the spec decides, and the difference is reported to the user before merging.
-- **The SQL-versus-entity tests need the database.** They run in the rdb suite, which the change `speed-up-and-fill-backend-tests` makes faster.
-- **Lint limits could push toward awkward splits.** Mitigation: the "ask before an exclusion" rule above.
+- **The error section waits for a library release.** Mitigation: the code-only replacements and every other section land first; the four reason rows are the last task.
+- **`Announcement.Payload` loses its static type.** A repository could announce a type the encoder does not handle. Mitigation: the encoder fails with Internal for an unknown type, so the operation stores nothing, and the `adapter/pb` table test lists every announced type.
+- **Routing the identity proxy handlers through a usecase adds a pass-through layer.** Accepted: the layer rule then has no exception, and depguard can enforce it.
+- **A large diff touching most of `internal/`.** Mitigation: several backend PRs, one per tasks.md section, each passing `make check`.
 
 ## Migration Plan
 
-Code only. Nothing to migrate or roll out beyond the normal backend deploy. Rollback is a revert of the PR.
+Code and docs only. Nothing to migrate or roll out beyond the normal backend deploy. Rollback is a revert of the PR.

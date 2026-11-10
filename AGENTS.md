@@ -39,8 +39,7 @@
        PR, proto PR, archive) happens in a worktree cut from origin/main
        (README "Branch work in this repository").
     3. Proto first when the contract changes (see dependency-order below).
-    4. One PR per repository, each citing the change in its OpenSpec
-       Traceability section.
+    4. Each PR cites the change in its OpenSpec Traceability section.
     5. After the implementation PRs merge and production is confirmed:
        /opsx:verify, then archive in a `<change>-archive` worktree here, adding
        only that change's paths (README "Lifecycle of a change" step 5).
