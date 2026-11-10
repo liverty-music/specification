@@ -84,7 +84,7 @@ UpsertDiscovered SHALL treat a discovered sale as the known discovered sale that
 
 ### Requirement: A created discovered sale is announced with its creation
 
-When UpsertDiscovered creates a discovered sale (Inserted), it SHALL announce the TicketSale as discovered, together with the creation: both are stored or neither is. A sale it updates (Updated) or skips (Skipped) SHALL NOT be announced. When the announcement cannot be recorded, UpsertDiscovered SHALL fail with Unavailable and store nothing.
+When UpsertDiscovered creates a discovered sale (Inserted), it SHALL announce the TicketSale as discovered (TicketSale.Discovered), together with the creation: both are stored or neither is. A sale it updates (Updated) or skips (Skipped) SHALL NOT be announced. When the announcement cannot be recorded, UpsertDiscovered SHALL fail with Unavailable and store nothing.
 
 #### Scenario: New sale
 

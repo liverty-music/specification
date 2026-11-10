@@ -27,7 +27,7 @@ Delete SHALL remove the PushSubscription with the given endpoint when it belongs
 
 ### Requirement: A removed subscription is announced with the change
 
-When Delete removes a PushSubscription, it SHALL announce the PushSubscription as unsubscribed, carrying it as it was, together with the removal: both are stored or neither is. When Delete removes nothing, it SHALL announce nothing. When the announcement cannot be recorded, Delete SHALL fail with Unavailable and the PushSubscription SHALL remain.
+When Delete removes a PushSubscription, it SHALL announce the PushSubscription as unsubscribed (PushSubscription.Unsubscribed), carrying it as it was, together with the removal: both are stored or neither is. When Delete removes nothing, it SHALL announce nothing. When the announcement cannot be recorded, Delete SHALL fail with Unavailable and the PushSubscription SHALL remain.
 
 #### Scenario: Registered browser removed
 

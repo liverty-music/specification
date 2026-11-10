@@ -14,24 +14,26 @@ tf 06 cmd ResaleEntryUseCase_AuthorizeCard
 rf 07 pcr External_PaymentProvider
 rf 08 cmd ResaleEntryUseCase_Confirm ->> 05 ->> 07
 rf 09 cmd ResaleEntryUseCase_Withdraw ->> 05
-tf 10 evt ResaleEntry_Changed
+tf 10 evt ResaleEntry_Withdrawn
 rf 11 pcr Schedule_ResaleDraw
 tf 12 cmd ResaleEntryUseCase_Draw
-tf 13 evt ResaleEntry_Changed
-tf 14 cmd OrderUseCase_Issue
-tf 15 evt Order_Paid
-tf 16 cmd TicketJourneyUseCase_MarkPaid
-rf 17 cmd NotificationUseCase_SendOrderConfirmation ->> 15
-rf 18 evt ResaleListing_Sold ->> 14
-tf 19 cmd ResaleListingUseCase_RefundSold
-tf 20 evt ResaleListing_Refunded
-tf 21 cmd NotificationUseCase_SendResaleSold
-rf 22 cmd OrderUseCase_ReleaseCardAuthorization ->> 10 ->> 13
-rf 23 cmd NotificationUseCase_SendResaleEntryEnded ->> 13
-rf 24 rmo TicketUseCase_List ->> 15
-tf 25 ui Fan_Tickets
-rf 26 pcr Schedule_SettlementDue
-tf 27 cmd SettlementUseCase_ReleaseDueSettlements
+tf 13 evt ResaleEntry_Won
+rf 14 evt ResaleEntry_Lapsed ->> 12
+rf 15 evt ResaleEntry_Lost ->> 12
+rf 16 cmd OrderUseCase_Issue ->> 13
+tf 17 evt Order_Paid
+tf 18 cmd TicketJourneyUseCase_MarkPaid
+rf 19 cmd NotificationUseCase_SendOrderConfirmation ->> 17
+rf 20 evt ResaleListing_Sold ->> 16
+tf 21 cmd ResaleListingUseCase_RefundSold
+tf 22 evt ResaleListing_Refunded
+tf 23 cmd NotificationUseCase_SendResaleSold
+rf 24 cmd OrderUseCase_ReleaseCardAuthorization ->> 10 ->> 14 ->> 15
+rf 25 cmd NotificationUseCase_SendResaleEntryEnded ->> 14 ->> 15
+rf 26 rmo TicketUseCase_List ->> 17
+tf 27 ui Fan_Tickets
+rf 28 pcr Schedule_SettlementDue
+tf 29 cmd SettlementUseCase_ReleaseDueSettlements
 ```
 
 ## Requirements

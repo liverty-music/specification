@@ -45,7 +45,7 @@ Create SHALL register all of the new artists in one call or none of them; any ot
 
 ### Requirement: A newly registered artist is announced with its registration
 
-For each artist that Create registers, it SHALL announce the Artist as created, together with the registration: all are stored or none is. An artist whose MBID was already registered SHALL NOT be announced, also when another call registered it between the caller's lookup and this Create. When an announcement cannot be recorded, Create SHALL fail with Unavailable and register none of the new artists.
+For each artist that Create registers, it SHALL announce the Artist as created (Artist.Created), together with the registration: all are stored or none is. An artist whose MBID was already registered SHALL NOT be announced, also when another call registered it between the caller's lookup and this Create. When an announcement cannot be recorded, Create SHALL fail with Unavailable and register none of the new artists.
 
 #### Scenario: New MBID
 

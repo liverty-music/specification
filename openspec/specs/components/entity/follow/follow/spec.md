@@ -27,7 +27,7 @@ Follow SHALL store a Follow for the fan and the artist at hype level Nearby, set
 
 ### Requirement: A new Follow is announced with the change
 
-When Follow stores a new Follow, it SHALL announce the Follow as created, at hype level Nearby, together with the change: both are stored or neither is. When Follow fails, including with AlreadyExists, it SHALL announce nothing. When the announcement cannot be recorded, Follow SHALL fail with Unavailable and store no Follow.
+When Follow stores a new Follow, it SHALL announce the Follow as created (Follow.Created), at hype level Nearby, together with the change: both are stored or neither is. When Follow fails, including with AlreadyExists, it SHALL announce nothing. When the announcement cannot be recorded, Follow SHALL fail with Unavailable and store no Follow.
 
 #### Scenario: First follow announced
 

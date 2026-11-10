@@ -27,7 +27,7 @@ Release SHALL take a Checkout and a time, and make it Expired and its Order Void
 
 ### Requirement: An expired Checkout is announced with the change
 
-When Release makes a Checkout Expired and its Order Void, it SHALL announce the Checkout as expired, carrying it in status Expired, together with the change: both are stored or neither is. When Release changes nothing, it SHALL announce nothing. When the announcement cannot be recorded, Release SHALL fail with Unavailable, and the Checkout SHALL stay Held and its Order Pending.
+When Release makes a Checkout Expired and its Order Void, it SHALL announce the Checkout as expired (Checkout.Expired), carrying it in status Expired, together with the change: both are stored or neither is. When Release changes nothing, it SHALL announce nothing. When the announcement cannot be recorded, Release SHALL fail with Unavailable, and the Checkout SHALL stay Held and its Order Pending.
 
 #### Scenario: Hold lapsed
 

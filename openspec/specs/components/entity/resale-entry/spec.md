@@ -18,7 +18,10 @@ Events announced about it:
 
 | event | announced by | carries |
 |-------|--------------|---------|
-| ResaleEntry.Changed | ResaleEntry.PersistDrawOutcome, ResaleEntry.RevertWin, ResaleEntry.Withdraw | the entry in state Won, Lapsed, Lost or Withdrawn |
+| ResaleEntry.Won | ResaleEntry.PersistDrawOutcome | the entry in state Won |
+| ResaleEntry.Lapsed | ResaleEntry.PersistDrawOutcome | the entry in state Lapsed |
+| ResaleEntry.Lost | ResaleEntry.PersistDrawOutcome, ResaleEntry.RevertWin | the entry in state Lost, with its lost reason |
+| ResaleEntry.Withdrawn | ResaleEntry.Withdraw | the entry in state Withdrawn |
 
 ```mermaid
 erDiagram

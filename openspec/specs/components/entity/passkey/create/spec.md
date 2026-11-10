@@ -26,7 +26,7 @@ Create SHALL store a Passkey with the given provider passkey id, User, AAGUID, n
 
 ### Requirement: A stored Passkey is announced as added
 
-When Create stores a new Passkey, it SHALL announce the Passkey as added, carrying the stored Passkey, together with it: both are stored or neither is. When the announcement cannot be recorded, Create SHALL fail with Unavailable and no Passkey SHALL be stored.
+When Create stores a new Passkey, it SHALL announce the Passkey as added (Passkey.Added), carrying the stored Passkey, together with it: both are stored or neither is. When the announcement cannot be recorded, Create SHALL fail with Unavailable and no Passkey SHALL be stored.
 
 #### Scenario: Passkey added
 

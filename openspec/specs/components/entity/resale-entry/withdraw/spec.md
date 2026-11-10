@@ -27,11 +27,11 @@ Withdraw SHALL take a ResaleEntry and a time, and in one indivisible step make t
 
 ### Requirement: A withdrawn entry is announced with the change
 
-When Withdraw makes an entry Withdrawn, it SHALL announce the entry, as it is after the change, together with the change: both are stored or neither is. When Withdraw fails it SHALL announce nothing. When the announcement cannot be recorded, Withdraw SHALL fail with Unavailable, and the entry SHALL stay Entered and its Order Pending.
+When Withdraw makes an entry Withdrawn, it SHALL announce the entry as withdrawn (ResaleEntry.Withdrawn), as it is after the change, together with the change: both are stored or neither is. When Withdraw fails it SHALL announce nothing. When the announcement cannot be recorded, Withdraw SHALL fail with Unavailable, and the entry SHALL stay Entered and its Order Pending.
 
 #### Scenario: Withdrawal announced
 - **WHEN** an Entered entry is withdrawn
-- **THEN** one withdrawal is announced, carrying the entry as Withdrawn
+- **THEN** the entry is announced as withdrawn once, carrying it as Withdrawn
 
 #### Scenario: Announcement cannot be recorded
 - **WHEN** the announcement of a withdrawal cannot be recorded

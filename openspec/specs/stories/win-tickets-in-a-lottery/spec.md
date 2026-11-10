@@ -20,24 +20,25 @@ tf 11 cmd TicketJourneyUseCase_MarkApplied
 rf 12 pcr Schedule_DrawWindowClosed
 tf 13 cmd LotteryEntryUseCase_DrawDueSales
 tf 14 cmd LotteryEntryUseCase_Draw
-tf 15 evt LotteryEntry_Drawn
-tf 16 cmd OrderUseCase_Issue
-tf 17 evt Order_Paid
-tf 18 cmd TicketJourneyUseCase_MarkPaid
-rf 19 cmd NotificationUseCase_SendOrderConfirmation ->> 17
-rf 20 ui Member_Concert
-tf 21 cmd SeriesUseCase_Cancel
-tf 22 evt Event_Cancelled
-tf 23 cmd LotteryEntryUseCase_EndForCancelledEvent
-tf 24 evt LotteryEntry_Drawn
-rf 25 cmd OrderUseCase_ReleaseCardAuthorization ->> 15 ->> 24
-rf 26 cmd NotificationUseCase_SendLotteryLoss ->> 15 ->> 24
-rf 27 rmo LotteryEntryUseCase_ListByTicketSale ->> 15 ->> 24
-tf 28 ui Fan_LotteryEntry
-rf 29 rmo TicketUseCase_List ->> 17
-tf 30 ui Fan_Tickets
-rf 31 pcr Schedule_SettlementDue
-tf 32 cmd SettlementUseCase_ReleaseDueSettlements
+tf 15 evt LotteryEntry_Won
+rf 16 evt LotteryEntry_Lost ->> 14
+rf 17 cmd OrderUseCase_Issue ->> 15
+tf 18 evt Order_Paid
+tf 19 cmd TicketJourneyUseCase_MarkPaid
+rf 20 cmd NotificationUseCase_SendOrderConfirmation ->> 18
+rf 21 ui Member_Concert
+tf 22 cmd SeriesUseCase_Cancel
+tf 23 evt Event_Cancelled
+tf 24 cmd LotteryEntryUseCase_EndForCancelledEvent
+tf 25 evt LotteryEntry_Lost
+rf 26 cmd OrderUseCase_ReleaseCardAuthorization ->> 16 ->> 25
+rf 27 cmd NotificationUseCase_SendLotteryLoss ->> 16 ->> 25
+rf 28 rmo LotteryEntryUseCase_ListByTicketSale ->> 15 ->> 16 ->> 25
+tf 29 ui Fan_LotteryEntry
+rf 30 rmo TicketUseCase_List ->> 18
+tf 31 ui Fan_Tickets
+rf 32 pcr Schedule_SettlementDue
+tf 33 cmd SettlementUseCase_ReleaseDueSettlements
 ```
 
 ## Requirements

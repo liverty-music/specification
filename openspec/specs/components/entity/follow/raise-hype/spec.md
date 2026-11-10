@@ -31,7 +31,7 @@ RaiseHype SHALL set the fan's Follow of the artist to the given level, set by in
 
 ### Requirement: A raised hype level is announced with the change
 
-When RaiseHype changes the level, it SHALL announce the Follow as changed, with its new level and who set it (inference), together with the change: both are stored or neither is. When it changes nothing, it SHALL announce nothing. When the announcement cannot be recorded, RaiseHype SHALL fail with Unavailable and the Follow SHALL stay as it was.
+When RaiseHype changes the level, it SHALL announce the Follow's hype as changed (Follow.HypeChanged), with its new level and who set it (inference), together with the change: both are stored or neither is. When it changes nothing, it SHALL announce nothing. When the announcement cannot be recorded, RaiseHype SHALL fail with Unavailable and the Follow SHALL stay as it was.
 
 #### Scenario: Level raised
 

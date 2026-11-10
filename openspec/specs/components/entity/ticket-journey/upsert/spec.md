@@ -36,7 +36,7 @@ Upsert SHALL fail with FailedPrecondition, and store nothing, when the event or 
 
 ### Requirement: A changed status is announced with the change
 
-When Upsert creates a journey or changes its status or status set by, it SHALL announce the journey's status change, carrying the journey with its new status and status set by, together with the change: both are stored or neither is. When the journey already has the given status and status set by, Upsert SHALL announce nothing. When the announcement cannot be recorded, Upsert SHALL fail with Unavailable and the journey SHALL stay as it was, or stay absent.
+When Upsert creates a journey or changes its status or status set by, it SHALL announce the journey's status as changed (TicketJourney.StatusChanged), carrying the journey with its new status and status set by, together with the change: both are stored or neither is. When the journey already has the given status and status set by, Upsert SHALL announce nothing. When the announcement cannot be recorded, Upsert SHALL fail with Unavailable and the journey SHALL stay as it was, or stay absent.
 
 #### Scenario: First status announced
 

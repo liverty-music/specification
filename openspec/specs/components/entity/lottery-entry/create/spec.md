@@ -52,7 +52,7 @@ When an Order already holds the given card authorization, Create SHALL return th
 
 ### Requirement: A new entry is announced with it
 
-When Create stores a new entry, it SHALL announce the entry together with it: the entry, its Pending Order and the announcement are stored or none of them is. The announcement SHALL carry the Pending Order, which names the entry, the user and the TicketStock. When Create returns an existing entry for a card authorization an Order already holds, or fails, it SHALL announce nothing. When the announcement cannot be recorded, Create SHALL fail with Unavailable and store nothing.
+When Create stores a new entry, it SHALL announce the entry as entered (LotteryEntry.Entered) together with it: the entry, its Pending Order and the announcement are stored or none of them is. The announcement SHALL carry the Pending Order, which names the entry, the user and the TicketStock. When Create returns an existing entry for a card authorization an Order already holds, or fails, it SHALL announce nothing. When the announcement cannot be recorded, Create SHALL fail with Unavailable and store nothing.
 
 #### Scenario: Entry stored
 

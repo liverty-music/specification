@@ -10,7 +10,7 @@ tf 02 cmd SeriesUseCase_Cancel
 tf 03 evt Event_Cancelled
 tf 04 cmd NotificationUseCase_SendEventCancelled
 rf 05 cmd LotteryEntryUseCase_EndForCancelledEvent ->> 03
-tf 06 evt LotteryEntry_Drawn
+tf 06 evt LotteryEntry_Lost
 tf 07 cmd OrderUseCase_ReleaseCardAuthorization
 rf 08 rmo ArtistUseCase_Get
 tf 09 rmo ConcertUseCase_ListCatalogByArtist
