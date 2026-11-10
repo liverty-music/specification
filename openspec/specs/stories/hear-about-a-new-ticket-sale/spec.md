@@ -5,17 +5,15 @@
 A fan who tracks an event of a tour is told, once, when a new discovered ticket sale for that tour is published, while fans who only follow the artist are not.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Hear about a new ticket sale")
-  TicketSaleDiscoveryUseCaseDiscoverForArtist("TicketSaleDiscoveryUseCase.DiscoverForArtist")
-  TicketSaleAnnouncementUseCaseAnnounceDiscoveredSale("TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale")
-end
-Fan --> Goal
-Goal ..> : include TicketSaleDiscoveryUseCaseDiscoverForArtist
-Goal ..> : include TicketSaleAnnouncementUseCaseAnnounceDiscoveredSale
+eventmodeling
+tf 01 pcr Schedule_DailySaleDiscovery
+tf 02 cmd TicketSaleDiscoveryUseCase_DiscoverForArtist
+tf 03 evt TicketSale_Discovered
+tf 04 cmd TicketSaleAnnouncementUseCase_AnnounceDiscoveredSale
+tf 05 cmd NotificationUseCase_Deliver
+tf 06 ui Fan_EventDetailSheet
+rf 07 rmo NotificationUseCase_List ->> 05
+tf 08 ui Fan_Notifications
 ```
 
 ## Requirements

@@ -5,17 +5,12 @@
 A fan tracking a tour is reminded of each ticket sale: 30 minutes before a first-come sale opens, and when a lottery opens and 24 hours before it closes. Each milestone is reminded once, and never between 22:00 and 08:00 in the fan's time zone.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Get reminded of ticket sale milestones")
-  TicketSaleReminderUseCaseScanDueReminders("TicketSaleReminderUseCase.ScanDueReminders")
-  TicketSaleReminderDeliveryUseCaseDeliverReminder("TicketSaleReminderDeliveryUseCase.DeliverReminder")
-end
-Fan --> Goal
-Goal ..> : include TicketSaleReminderUseCaseScanDueReminders
-Goal ..> : include TicketSaleReminderDeliveryUseCaseDeliverReminder
+eventmodeling
+tf 01 pcr Schedule_ReminderScan
+tf 02 cmd TicketSaleReminderUseCase_ScanDueReminders
+tf 03 cmd TicketSaleReminderDeliveryUseCase_DeliverReminder
+tf 04 cmd NotificationUseCase_Deliver
+tf 05 ui Fan_EventDetailSheet
 ```
 
 ## Requirements

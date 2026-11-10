@@ -3,6 +3,49 @@
 ## Purpose
 CheckoutUseCase.Start begins a fan's checkout for a TicketStock of an event a FirstCome TicketSale names, or resumes it: it holds the chosen number of tickets for 15 minutes and returns the holding Checkout, and records the referral code it was started with.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as CheckoutUseCase.Start
+participant TicketStock
+participant Event
+participant TicketSale
+participant LotteryEntry
+participant IdentityVerification
+participant Order
+participant Checkout
+UC->>TicketStock: Get
+break TicketStock does not exist
+  Note over UC: fail with NotFound
+end
+UC->>Event: IsEventPublished
+break event is not published
+  Note over UC: fail with FailedPrecondition
+end
+UC->>TicketSale: ListByEvent
+break no FirstCome sale of the event is open
+  Note over UC: fail with FailedPrecondition
+end
+UC->>LotteryEntry: ListEnteredByTicketSaleAndTicketStock
+break a closed Lottery sale still has Entered entries for the stock
+  Note over UC: fail with FailedPrecondition
+end
+break count below 1 or above the per-account limit
+  Note over UC: fail with InvalidArgument
+end
+opt sale requires verification
+  UC->>IdentityVerification: GetByUserID
+  break no Active IdentityVerification
+    Note over UC: fail with FailedPrecondition
+  end
+end
+UC->>Order: GetHeldForEvent "not counting the fan's own holding Checkout"
+break application does not fit the event
+  Note over UC: fail with FailedPrecondition
+end
+UC->>Checkout: GetOrCreateHeld "hold for 15 minutes, with the ReferralCode"
+```
+
 ## Requirements
 
 ### Requirement: Verification gate

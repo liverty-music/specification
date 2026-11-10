@@ -4,27 +4,19 @@
 A fan who taps an event link that an artist shared, or a new-concert notification, lands on that event's public page whether or not they have an account, can follow the artist there, and when they sign up to buy, comes back to the same event.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-actor Member("member")
-actor Member("member")
-systemBoundary "Liverty Music"
-  Goal("Open a shared event link")
-  SeriesUseCasePublish("SeriesUseCase.Publish")
-  SeriesUseCaseCancel("SeriesUseCase.Cancel")
-  ConcertUseCaseGet("ConcertUseCase.Get")
-  ConcertUseCaseListBySeries("ConcertUseCase.ListBySeries")
-  NotificationUseCaseNotifyNewConcerts("NotificationUseCase.NotifyNewConcerts")
-end
-Fan --> Goal
-Goal ..> : include SeriesUseCasePublish
-Goal ..> : include SeriesUseCaseCancel
-Goal ..> : include ConcertUseCaseGet
-Goal ..> : include ConcertUseCaseListBySeries
-Goal ..> : include NotificationUseCaseNotifyNewConcerts
-Member --> SeriesUseCasePublish
-Member --> SeriesUseCaseCancel
+eventmodeling
+tf 01 ui Member_Concert
+tf 02 cmd SeriesUseCase_Publish
+tf 03 evt Concert_Created
+tf 04 cmd NotificationUseCase_NotifyNewConcerts
+rf 05 rmo ConcertUseCase_Get ->> 03
+rf 06 rmo ConcertUseCase_ListBySeries ->> 03
+rf 07 ui Fan_Event ->> 04 ->> 05 ->> 06
+rf 08 ui Member_Concert
+tf 09 cmd SeriesUseCase_Cancel
+tf 10 evt Event_Cancelled
+tf 11 rmo ConcertUseCase_Get
+tf 12 ui Fan_Event
 ```
 
 ## Requirements

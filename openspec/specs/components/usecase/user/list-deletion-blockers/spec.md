@@ -3,6 +3,37 @@
 ## Purpose
 Tells a fan or an admin what currently stops a User from being deleted, so the withdrawal and admin screens can show it before anyone commits, and UserUseCase.Delete applies the same rule.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as UserUseCase.ListDeletionBlockers
+participant User
+participant Ticket
+participant Event
+participant ResaleListing
+participant LotteryEntry
+participant Checkout
+participant Order
+UC->>User: Get
+break unknown User
+  Note over UC: NotFound
+end
+UC->>Ticket: ListByUser
+loop each Issued Ticket
+  UC->>Event: Get "upcoming ticket when today or later"
+end
+UC->>ResaleListing: ListByUser
+loop each Listed ResaleListing
+  UC->>Event: Get "listed resale before its deadline"
+end
+UC->>LotteryEntry: ListByUser "Entered is a pending lottery entry"
+UC->>Checkout: ListByUser "Committed or unexpired Held"
+loop each Won LotteryEntry
+  UC->>Order: GetByLotteryEntryID "payment in progress when none"
+end
+Note over UC: one blocker per kind with its count, a failed read returns its own code
+```
+
 ## Requirements
 
 ### Requirement: Four kinds of blocker

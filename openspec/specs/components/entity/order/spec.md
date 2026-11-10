@@ -27,6 +27,13 @@ An Order is one fan account's application for tickets of one TicketStock and, on
 | refund time | when the Order was refunded | present exactly when Refunded |
 | confirmation send time | when the purchase confirmation email was sent to the user | empty until sent; set once |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| Order.Paid | Order.Issue | the Order in status Paid |
+| Order.Refunded | Order.CommitRefund | the Order in status Refunded, with its refund |
+
 ```mermaid
 erDiagram
   User ||--o{ Order : "applies"

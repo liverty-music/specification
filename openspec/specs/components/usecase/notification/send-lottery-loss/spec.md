@@ -3,6 +3,28 @@
 ## Purpose
 NotificationUseCase.SendLotteryLoss tells a fan that their lottery entry lost and that nothing is charged: an email, and a push notification that opens the event.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as NotificationUseCase.SendLotteryLoss
+participant LotteryEntry
+participant Order
+participant User
+participant TicketStock
+participant Concert
+LotteryEntry-->>UC: PersistDrawOutcome (Lost)
+LotteryEntry-->>UC: RevertWin (Lost)
+LotteryEntry-->>UC: EndEnteredByEvent (Lost)
+Note over UC: a failed read or send fails the run, which is run again
+UC->>LotteryEntry: Get
+UC->>Order: Get
+UC->>User: Get
+UC->>TicketStock: Get
+UC->>Concert: ListByIDs
+UC->>LotteryEntry: SendLossEmail "one email per entry"
+UC->>UC: Deliver "lottery_loss, once per entry"
+```
+
 ## Requirements
 
 ### Requirement: Loss email after every Lost result

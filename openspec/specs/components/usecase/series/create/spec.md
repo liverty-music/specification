@@ -4,6 +4,34 @@
 
 Create lets a member of an Organizer start a new first-party concert — a Series with one or more DRAFT Events and the Artists it represents as performers — that no fan can see and nobody is notified about until its Events are published.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as SeriesUseCase.Create
+participant Organizer
+participant Venue
+participant Series
+break invalid title, event, date, times, place id or per-account limit
+  Note over UC: fail with InvalidArgument, storing nothing
+end
+UC->>Organizer: ListArtists
+break a performer is not represented by the Organizer
+  Note over UC: fail with PermissionDenied
+end
+loop each event
+  UC->>Venue: GetByPlaceID
+  opt no Venue holds the place id
+    UC->>Venue: GetPlace
+    break catalog unreachable, or no such place
+      Note over UC: fail with Unavailable or InvalidArgument, storing nothing
+    end
+    UC->>Venue: Create
+  end
+end
+UC->>Series: CreateDraft "one DRAFT Event per event, with the performers"
+UC->>Series: GetAuthored
+```
+
 ## Requirements
 
 ### Requirement: Draft input is validated

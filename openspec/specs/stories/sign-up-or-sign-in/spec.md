@@ -5,15 +5,10 @@
 Defines user authentication behavior: sign up / sign in, session restoration on cold start, and the server-side session monitoring policy.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Sign up or sign in")
-  UserUseCaseCreate("UserUseCase.Create")
-end
-Fan --> Goal
-Goal ..> : include UserUseCaseCreate
+eventmodeling
+tf 01 ui Fan_HostedLogin
+tf 02 cmd UserUseCase_Create
+tf 03 evt User_Created
 ```
 
 ## Requirements

@@ -4,33 +4,34 @@
 A fan who holds tickets of a seat type and cannot attend lists one through official resale (公式リセール) after that seat type sold out for the event, whether the tickets were bought first come or won in a lottery. Another fan applies for resale tickets of the seat type; a daily draw at 12:00 allocates the listed tickets to applications, the winning fan is charged face value and receives new tickets in their own name, and the listing fan is refunded the face value minus the 10% resale fee, while the Organizer is paid once per seat.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("listing fan")
-actor EnteringFan("fan who applies")
-systemBoundary "Liverty Music"
-  Goal("Resell a ticket")
-  ResaleListingUseCaseCreate("ResaleListingUseCase.Create")
-  ResaleListingUseCaseList("ResaleListingUseCase.List")
-  ResaleEntryUseCaseAuthorizeCard("ResaleEntryUseCase.AuthorizeCard")
-  ResaleEntryUseCaseConfirm("ResaleEntryUseCase.Confirm")
-  ResaleEntryUseCaseWithdraw("ResaleEntryUseCase.Withdraw")
-  ResaleEntryUseCaseDraw("ResaleEntryUseCase.Draw")
-  OrderUseCaseIssue("OrderUseCase.Issue")
-  TicketUseCaseList("TicketUseCase.List")
-end
-Fan --> Goal
-Goal ..> : include ResaleListingUseCaseCreate
-Goal ..> : include ResaleListingUseCaseList
-Goal ..> : include ResaleEntryUseCaseAuthorizeCard
-Goal ..> : include ResaleEntryUseCaseConfirm
-Goal ..> : include ResaleEntryUseCaseWithdraw
-Goal ..> : include ResaleEntryUseCaseDraw
-Goal ..> : include OrderUseCaseIssue
-Goal ..> : include TicketUseCaseList
-EnteringFan --> ResaleEntryUseCaseAuthorizeCard
-EnteringFan --> ResaleEntryUseCaseConfirm
-EnteringFan --> ResaleEntryUseCaseWithdraw
+eventmodeling
+tf 01 ui Fan_Tickets
+tf 02 cmd ResaleListingUseCase_Create
+tf 03 rmo ResaleListingUseCase_List
+tf 04 ui Fan_Tickets
+rf 05 ui Fan_ResaleEntry
+tf 06 cmd ResaleEntryUseCase_AuthorizeCard
+rf 07 pcr External_PaymentProvider
+rf 08 cmd ResaleEntryUseCase_Confirm ->> 05 ->> 07
+rf 09 cmd ResaleEntryUseCase_Withdraw ->> 05
+tf 10 evt ResaleEntry_Changed
+rf 11 pcr Schedule_ResaleDraw
+tf 12 cmd ResaleEntryUseCase_Draw
+tf 13 evt ResaleEntry_Changed
+tf 14 cmd OrderUseCase_Issue
+tf 15 evt Order_Paid
+tf 16 cmd TicketJourneyUseCase_MarkPaid
+rf 17 cmd NotificationUseCase_SendOrderConfirmation ->> 15
+rf 18 evt ResaleListing_Sold ->> 14
+tf 19 cmd ResaleListingUseCase_RefundSold
+tf 20 evt ResaleListing_Refunded
+tf 21 cmd NotificationUseCase_SendResaleSold
+rf 22 cmd OrderUseCase_ReleaseCardAuthorization ->> 10 ->> 13
+rf 23 cmd NotificationUseCase_SendResaleEntryEnded ->> 13
+rf 24 rmo TicketUseCase_List ->> 15
+tf 25 ui Fan_Tickets
+rf 26 pcr Schedule_SettlementDue
+tf 27 cmd SettlementUseCase_ReleaseDueSettlements
 ```
 
 ## Requirements

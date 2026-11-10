@@ -3,6 +3,43 @@
 ## Purpose
 TicketSaleUseCase.SetWindow lets an Organizer move the start and end times of one of its TicketSales: a lottery sale until its window opens, a first-come sale at any time.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as TicketSaleUseCase.SetWindow
+participant TicketSale
+participant Series
+participant Event
+UC->>TicketSale: Get
+break sale does not exist
+  Note over UC: fail with NotFound
+end
+UC->>Series: GetAuthored
+break another Organizer owns the Series
+  Note over UC: fail with PermissionDenied
+end
+break Lottery sale already open
+  Note over UC: fail with FailedPrecondition
+end
+break window breaks the TicketSale rules
+  Note over UC: fail with InvalidArgument
+end
+loop each event the sale names
+  UC->>Event: GetEventStartTime
+end
+break end time not allowed for the events' start times
+  Note over UC: fail with FailedPrecondition
+end
+loop each event the sale names
+  UC->>TicketSale: ListByEvent
+end
+break new window overlaps another sale
+  Note over UC: fail with FailedPrecondition
+end
+UC->>TicketSale: SetWindow
+Note over UC: return the updated sale with its events
+```
+
 ## Requirements
 
 ### Requirement: Only the Series' Organizer moves the window

@@ -4,6 +4,41 @@
 
 SettlementUseCase.ReleaseDueSettlements pays out every Held Settlement whose event started more than 7 days ago and whose Organizer can receive payouts, then marks it Released.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as SettlementUseCase.ReleaseDueSettlements
+participant Settlement
+participant Order
+participant Event
+participant PayoutAccount
+Note over UC: runs every 5 minutes
+UC->>Settlement: ListHeld
+break ListHeld fails
+  Note over UC: fail, release nothing
+end
+loop each Held Settlement, a failed one stays Held
+  UC->>Order: Get
+  UC->>Event: GetEventStartTime
+  break event does not exist, or not 7 days past its start
+    Note over UC: skip or withhold
+  end
+  UC->>PayoutAccount: GetByOrganizerID
+  UC->>PayoutAccount: GetStatus "stored status when the refresh fails"
+  break no payout account, or not Active
+    Note over UC: withhold without failing
+  end
+  break splits break the Settlement split rules
+    Note over UC: fail that Settlement, it stays Held
+  end
+  UC->>Order: GetProviderChargeID
+  loop each split
+    UC->>Settlement: CreatePayout
+  end
+  UC->>Settlement: MarkReleased "FailedPrecondition is skipped"
+end
+```
+
 ## Requirements
 
 ### Requirement: Payout waits for the Organizer's payout account

@@ -4,6 +4,34 @@
 
 OrganizerUseCase.ReconcileProvisioning finishes provisioning for every Organizer left in status provisioning, for example after a failed Create, so each eventually becomes active with an owner identity.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as OrganizerUseCase.ReconcileProvisioning
+participant Organizer
+participant Organization
+Note over UC: runs every 5 minutes, the first run 5 minutes after the service starts
+UC->>Organizer: ListByStatus "provisioning"
+break ListByStatus fails
+  Note over UC: fail and change nothing
+end
+loop each Organizer left provisioning
+  opt no Organization recorded
+    UC->>Organization: Create
+    opt Create fails with AlreadyExists
+      UC->>Organization: GetByName
+    end
+    UC->>Organizer: SetProviderOrganizerID
+  end
+  UC->>Organization: Provision
+  UC->>Organizer: CompareAndSetStatus "provisioning to active"
+  opt failure with AlreadyExists, InvalidArgument or FailedPrecondition
+    UC->>UC: Deactivate
+  end
+end
+Note over UC: a failed Organizer stays provisioning for the next run, and a deactivated one stays deactivated
+```
+
 ## Requirements
 
 ### Requirement: Runs every 5 minutes

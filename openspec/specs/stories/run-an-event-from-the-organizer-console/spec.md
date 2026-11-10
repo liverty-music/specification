@@ -4,25 +4,22 @@
 A member of an Organizer takes one event from draft to the door in the organizer console — adds a seat type, publishes it, stocks the seat type, opens a lottery sale, watches it, and issues the scanners venue staff use — reaching every step by navigation, on a PC or on a phone.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Member("member")
-systemBoundary "Liverty Music"
-  Goal("Run an event from the organizer console")
-  SeatTypeUseCaseCreate("SeatTypeUseCase.Create")
-  SeriesUseCasePublish("SeriesUseCase.Publish")
-  TicketStockUseCaseCreate("TicketStockUseCase.Create")
-  TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
-  TicketSaleUseCaseListOwnByEvent("TicketSaleUseCase.ListOwnByEvent")
-  ScannerUseCaseCreate("ScannerUseCase.Create")
-end
-Member --> Goal
-Goal ..> : include SeatTypeUseCaseCreate
-Goal ..> : include SeriesUseCasePublish
-Goal ..> : include TicketStockUseCaseCreate
-Goal ..> : include TicketSaleUseCaseCreate
-Goal ..> : include TicketSaleUseCaseListOwnByEvent
-Goal ..> : include ScannerUseCaseCreate
+eventmodeling
+tf 01 ui Member_Home
+tf 02 ui Member_Concerts
+tf 03 ui Member_Concert
+tf 04 cmd SeatTypeUseCase_Create
+rf 05 ui Member_Event
+tf 06 cmd SeriesUseCase_Publish
+tf 07 evt Concert_Created
+tf 08 cmd NotificationUseCase_NotifyNewConcerts
+rf 09 cmd TicketStockUseCase_Create ->> 05
+rf 10 ui Member_TicketSaleEditor ->> 05
+tf 11 cmd TicketSaleUseCase_Create
+tf 12 rmo TicketSaleUseCase_ListOwnByEvent
+tf 13 ui Member_Event
+tf 14 cmd ScannerUseCase_Create
+rf 15 cmd ScannerUseCase_Revoke ->> 13
 ```
 
 ## Requirements

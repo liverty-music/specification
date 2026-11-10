@@ -16,6 +16,12 @@ An Event is one performance at one Venue on one local date, at an optional start
 | publish state | DRAFT, PUBLISHED or CANCELLED | first-party only; absent on a discovered Event |
 | per-account limit | most tickets one account may hold for the event, across every TicketSale, SeatType and official resale | first-party only; 1 to 10; 4 when not given |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| Event.Cancelled | Series.CancelEvents | the Event in status CANCELLED |
+
 ```mermaid
 erDiagram
   Series ||--o{ Event : "groups"

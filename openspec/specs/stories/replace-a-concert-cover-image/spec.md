@@ -5,19 +5,11 @@
 An Organizer uploads an image and makes it the cover of its concert, without the concert ever showing a broken or unprocessed image.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Member("member")
-systemBoundary "Liverty Music"
-  Goal("Replace a concert cover image")
-  SeriesImageUseCaseCreateUploadUrl("SeriesImageUseCase.CreateUploadUrl")
-  SeriesUseCaseSetCoverImage("SeriesUseCase.SetCoverImage")
-  SeriesImageUseCaseProcess("SeriesImageUseCase.Process")
-end
-Member --> Goal
-Goal ..> : include SeriesImageUseCaseCreateUploadUrl
-Goal ..> : include SeriesUseCaseSetCoverImage
-Goal ..> : include SeriesImageUseCaseProcess
+eventmodeling
+tf 01 ui Member_ConcertEditor
+tf 02 cmd SeriesImageUseCase_CreateUploadUrl
+rf 03 cmd SeriesUseCase_SetCoverImage ->> 01
+tf 04 cmd SeriesImageUseCase_Process
 ```
 
 ## Requirements

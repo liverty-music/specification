@@ -4,6 +4,31 @@
 
 OrganizerUseCase.Create registers a new Organizer from a name, a short name and an owner email and provisions its Organization with the owner identity, so the Organizer becomes active and its owner can sign in.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as OrganizerUseCase.Create
+participant Organizer
+participant Organization
+UC->>Organizer: Create "starts provisioning"
+break the short name is already used
+  Note over UC: fail with AlreadyExists
+end
+UC->>Organization: Create
+opt Create fails with AlreadyExists
+  UC->>Organization: GetByName
+end
+UC->>Organizer: SetProviderOrganizerID
+UC->>Organization: Provision
+UC->>Organizer: CompareAndSetStatus "provisioning to active"
+opt recording or completing fails with AlreadyExists, InvalidArgument or FailedPrecondition
+  UC->>UC: Deactivate
+  UC->>UC: Delete
+  Note over UC: fail with the original error
+end
+Note over UC: another failure leaves the Organizer provisioning for ReconcileProvisioning, and a deactivated one stays deactivated
+```
+
 ## Requirements
 
 ### Requirement: A failed provisioning leaves the Organizer provisioning

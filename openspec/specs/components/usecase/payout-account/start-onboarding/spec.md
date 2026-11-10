@@ -3,6 +3,30 @@
 ## Purpose
 PayoutAccountUseCase.StartOnboarding is called when a member of an Organizer asks to start or continue the payment provider's 本人確認 (identity check): it opens the Organizer's payout account when there is none and returns a fresh link to the provider's onboarding page.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as PayoutAccountUseCase.StartOnboarding
+participant Organizer
+participant PayoutAccount
+UC->>Organizer: Get
+break Organizer does not exist
+  Note over UC: fail with NotFound
+end
+UC->>PayoutAccount: GetByOrganizerID
+opt Organizer has no account
+  UC->>PayoutAccount: Create "owner email as contact"
+  UC->>PayoutAccount: Upsert "pending"
+  break account cannot be opened or stored
+    Note over UC: fail with that error, no link
+  end
+end
+UC->>PayoutAccount: CreateOnboardingLink "back to the member's Home"
+break link cannot be created
+  Note over UC: fail with that error, the account stays stored
+end
+```
+
 ## Requirements
 
 ### Requirement: StartOnboarding opens the account when the Organizer has none

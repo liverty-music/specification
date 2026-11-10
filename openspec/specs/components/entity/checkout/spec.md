@@ -14,6 +14,14 @@ A Checkout is how one fan's Order is bought first come, first served: during a F
 | commit time | when its tickets were committed against the stock | absent until Committed |
 | capture time | when the card was charged | absent until charged; set once |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| Checkout.Held | Checkout.GetOrCreateHeld | the Checkout in status Held |
+| Checkout.Released | Checkout.GetOrCreateHeld, Checkout.RevertCommit | the Checkout in status Released |
+| Checkout.Expired | Checkout.GetOrCreateHeld, Checkout.Release | the Checkout in status Expired |
+
 ```mermaid
 erDiagram
   Order ||--o| Checkout : "is checked out as"

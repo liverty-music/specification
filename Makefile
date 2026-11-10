@@ -1,4 +1,4 @@
-.PHONY: lint breaking fix words stories check
+.PHONY: lint breaking fix words diagrams check
 
 ## lint: buf lint + format check. Breaking change detection is `make breaking`:
 ## an intended breaking change passes CI with the `buf skip breaking` label,
@@ -21,10 +21,10 @@ fix:
 words:
 	python3 scripts/check-forbidden-words.py
 
-## stories: every usecase method a story names is drawn in its Purpose's
-## usecase-beta fence
-stories:
-	python3 scripts/check-story-diagrams.py
+## diagrams: story eventmodeling, entity events and usecase sequence
+## diagrams match their spec text
+diagrams:
+	python3 scripts/check-diagrams.py
 
 ## check: full local pre-commit check
-check: lint words stories
+check: lint words diagrams

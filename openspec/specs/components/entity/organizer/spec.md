@@ -19,6 +19,12 @@ An Organizer is a vetted business - a record label, management agency, promoter 
 | contact email | the Organizer's contact email | optional until entered; an email address of at most 165 characters |
 | platform fee rate | the platform fee applied to the Organizer's future Orders, in hundredths of a percent | required; 0 to 3000; 800 for a new Organizer; never shown to the fan audience |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| Organizer.Activated | Organizer.CompareAndSetStatus | the Organizer in status active |
+
 ```mermaid
 erDiagram
   Organizer ||--o| Organization : "is signed in to through"

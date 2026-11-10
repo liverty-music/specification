@@ -4,19 +4,14 @@
 A fan who can no longer use any of their passkeys - the device was lost, reset or replaced, or the passkey was not synced - gets back into the same account with a new passkey, using only their verified email address.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Recover sign-in after losing passkeys")
-  RequestRecovery("UserUseCase.RequestPasskeyRecovery")
-  SendLink("UserUseCase.SendPasskeyRecoveryLink")
-  Notify("UserUseCase.NotifyPasskeyChange")
-end
-Fan --> Goal
-Goal ..> : include RequestRecovery
-Goal ..> : include SendLink
-Goal ..> : include Notify
+eventmodeling
+tf 01 ui Fan_PasskeyRecovery
+tf 02 cmd UserUseCase_RequestPasskeyRecovery
+tf 03 cmd UserUseCase_SendPasskeyRecoveryLink
+tf 04 pcr External_IdentityProvider
+tf 05 cmd PasskeyUseCase_RecordChange
+tf 06 evt Passkey_Added
+tf 07 cmd UserUseCase_NotifyPasskeyChange
 ```
 
 ## Requirements

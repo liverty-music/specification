@@ -5,21 +5,15 @@
 An admin reviews concerts held back from automatic publishing, publishing the good ones, reconciling duplicates, and dropping the wrong ones, while rejected concerts stay eligible for later discovery.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Admin("admin")
-systemBoundary "Liverty Music"
-  Goal("Review concert candidates")
-  ConcertCreationUseCaseCreateFromDiscovered("ConcertCreationUseCase.CreateFromDiscovered")
-  ConcertCandidateUseCaseList("ConcertCandidateUseCase.List")
-  ConcertCandidateUseCaseApprove("ConcertCandidateUseCase.Approve")
-  ConcertCandidateUseCaseReject("ConcertCandidateUseCase.Reject")
-end
-Admin --> Goal
-Goal ..> : include ConcertCreationUseCaseCreateFromDiscovered
-Goal ..> : include ConcertCandidateUseCaseList
-Goal ..> : include ConcertCandidateUseCaseApprove
-Goal ..> : include ConcertCandidateUseCaseReject
+eventmodeling
+tf 01 pcr Schedule_DailyConcertSearch
+tf 02 cmd ConcertUseCase_SearchNewConcerts
+tf 03 cmd ConcertCreationUseCase_CreateFromDiscovered
+tf 04 rmo ConcertCandidateUseCase_List
+tf 05 ui Admin_ApprovalQueue
+tf 06 cmd ConcertCandidateUseCase_Approve
+tf 07 evt Concert_Created
+rf 08 cmd ConcertCandidateUseCase_Reject ->> 05
 ```
 
 ## Requirements

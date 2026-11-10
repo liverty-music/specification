@@ -3,6 +3,29 @@
 ## Purpose
 NotificationUseCase.SendOrderRefunded tells the fan of an Order refunded for 中止 (cancellation) how much was refunded and to which card: an email, and a push notification that opens the Order.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as NotificationUseCase.SendOrderRefunded
+participant Order
+participant User
+participant Concert
+Order-->>UC: CommitRefund (refunded)
+Note over UC: once per Order, a failure other than NotFound runs it again
+UC->>Order: Get
+break Order not found, or refund reason is Dispute
+  Note over UC: send nothing
+end
+UC->>User: Get
+UC->>Order: GetEventID
+UC->>Concert: ListByIDs
+break refund amount is 0, every Ticket resold
+  Note over UC: send nothing
+end
+UC->>Order: SendRefundEmail
+UC->>UC: Deliver "order_refunded, opens the Order"
+```
+
 ## Requirements
 
 ### Requirement: The refund notice once per refunded order

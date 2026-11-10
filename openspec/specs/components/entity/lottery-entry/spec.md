@@ -14,6 +14,13 @@ A LotteryEntry is how one fan's Order takes part in a Lottery TicketSale: a requ
 | lost reason | why the entry lost: not drawn, the card could not be charged, or the concert was cancelled | present exactly when the state is Lost |
 | loss email send time | when the email telling the fan the entry lost was sent | absent until sent; set once |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| LotteryEntry.Entered | LotteryEntry.Create | the entry's Pending Order, with its user and TicketStock |
+| LotteryEntry.Drawn | LotteryEntry.PersistDrawOutcome, LotteryEntry.EndEnteredByEvent, LotteryEntry.RevertWin | the entry in state Won or Lost, with its lost reason |
+
 ```mermaid
 erDiagram
   Order ||--o| LotteryEntry : "is entered as"

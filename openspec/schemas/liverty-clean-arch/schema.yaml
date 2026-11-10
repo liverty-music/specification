@@ -14,7 +14,7 @@ artifacts:
       - **What Changes**: Bullet list of changes. Be specific about new capabilities, modifications, or removals. Mark breaking changes with **BREAKING**.
       - **Capabilities**: Identify which specs will be created or modified:
         - **New Capabilities**: List capabilities being introduced. Each becomes a new `specs/<capability-path>/spec.md`. The path is one of the spec-tree slots defined in the specs instruction - `stories/<story>`, `components/entity/<entity>`, `components/entity/<entity>/<operation>`, `components/usecase/<entity>/<method>`, `components/adapter|infrastructure/<audience>/<delivery>/.../<component>` - in kebab-case.
-        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Only include if spec-level behavior changes (not just implementation details). Each needs a delta spec file. Use the exact existing path under `openspec/specs/`. Leave empty if no requirement changes. An entity's Purpose (its attribute table and state diagram) and a story's Purpose (its usecase diagram) are edited directly in the main spec, never through a delta: list the entity or story here marked (Purpose) so reviewers see it, and if that is the change's only spec edit set `skip_specs: true` and say so. When a usecase is listed, also list the entity and the entity operations it relies on, or state here why they are unchanged.
+        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Only include if spec-level behavior changes (not just implementation details). Each needs a delta spec file. Use the exact existing path under `openspec/specs/`. Leave empty if no requirement changes. An entity's Purpose (its attribute table, events table and state diagram), a story's Purpose (its eventmodeling diagram) and a usecase's Purpose (its sequence diagram) are edited directly in the main spec, never through a delta: list the entity or story here marked (Purpose) so reviewers see it, and if that is the change's only spec edit set `skip_specs: true` and say so. When a usecase is listed, also list the entity and the entity operations it relies on, or state here why they are unchanged.
       - **Impact**: Affected code, APIs, dependencies, or systems.
 
       IMPORTANT: The Capabilities section is critical. It creates the contract between
@@ -190,6 +190,20 @@ artifacts:
           each transition is a usecase concern. States and attributes come
           from the requirements' own conditions; none is added that no
           requirement mentions.
+          When an operation announces something about the entity, list each
+          domain event after the attribute table, as a table: event |
+          announced by | carries. The event is named <Entity>.<PastTense>
+          for what happened to the entity, in its own vocabulary: "announce
+          the Order as paid" is Order.Paid. The entity is the one the event
+          is about, which may differ from the announcing operation's own
+          (Series.CancelEvents announces Event.Cancelled). "announced by"
+          lists every operation that announces it; "carries" says what the
+          event holds, in attribute terms. Each event is listed once, by its
+          own entity. The operations' requirements still state when they
+          announce; the table only names the announcement.
+            | event | announced by | carries |
+            |---|---|---|
+            | Order.Paid | Order.Issue | the Order in status Paid |
           Tables and closed fences are fine; never an HTML comment or an
           extra `##` heading, or archive cannot carry the Purpose into a new
           main spec. A new entity puts the table in its delta's Purpose
@@ -224,7 +238,42 @@ artifacts:
 
       components/usecase/<entity>/<method>/spec.md
 
-        ## Purpose       The operation and its caller-facing intent.
+        ## Purpose
+          The operation and its caller-facing intent. When the spec's text
+          names 5 or more distinct entity operations (<Entity>.<Operation>
+          whose Entity has a spec under components/entity/), draw its flow in
+          a `mermaid` sequenceDiagram fence:
+            - participants: first `participant UC as <Interface>.<Method>`,
+              then one `participant <Entity>` per entity it calls, named
+              exactly as the entity;
+            - messages: each call is `UC->><Entity>: <Operation>`, optionally
+              followed by a short argument note; a call to another method of
+              the same interface is `UC->>UC: <Method>`;
+            - triggers: an entity operation the text names as what starts the
+              usecase, rather than as a call it makes, is an incoming dashed
+              message before the first call (`LotteryEntry-->>UC:
+              PersistDrawOutcome (Won)`); a usecase method that starts it is
+              written in a `Note over UC`, never as a message;
+            - branches: `alt`/`else`, `opt`, `loop` and `break` carry the
+              branches the requirements state, labelled in their own terms;
+              retries and time limits are a `Note over`; `autonumber` is on.
+          The operations in the messages and triggers are exactly the ones
+          the text names, no more and no fewer. The diagram summarizes the
+          requirements and is not normative: when the two disagree, the
+          requirements win and the diagram is fixed. Like an entity's
+          Purpose, it is edited directly in the main spec; a change that
+          modifies the usecase's requirements lists the usecase marked
+          (Purpose) and fixes the diagram when it archives.
+            sequenceDiagram
+            autonumber
+            participant UC as TicketUseCase.Admit
+            participant Ticket
+            UC->>Ticket: Get
+            break Ticket is Voided
+              Note over UC: report Voided
+            end
+            UC->>Ticket: Admit
+
         ## Requirements  Everything about driving the entity: the trigger and
                          input in entity terms; preconditions as entity
                          states and guards, in the entity spec's words; the
@@ -240,32 +289,46 @@ artifacts:
 
         ## Purpose
           The user goal in one or two sentences. When the story composes
-          usecases, draw it in a `mermaid` usecase-beta fence: one
-          `systemBoundary "Liverty Music"` holding the goal (labelled with
-          the story name as a sentence) and each usecase method the story
-          composes (labelled with its full name, OrderUseCase.Checkout); an
-          `include` edge from the goal to each method; the actor who pursues
-          the goal, outside the boundary, with an edge to the goal (none when
-          the platform pursues it on its own, as in discovery); and any
-          other actor with an edge to the method it triggers. A method run
-          by a schedule or an internal event has only its include edge.
-          Actors are named in the entity vocabulary: fan, admin, member,
-          venue staff. The fence names every usecase method the story's
-          requirements name; it may also name one they describe in words.
-          No front-matter config. Order is not drawn: it is the scenarios'.
-          Like an entity's Purpose, it is edited directly in the main spec;
-          a new story puts it in its delta's Purpose.
-            usecase-beta
-            direction LR
-            actor Member("member")
-            systemBoundary "Liverty Music"
-              Goal("Publish an organizer concert")
-              Create("SeriesUseCase.Create")
-              Publish("SeriesUseCase.Publish")
-            end
-            Member --> Goal
-            Goal ..> : include Create
-            Goal ..> : include Publish
+          usecases, draw it in a `mermaid` eventmodeling fence: one frame per
+          line in time order, `tf <NN> <element> <name>` with NN unique in
+          the fence and counting up in line order. The elements:
+            ui   a screen or surface an actor uses: <Actor>_<Screen>, where
+                 Actor is Fan, Member, Admin or VenueStaff and Screen is the
+                 route or global surface spec name in PascalCase
+                 (Fan_Tickets, Fan_EventDetailSheet)
+            cmd  a usecase method that writes: <Interface>_<Method>
+                 (LotteryEntryUseCase_Confirm)
+            rmo  a usecase method that only reads, whose result a screen
+                 shows: <Interface>_<Method> (TicketUseCase_List)
+            evt  a domain event an entity lists: <Entity>_<PastTense>
+                 (LotteryEntry_Drawn)
+            pcr  a trigger with no actor, a schedule or a call from an
+                 external system: Schedule_<What> or External_<System>,
+                 the system named by its role, never by its vendor
+                 (Schedule_DrawWindowClosed, External_PaymentProvider)
+          Names join their parts with `_`, never `.`: a dotted name opens a
+          lane of its own for each frame. A usecase run by an event directly
+          follows that event; the consumer or workflow between them is not
+          drawn. A usecase run by a schedule follows its pcr. A frame that
+          does not follow the frame before it starts with `rf`, which breaks
+          the inferred link, and names its source with `->> <NN>`; one event
+          starting several usecases is drawn this way. Branch conditions
+          (won or lost, captured or not) are not drawn; they stay in the
+          scenarios. The fence names every usecase method the story's
+          requirements name, as a cmd or rmo; it may also name one they
+          describe in words. No front-matter config. Like an entity's
+          Purpose, it is edited directly in the main spec; a new story puts
+          it in its delta's Purpose.
+            eventmodeling
+            tf 01 ui Fan_EventDetailSheet
+            tf 02 cmd LotteryEntryUseCase_Confirm
+            tf 03 evt LotteryEntry_Entered
+            tf 04 cmd TicketJourneyUseCase_MarkApplied
+            rf 05 pcr Schedule_DrawWindowClosed
+            tf 06 cmd LotteryEntryUseCase_Draw
+            tf 07 evt LotteryEntry_Drawn
+            tf 08 cmd OrderUseCase_Issue
+            rf 09 cmd NotificationUseCase_SendLotteryLoss ->> 07
 
       One rule, split across four places:
 
@@ -304,7 +367,8 @@ artifacts:
       ## What may be named in a spec
 
       The subject of a requirement or scenario is an entity, an operation or
-      usecase method (Order.Create, OrderUseCase.Checkout), an audience and
+      usecase method (Order.Create, OrderUseCase.Checkout), a domain event
+      an entity's Purpose lists (Order.Paid), an audience and
       screen name, a surface name, or a UI vocabulary term defined by the
       surface that owns it. Never an implementation type, a file path, or a
       package-internal function or field. Frontend behavior is stated from

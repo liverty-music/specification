@@ -3,6 +3,28 @@
 ## Purpose
 TicketJourneyUseCase.MarkPaid sets a user's ticket journey for an event to Paid once their purchase is recorded, whether the tickets came from a lottery or a checkout.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as TicketJourneyUseCase.MarkPaid
+participant TicketJourney
+participant Concert
+participant User
+participant Follow
+Note over UC: runs for each Order announced as paid
+UC->>TicketJourney: Upsert "Paid, set by the platform"
+break Upsert fails
+  Note over UC: fail, and MarkPaid is run again
+end
+Note over UC: a failure from here on does not fail MarkPaid
+UC->>Concert: ListByIDs
+UC->>User: Get "home"
+UC->>Follow: ListByUser
+opt lowest matching level, one followed artist, Follow raisable
+  UC->>Follow: RaiseHype
+end
+```
+
 ## Requirements
 
 ### Requirement: Paid after every recorded purchase

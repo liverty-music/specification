@@ -14,6 +14,12 @@ A ResaleEntry is one fan account's application, through its Order, for official 
 | lost reason | why it lost: no ticket left at the last draw, the concert cancelled, the card could not be charged after it won, the payment could not be completed before the show, or a listing allocated to it was cancelled after it was charged, so the charge was refunded | present only when Lost |
 | ended email send time | when the email telling the fan that the entry lapsed or lost was sent | absent until sent; set once |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| ResaleEntry.Changed | ResaleEntry.PersistDrawOutcome, ResaleEntry.RevertWin, ResaleEntry.Withdraw | the entry in state Won, Lapsed, Lost or Withdrawn |
+
 ```mermaid
 erDiagram
   Order ||--o| ResaleEntry : "is applied for as"

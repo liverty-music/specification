@@ -33,11 +33,11 @@ repos:
         language: system
         files: ^openspec/(specs|changes)/.*spec\.md$
         pass_filenames: false
-      - id: check-story-diagrams
-        name: openspec story usecase diagrams
-        entry: python3 scripts/check-story-diagrams.py
+      - id: check-diagrams
+        name: openspec story, entity and usecase diagrams
+        entry: python3 scripts/check-diagrams.py
         language: system
-        files: ^openspec/specs/stories/.*spec\.md$
+        files: ^(openspec/specs/(stories|components/entity|components/usecase)/.*spec\.md|scripts/check-diagrams\.py)$
         pass_filenames: false
       - id: check-forbidden-words
         name: forbidden words

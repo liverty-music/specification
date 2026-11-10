@@ -3,6 +3,58 @@
 ## Purpose
 OrderUseCase.Place places a fan's order for their Checkout: it checks what the fan can still fix, then has OrderUseCase.Issue commit, charge and issue the Checkout's Order, and returns the Order.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as OrderUseCase.Place
+participant Checkout
+participant Order
+participant TicketStock
+participant Event
+participant CardAuthorization
+participant TicketSale
+participant IdentityVerification
+UC->>Checkout: Get
+UC->>Order: Get
+break Checkout missing or its Order not the fan's
+  Note over UC: fail with PermissionDenied
+end
+break Order is Paid
+  Note over UC: return the Order
+end
+break Checkout is neither Held nor Committed
+  Note over UC: fail with FailedPrecondition
+end
+opt Checkout is Held
+  break Checkout is not holding at the current time
+    Note over UC: fail with FailedPrecondition
+  end
+  UC->>TicketStock: Get
+  UC->>Event: IsEventPublished
+  break event is not published
+    Note over UC: fail with FailedPrecondition
+  end
+  break Order has no card authorization
+    Note over UC: fail with FailedPrecondition
+  end
+  UC->>CardAuthorization: Get
+  break card authorization not Authorized, or its amount differs
+    Note over UC: fail with FailedPrecondition, or InvalidArgument for the amount
+  end
+  UC->>TicketSale: Get
+  opt sale requires verification
+    UC->>IdentityVerification: GetByUserID
+  end
+end
+UC->>UC: Issue "one run shared by every Place for the Checkout"
+Note over UC: fail with Unavailable when Issue has not ended 30 seconds after Place started it
+alt Issue ends with the Order Paid
+  Note over UC: return the Order
+else Issue ends without a Paid Order
+  Note over UC: fail with FailedPrecondition
+end
+```
+
 ## Requirements
 
 ### Requirement: Only the fan's own Checkout, placed while holding

@@ -5,25 +5,20 @@
 A fan finds artists to follow by searching by name, browsing popular charts or exploring artists similar to one they know; every artist found is a registered artist that soon shows the catalog's canonical name and its community images, and charts and similar artists suggest only artists whose activity has not ended.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Discover artists")
-  ArtistUseCaseSearch("ArtistUseCase.Search")
-  ArtistUseCaseListTop("ArtistUseCase.ListTop")
-  ArtistUseCaseListSimilar("ArtistUseCase.ListSimilar")
-  ArtistUseCaseCreate("ArtistUseCase.Create")
-  ArtistUseCaseRefresh("ArtistUseCase.Refresh")
-  ArtistImageSyncUseCaseSyncArtistImage("ArtistImageSyncUseCase.SyncArtistImage")
-end
-Fan --> Goal
-Goal ..> : include ArtistUseCaseSearch
-Goal ..> : include ArtistUseCaseListTop
-Goal ..> : include ArtistUseCaseListSimilar
-Goal ..> : include ArtistUseCaseCreate
-Goal ..> : include ArtistUseCaseRefresh
-Goal ..> : include ArtistImageSyncUseCaseSyncArtistImage
+eventmodeling
+tf 01 ui Fan_Discovery
+tf 02 cmd ArtistUseCase_Search
+rf 03 cmd ArtistUseCase_ListTop ->> 01
+rf 04 cmd ArtistUseCase_ListSimilar ->> 01
+rf 05 ui Admin_Organizers
+tf 06 cmd ArtistUseCase_Create
+rf 07 evt Artist_Created ->> 02 ->> 03 ->> 04 ->> 06
+tf 08 cmd ArtistUseCase_Refresh
+rf 09 cmd ArtistImageSyncUseCase_SyncArtistImage ->> 07
+rf 10 pcr Schedule_DailyArtistRefresh
+tf 11 cmd ArtistUseCase_Refresh
+rf 12 pcr Schedule_DailyArtistImageSync
+tf 13 cmd ArtistImageSyncUseCase_SyncArtistImage
 ```
 
 ## Requirements

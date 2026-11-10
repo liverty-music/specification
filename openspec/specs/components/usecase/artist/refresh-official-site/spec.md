@@ -4,6 +4,33 @@
 
 OfficialSiteRefreshUseCase.RefreshOfficialSite keeps an artist's official site in line with the music catalog, so discovery reads the artist's current site. It runs daily for a small batch of followed artists whose site was never checked or was checked more than 7 days ago.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as OfficialSiteRefreshUseCase.RefreshOfficialSite
+participant Follow
+participant Artist
+Note over UC: runs daily at 04:00 Japan time
+UC->>Follow: ListAll
+break nobody follows any artist
+  Note over UC: do nothing
+end
+UC->>Artist: ListStaleOfficialSite "age 7 days, limit a seventh of the followed artists"
+loop each due artist, one at a time
+  UC->>Artist: ResolveOfficialSiteURL
+  opt a URL is found
+    UC->>Artist: GetOfficialSite
+    alt the artist has no official site
+      UC->>Artist: CreateOfficialSite
+    else the URL differs from the stored url
+      UC->>Artist: UpdateOfficialSiteURL
+    end
+  end
+  UC->>Artist: MarkOfficialSiteChecked
+end
+Note over UC: a failed artist records no check, and the run stops after 3 consecutive failed artists or at shutdown
+```
+
 ## Requirements
 
 ### Requirement: RefreshOfficialSite brings the stored site in line with the catalog

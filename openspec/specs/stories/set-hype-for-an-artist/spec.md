@@ -5,15 +5,12 @@
 A fan tells the app how far they will travel for an artist by choosing a hype level on My Artists; the choice shows at once, is kept across sessions, and decides which of the artist's concerts are highlighted on the Dashboard and which new concerts reach the fan by push.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Set hype for an artist")
-  FollowUseCaseSetHype("FollowUseCase.SetHype")
-end
-Fan --> Goal
-Goal ..> : include FollowUseCaseSetHype
+eventmodeling
+tf 01 ui Fan_MyArtists
+tf 02 cmd FollowUseCase_SetHype
+tf 03 evt Follow_HypeChanged
+tf 04 rmo ConcertUseCase_ListFollowed
+tf 05 ui Fan_Dashboard
 ```
 
 ## Requirements

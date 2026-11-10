@@ -4,6 +4,40 @@
 
 NotificationUseCase.NotifyNewConcerts tells each follower of an artist about concerts just added for that artist, when the follower's hype level matches at least one of them, with a message in the fan's language that counts the matching concerts and links to the earliest one.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as NotificationUseCase.NotifyNewConcerts
+participant Concert
+participant Series
+participant Artist
+participant Follow
+Concert-->>UC: Create (new concerts for an artist)
+Series-->>UC: PublishEvents (new concerts for an artist)
+Note over UC: an admin can also give it the same input directly
+UC->>Artist: Get
+break artist cannot be read
+  Note over UC: fail, send nothing
+end
+UC->>Concert: ListByIDs
+break a concert is missing or does not feature the artist
+  Note over UC: fail with InvalidArgument, notify nobody
+end
+Note over UC: concerts with no performers are left out
+UC->>Follow: ListFollowers
+break followers cannot be read
+  Note over UC: fail, start nothing
+end
+loop each follower, until the call is cancelled
+  opt hype level matches at least one new concert
+    UC->>UC: Deliver "new_concerts"
+    break notification cannot be started
+      Note over UC: stop and fail, processed again
+    end
+  end
+end
+```
+
 ## Requirements
 
 ### Requirement: Triggered by concerts added for an artist

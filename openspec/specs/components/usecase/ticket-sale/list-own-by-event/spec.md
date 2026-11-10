@@ -3,6 +3,30 @@
 ## Purpose
 TicketSaleUseCase.ListOwnByEvent shows an Organizer every sale of one of its events, with the entry stats of each TicketStock in each lottery sale, whether each lottery sale has been drawn, and the event's purchases per referral code.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as TicketSaleUseCase.ListOwnByEvent
+participant Event
+participant TicketSale
+participant TicketStock
+participant LotteryEntry
+participant Order
+UC->>Event: GetOrganizerID
+break NotFound or another Organizer
+  Note over UC: fail with PermissionDenied
+end
+UC->>TicketSale: ListByEvent
+UC->>TicketStock: ListByEvent
+loop each Lottery sale
+  loop each TicketStock of the event
+    UC->>LotteryEntry: GetStatsByTicketSaleAndTicketStock
+  end
+end
+UC->>Order: ListReferralStatsByEvent
+Note over UC: return the sales and the purchases per referral code
+```
+
 ## Requirements
 
 ### Requirement: The owner sees the event's sales with their entry stats per stock

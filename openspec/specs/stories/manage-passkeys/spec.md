@@ -4,19 +4,14 @@
 A signed-in fan keeps their passkeys in order: adds one on another device so it can sign in there, sees which passkeys their account has, removes ones they no longer use or do not recognize, and is told by email about every change.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Manage passkeys")
-  Notify("UserUseCase.NotifyPasskeyChange")
-  Record("PasskeyUseCase.RecordChange")
-  List("PasskeyUseCase.List")
-end
-Fan --> Goal
-Goal ..> : include Notify
-Goal ..> : include Record
-Goal ..> : include List
+eventmodeling
+tf 01 rmo PasskeyUseCase_List
+tf 02 ui Fan_Settings
+tf 03 pcr External_IdentityProvider
+tf 04 cmd PasskeyUseCase_RecordChange
+tf 05 evt Passkey_Added
+rf 06 evt Passkey_Removed ->> 04
+rf 07 cmd UserUseCase_NotifyPasskeyChange ->> 05 ->> 06
 ```
 
 ## Requirements

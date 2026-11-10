@@ -4,19 +4,17 @@
 A fan who signs up verifies their email address from the verification email, in their own language, and comes back to the app, so the address can later receive a passkey recovery link.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Verify my email address")
-  Verify("UserUseCase.VerifyEmail")
-  Resend("UserUseCase.ResendEmailVerification")
-  Reissue("UserUseCase.ReissueEmailVerification")
-end
-Fan --> Goal
-Goal ..> : include Verify
-Goal ..> : include Resend
-Goal ..> : include Reissue
+eventmodeling
+tf 01 ui Fan_HostedLogin
+tf 02 cmd UserUseCase_Create
+tf 03 evt User_Created
+tf 04 ui Fan_VerifyEmail
+tf 05 cmd UserUseCase_VerifyEmail
+rf 06 ui Fan_Settings
+tf 07 cmd UserUseCase_ResendEmailVerification
+tf 08 cmd UserUseCase_ReissueEmailVerification
+rf 09 ui Fan_VerifyEmail ->> 08
+tf 10 cmd UserUseCase_VerifyEmail
 ```
 
 ## Requirements

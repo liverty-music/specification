@@ -4,19 +4,12 @@
 A fan sees every notification sent to them in one place, including those whose push never reached a browser, and knows which ones they have not read yet.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Review received notifications")
-  Deliver("NotificationUseCase.Deliver")
-  List("NotificationUseCase.List")
-  MarkRead("NotificationUseCase.MarkRead")
-end
-Fan --> Goal
-Goal ..> : include Deliver
-Goal ..> : include List
-Goal ..> : include MarkRead
+eventmodeling
+tf 01 cmd NotificationUseCase_Deliver
+tf 02 rmo NotificationUseCase_List
+tf 03 ui Fan_Notifications
+rf 04 ui Fan_ServiceWorker ->> 01
+rf 05 cmd NotificationUseCase_MarkRead ->> 03 ->> 04
 ```
 
 ## Requirements

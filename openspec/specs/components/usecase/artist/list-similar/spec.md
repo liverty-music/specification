@@ -4,6 +4,23 @@
 
 ArtistUseCase.ListSimilar returns artists musically similar to a given artist, each registered as an artist so it can be followed, up to a caller-chosen number.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as ArtistUseCase.ListSimilar
+participant Artist
+alt same artist answered within the last 6 hours
+  UC->>Artist: ListByMBIDs "current activity_ended"
+else otherwise
+  UC->>Artist: Get "seed"
+  UC->>Artist: ListSimilar "limit 50"
+  UC->>Artist: FilterArtistsByMBID
+  UC->>Artist: ListByMBIDs
+  UC->>Artist: Create "the unregistered ones"
+end
+Note over UC: leave out ended artists, then cut to the limit
+```
+
 ## Requirements
 
 ### Requirement: ListSimilar returns the catalog's similar artists as registered artists

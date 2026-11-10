@@ -3,6 +3,37 @@
 ## Purpose
 NotificationUseCase.SendEventCancelled tells each fan who bought tickets for an Event that it is 中止 (cancelled) and that the price of the tickets they still hold is refunded: an email, and a push notification that opens the event's page.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as NotificationUseCase.SendEventCancelled
+participant Series
+participant Order
+participant User
+participant Concert
+participant Ticket
+Series-->>UC: CancelEvents (each cancelled Event)
+UC->>Order: ListByEvent
+break listing fails
+  Note over UC: fail and run again
+end
+loop each Paid Order not yet told, a failure does not stop the others
+  UC->>Order: Get
+  break no longer Paid or no longer exists
+    Note over UC: send nothing for it
+  end
+  UC->>User: Get
+  UC->>Order: GetEventID
+  UC->>Concert: ListByIDs
+  UC->>Ticket: ListByUserAndEvent
+  break no Issued Ticket, every Ticket resold
+    Note over UC: send nothing for it
+  end
+  UC->>Order: SendCancellationEmail
+  UC->>UC: Deliver "concert_cancelled"
+end
+```
+
 ## Requirements
 
 ### Requirement: Every fan with a Paid Order of a cancelled event is told once per order

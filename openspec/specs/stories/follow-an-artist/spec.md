@@ -5,19 +5,16 @@
 A fan follows an artist and the follow takes effect at once; when the platform has never looked for that artist's concerts, a first concert search starts in the background, so the artist's upcoming concerts reach the catalog and the fan's Dashboard without the fan waiting for it.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Follow an artist")
-  FollowUseCaseFollow("FollowUseCase.Follow")
-  ConcertUseCaseSearchNewConcertsOnFirstFollow("ConcertUseCase.SearchNewConcertsOnFirstFollow")
-  ConcertUseCaseSearchNewConcerts("ConcertUseCase.SearchNewConcerts")
-end
-Fan --> Goal
-Goal ..> : include FollowUseCaseFollow
-Goal ..> : include ConcertUseCaseSearchNewConcertsOnFirstFollow
-Goal ..> : include ConcertUseCaseSearchNewConcerts
+eventmodeling
+tf 01 ui Fan_Discovery
+tf 02 cmd FollowUseCase_Follow
+tf 03 evt Follow_Created
+tf 04 cmd ConcertUseCase_SearchNewConcertsOnFirstFollow
+tf 05 cmd ConcertUseCase_SearchNewConcerts
+tf 06 cmd ConcertCreationUseCase_CreateFromDiscovered
+tf 07 evt Concert_Created
+tf 08 rmo ConcertUseCase_ListFollowed
+tf 09 ui Fan_Dashboard
 ```
 
 ## Requirements

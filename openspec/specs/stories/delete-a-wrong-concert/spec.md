@@ -5,17 +5,12 @@
 An admin removes a wrong Concert from the catalog for good: the next discovery run does not bring the same slot back.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Admin("admin")
-systemBoundary "Liverty Music"
-  Goal("Delete a wrong concert")
-  ConcertUseCaseDelete("ConcertUseCase.Delete")
-  ConcertCreationUseCaseCreateFromDiscovered("ConcertCreationUseCase.CreateFromDiscovered")
-end
-Admin --> Goal
-Goal ..> : include ConcertUseCaseDelete
-Goal ..> : include ConcertCreationUseCaseCreateFromDiscovered
+eventmodeling
+tf 01 ui Admin_ArtistConcerts
+tf 02 cmd ConcertUseCase_Delete
+rf 03 pcr Schedule_ConcertDiscovery
+tf 04 cmd ConcertUseCase_SearchNewConcerts
+tf 05 cmd ConcertCreationUseCase_CreateFromDiscovered
 ```
 
 ## Requirements
