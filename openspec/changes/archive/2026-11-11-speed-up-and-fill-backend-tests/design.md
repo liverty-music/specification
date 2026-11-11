@@ -58,7 +58,7 @@ Decision: pgtestdb. It removes the two parts that are easy to get wrong (a stale
 
 ### Bound the connections, rather than the parallelism alone
 
-Eight tests in parallel, each with a pool of up to 10 connections and some with workflow pools, can pass 100 connections. Two settings keep the run inside the limit. The test pool is opened with at most 4 connections, which is enough for a test. The test server's `max_connections` is raised to 300 in compose.yml and in the CI service definition. The pools the story tests open for their workflow runtime and client are capped at 4 connections too: with pgxpool's default of one per CPU, a run failed with `too many clients already` even at 300. All three are test-only settings in this repository; nothing deployed changes.
+Eight tests in parallel, each with a pool of up to 10 connections and some with workflow pools, can pass 100 connections. Three settings keep the run inside the limit. The test pool is opened with at most 4 connections, which is enough for a test. The test server's `max_connections` is raised to 300 in compose.yml and in the CI service definition. The pools the story tests open for their workflow runtime and client are capped at 4 connections too: with pgxpool's default of one per CPU, a run failed with `too many clients already` even at 300. All three are test-only settings in this repository; nothing deployed changes.
 
 ### Reproduce the failure before claiming a fix
 
