@@ -24,9 +24,9 @@ Every value the face shows is already loaded by the screen; only the prefecture 
 | date, open, start | `event.date`, `openTime`, `startTime` | `ConcertService.Get` → `event.local_date`, `open_time`, `start_time` |
 | venue, prefecture | `event.venueName`, `adminArea` (shown as a localized name with the Event page's prefecture helper, never the raw ISO 3166-2 code) | `ConcertService.Get` → `event.listed_venue_name` or `venue.name`, `venue.admin_area` |
 | seat type | `WalletTicket.seatTypeName` | `TicketSaleService.ListByEvent` → stock's seat type name |
-| state, admit time | `WalletTicket.state`, `admitTime` | `TicketService.List` → `status`, `admit_time` |
+| state | `WalletTicket.state` (the stamp shows the event's date, not the admit time) | `TicketService.List` → `status` |
 | full name, phone | `WalletPersonalDetails` | the fan's User, as the list already reads it |
-| resale notice | `WalletTicket.resaleWithoutConsentProhibited` | `TicketService.List` |
+| transfer prohibition | shown on every ticket's back: the Ticket entity's flag is always true, so it is not read | — |
 
 The colour of the face's lower part comes from `artistHue(name)` (`src/adapter/view/artist-color.ts`) of the first performer, as the event cards already do.
 
@@ -42,8 +42,8 @@ The colour of the face's lower part comes from `artistHue(name)` (`src/adapter/v
 
 - The dashboard event card (owner's decision: later).
 - Changing the QR code, its signing, the 15 s rotation or the 5 s polling.
-- Changing the tickets list, which keeps the 特定興行入場券 face of every ticket.
-- Following the device's tilt on iOS. Safari on iOS gives the orientation only after the page asks with `DeviceOrientationEvent.requestPermission()`, which shows a permission dialog (https://www.w3.org/TR/orientation-event/#dom-deviceorientationevent-requestpermission); the ticket sways by itself there.
+- Changing what the tickets list shows: it keeps the 特定興行入場券 face of every ticket. Task 5.5 only removes a condition on the transfer notice, in the list and on the order screen, that is never false (the Ticket entity's flag is always true), so both show the same as before.
+- Asking for the device's orientation where that opens a permission dialog (Safari on iOS: https://www.w3.org/TR/orientation-event/#dom-deviceorientationevent-requestpermission). The ticket sways by itself there.
 
 ## Decisions
 
@@ -60,7 +60,7 @@ Alternative: one face with the personal details masked for sharing (the first re
 
 ### Two ways to draw one DOM
 
-`virtual-ticket` lays the ticket out at one design size (20rem by 34rem) and scales it to its stage, so type and spacing keep their proportions on a narrow screen. It is drawn in one of two ways, chosen by feature detection (`'requestPaint' in HTMLCanvasElement.prototype && 'texElementSubImage2D' in WebGL2RenderingContext.prototype`):
+`virtual-ticket` lays the ticket out at one design size (20rem by 34rem) and scales it to its stage, so type and spacing keep their proportions on every screen. The stage takes the sheet's width up to 26rem, bounded by 52% of the viewport's height (owner's request, 2026-11-11: a larger ticket with less room around it), and WebGL draws at the scaled resolution, at most 3 device pixels per CSS pixel. It is drawn in one of two ways, chosen by feature detection (`'requestPaint' in HTMLCanvasElement.prototype && 'texElementSubImage2D' in WebGL2RenderingContext.prototype`):
 
 - **Sheet (Chrome and Edge 157 and later):** the card is moved into a `<canvas>`, and both sides become `HTMLSource` textures on one mesh (`ticket-sheet-renderer.ts`). The mesh's vertices are moved every frame: it turns about its vertical axis, its top runs ahead of its foot and it bows across its width, so the ticket bends like paper. The foil and the stamp's shockwave run through the text. `updateElementGeometry` tells the browser where the facing side was drawn, so taps and text selection hit it.
 - **DOM (Safari, Firefox, and a fan who asked to reduce motion):** both sides stay in the page; a canvas under the front's text draws the art, the foil and the paper (`ticket-renderer.ts`), and the card turns with a CSS 3D transform. With reduced motion this renderer draws one still frame per change.
@@ -68,6 +68,10 @@ Alternative: one face with the personal details masked for sharing (the first re
 When the sheet cannot start, or WebGL is unavailable, the component falls back one step: sheet to DOM, DOM to the plain cover image under the text.
 
 Alternative: draw the text with PixiJS. It would no longer be selectable or read aloud, and every item would be laid out twice. Rejected.
+
+### The ticket follows the device's tilt
+
+The component listens for `deviceorientation` wherever the event exists, unless the fan asked to reduce motion; level across and held at about 45 degrees is the ticket at rest. Listening asks for nothing. Chrome has `DeviceOrientationEvent.requestPermission()` since 121 (Intent to Ship: https://groups.google.com/a/chromium.org/g/blink-dev/c/ckd2rFmT3PA) and grants the sensors by default; whether it holds the events back until the method is called could not be settled from the sources. So on the first touch of the ticket, the component calls it only when `navigator.permissions.query({ name: 'accelerometer' })` already answers `granted`, which cannot open a dialog and which Safari does not answer at all.
 
 ### PixiJS is pinned to a dev build (owner's decision, 2026-11-10; replaces "wait for 8.23")
 
@@ -125,7 +129,7 @@ The image is made at the layout size, not the size on screen: the ticket is tilt
 
 Alternative for the sheet: extract the WebGL frame of the live sheet. The stamp would have to be hidden and a repaint awaited while the visible canvas is frozen, and Safari would still need the SVG way. One way for every browser is simpler. Rejected.
 
-Verification (2026-11-11): `e2e/functional/virtual-ticket.spec.ts` passed in Chromium (`functional`) on the dev server: the shared file is a PNG of the front's shape with the test cover's hue in its art and no stamp ink. Share images of the default and rock presets, made from Storybook in headless Chromium, showed the art, the preset's embedded face and the notches. WebKit (`webkit-virtual-ticket`) runs in CI; it could not run on the owner's machine (missing system libraries).
+Verification (2026-11-11): CI ran `e2e/functional/virtual-ticket.spec.ts` in Chromium (`functional`) and WebKit (`webkit-virtual-ticket`), and both passed on frontend#992. Locally it passed in Chromium on the dev server: the shared file is a PNG of the front's shape with the test cover's hue in its art and no stamp ink. Share images of the default and rock presets, made from Storybook in headless Chromium, showed the art, the preset's embedded face and the notches. WebKit (`webkit-virtual-ticket`) runs in CI; it could not run on the owner's machine (missing system libraries).
 
 ### CORS header from the CDN backend bucket
 
@@ -155,9 +159,27 @@ The component imports its renderers dynamically, the way `dna-orb` loads Matter.
 
 Measured on a production build (2026-11-11): `ticket-renderer` 304.8 KB (92.4 KB gzip), which holds PixiJS, and `ticket-sheet-renderer` 18.0 KB (6.3 KB gzip).
 
+## Found in production (2026-11-11)
+
+The owner opened the released ticket (v1.159.0) on a Pixel: no effects, and no tilt with the device. Both were dead in the app and only there.
+
+- **Content-Security-Policy.** The fan app's `index.html` sets `script-src` without `'unsafe-eval'`. PixiJS 8 builds its uniform and shader sync code with `new Function`, so every renderer threw at start, and the component fell back to the plain cover without logging. PixiJS ships `pixi.js/unsafe-eval` for this (https://pixijs.com/8.x/guides/migrations/v8): both renderers import it first, and a renderer that cannot start is now logged. The effects had been seen in Storybook, which has no policy; the e2e passed because the fallback satisfied its checks.
+- **Tilt.** The presence of `DeviceOrientationEvent.requestPermission` was read as "iOS, do not ask", but Chrome has had it since 121, so the listener was never added on the Pixel. See "The ticket follows the device's tilt".
+- **`font-src`.** It gains `data:`: Vite inlines small font files of the presets' faces as data URLs, and the share image embeds faces the same way.
+- **The sheet, in the app.** Driving the production build in Edge 157 over CDP (the first time the sheet ran outside Storybook) showed three more:
+  - The canvas's bend margin lay over the button below the ticket and took its taps. The controls are now positioned above the stage.
+  - A side without a paint record, a frame or two after the card moves into the canvas, makes the upload throw `No cached paint record for element` inside PixiJS's own `paint` listener, as an unhandled error. The sources are created with `autoUpdate: false`, and the renderer follows `paint` itself and draws its own frames, with that failure handled.
+  - A descendant of a canvas reports no size (`offsetWidth` 0, a computed width of `auto`). The share image and its art take the ticket's size from the box the card is laid out in, outside the canvas.
+
+Verification after the fixes, on a production build (`vite preview`):
+
+- `e2e/functional/virtual-ticket-webgl.spec.ts` (Chromium with software WebGL): the front is drawn under the policy (`data-drawn="true"`), the card tilts when `deviceorientation` events arrive, and the shared image carries the cover's hue in its art. The long flow in `virtual-ticket.spec.ts` now runs with WebGL turned off, so it tests the fallback on purpose.
+- Edge 157 over CDP with the same mocked backend: the ticket is drawn as a sheet; closed and reopened it has one canvas and is drawn; the button below it receives its tap; the back, a preset change and the share image work; no page error is logged.
+- Not verified: a real phone. The Pixel check is task 4.9.
+
 ## Risks / Trade-offs
 
-- [The speed of the WebGL art on an iPhone is unmeasured; the owner has no iPhone] → The resolution is capped at 2 device pixels per CSS pixel, and WebKit runs the flow in CI. A slow phone still shows every item, because the text is DOM.
+- [The speed of the WebGL art on an iPhone is unmeasured; the owner has no iPhone] → The resolution is capped at 3 device pixels per CSS pixel, and WebKit runs the flow in CI. A slow phone still shows every item, because the text is DOM.
 - [A `dev` build of PixiJS in production] → The version is pinned exactly, the sheet is behind feature detection with the DOM way as fallback, and the exit condition is written above.
 - [HTML-in-Canvas changes shape again in Chrome] → Feature detection falls back to the DOM way, which is the Safari way and is tested on every PR.
 - [WebKit draws the SVG `foreignObject` image before its embedded fonts are ready] → Unverified locally. The image then shows the fallback face; CI's WebKit run checks the image's content, not its typeface.
