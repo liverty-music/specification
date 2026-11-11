@@ -48,7 +48,7 @@ The transactional outbox is the only pattern that removes both the lost event an
    |  | if rows changed:                                                   |
    |  |   INSERT INTO watermill_events_outbox (uuid, payload, metadata)    |  the event, one
    |  |   uuid = UUIDv7 made here, payload = forwarder envelope around     |  table for every
-   |  |   proto.Marshal(pb.FromLotteryEntry(entry))                        |  subject, on the tx
+   |  |   proto.Marshal(encoder.Encode(subject, entry))                    |  subject, on the tx
    |  +------------------------------------------------------------------+
    v                     commit: both or neither
  forwarder (watermill components/forwarder, in workflow-worker)
@@ -73,7 +73,7 @@ The transactional outbox is the only pattern that removes both the lost event an
 | Read every committed event and drop it once delivered | watermill-sql `PostgreSQLQueueSchema` (`WHERE acked = false ... FOR UPDATE`: a row of an open transaction is read once committed) with `DeleteOnAck` | None |
 | Relay to NATS with the original id | watermill `forwarder`: the envelope keeps the original UUID and metadata and restores them before publishing | Wiring in `workflow-worker` |
 | Drop a repeated publish | watermill-nats `TrackMsgID: true` (already set) sends the UUID as `Nats-Msg-Id` | None |
-| Encode the payload | the generated `entity/v1` messages and the entity-to-proto functions | Move the functions from `internal/adapter/rpc/mapper` to `internal/adapter/pb` (see "The payload") |
+| Encode the payload | the generated `entity/v1` messages and the entity-to-proto functions in `internal/adapter/pb` | The repository hands the entity to the outbox, which encodes it through an encoder that `internal/adapter/pb` implements (see "The payload") |
 | Start follow-up work once | DBOS workflow id | The consumer names the workflow id after the business key |
 
 What goes away: the UUIDv5 namespace, the step origin in the context, the per-step counter, the `EventPublisher` dependency of the usecases, the payload structs of `entity/event_data.go` (the subject constants stay), and the rule "a step publishes once".
@@ -143,7 +143,7 @@ Rejected:
   | Unmarshal | 0.88 µs | 6.1 µs | - |
 
   For 1,000,000 events that is 156 MB against 309 MB in the outbox and the stream. The cost is that a message is not readable as text on the wire; read it with the generated types.
-- **Conversion** lives in `internal/adapter/pb` (moved from `internal/adapter/rpc/mapper`, which RPC handlers and the outbox both use): `pb.FromLotteryEntry(e)` returns the proto message, `pb.ToLotteryEntry(m)` the entity. The name `proto` is avoided because the same files import `google.golang.org/protobuf/proto`. The infrastructure layer may import the adapter layer.
+- **Conversion** lives in `internal/adapter/pb`, which RPC handlers and the outbox both use: `pb.FromLotteryEntry(e)` returns the proto message, `pb.ToLotteryEntry(m)` the entity. The name `proto` is avoided because the same files import `google.golang.org/protobuf/proto`. The infrastructure layer does not import the adapter layer (depguard enforces it): a repository announces the entity itself, and `messaging.Outbox` encodes it through the `messaging.Encoder` interface, which `pb.AnnouncementEncoder` implements and `internal/di` wires (OpenSpec change `restructure-backend-responsibilities`). `rdb`'s generic announce helpers accept only the entity types the encoder maps.
 
 ### Personal data
 
