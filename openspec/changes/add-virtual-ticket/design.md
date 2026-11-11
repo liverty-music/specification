@@ -71,7 +71,7 @@ Alternative: draw the text with PixiJS. It would no longer be selectable or read
 
 ### PixiJS is pinned to a dev build (owner's decision, 2026-11-10; replaces "wait for 8.23")
 
-`pixi.js` is pinned to `8.22.0-dev.f7d8c62`, the `dev` build that contains pixijs#12341; 8.22.0 on `latest` fails in Chrome 157 only in `HTMLSource`. The owner chose to ship the sheet now rather than wait. The pin installs without an npm `overrides` entry. Exit condition: when a `pixi.js` release containing pixijs#12341 is on npm `latest` (expected 8.23.0), move to it and drop the pin.
+`pixi.js` is pinned to `8.22.0-dev.f7d8c62`, the `dev` build that contains pixijs#12341; 8.22.0 on `latest` fails in Chrome 157 only in `HTMLSource`. The owner chose to ship the sheet now rather than wait. The pin needs an npm `overrides` entry: `pixi-filters` peers `pixi.js >=8.0.0-0`, a semver range does not match a prerelease of another version, and `npm ci` fails with `ERESOLVE` without it (seen in the frontend PR's first CI run, 2026-11-11). The override hands `pixi-filters` the root's `pixi.js`; the frontend's AGENTS.md records it with its exit condition. Exit condition: when a `pixi.js` release containing pixijs#12341 is on npm `latest` (expected 8.23.0), move to it and delete the pin and the override.
 
 ### Design presets, kept on the device (owner's decision, 2026-11-10)
 
