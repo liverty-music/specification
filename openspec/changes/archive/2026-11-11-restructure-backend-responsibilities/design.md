@@ -69,7 +69,7 @@ type Encoder interface {
 }
 ```
 
-`adapter/pb` implements it with a type switch over the announced entity types, choosing the `ForAnnouncement` variant for User and PushSubscription. It satisfies the interface structurally, so it imports nothing from `messaging`. `internal/di` passes it to `messaging.NewOutbox`. Repositories call `announce` with the entity as today, minus the `pb.From…` call.
+`adapter/pb` implements it (`AnnouncementEncoder`) with a type switch over the announced entity types, choosing the `ForAnnouncement` variant for User and PushSubscription. A ResaleListing is announced as `*entity.ResaleListing`, and the encoder adds its status (both call sites built `usecase.ResaleListingAt{Listing: l, Status: l.Status}`). It satisfies the interface structurally, so it imports nothing from `messaging`. `internal/di` passes it to `messaging.NewOutbox`. Repositories call `announce` with the entity as today, minus the `pb.From…` call.
 
 The call sites are type-checked by a generic helper in `rdb`, which is the one list of what may be announced:
 
@@ -103,6 +103,8 @@ backend `AGENTS.md` ("Announcements") then says that a repository announces the 
 
 `internal/di` and `cmd/` may import everything.
 
+Test files are exempt (`files: ["…", "!$test"]`). The boundary and story tests wire several layers together on purpose: `adapter/rpc` boundary tests run a handler behind the real `infrastructure/auth` interceptors, `infrastructure/server` tests serve real `adapter/rpc` handlers, and `rdb` story tests record announcements through the real `pb.AnnouncementEncoder`. Production code had no violation left once the rules were enabled.
+
 ### Handlers reach ports through usecases
 
 - The six fan handlers take `usecase.UserUseCase` and call the shared `callerUserID`, or `ResolveCaller` where they need the whole User. The NotFound they return is unchanged.
@@ -131,7 +133,7 @@ No custom sentinel error or custom error type remains in `internal/`. For each o
 
 The reason comes from [pannpers/go-apperr#8](https://github.com/pannpers/go-apperr/issues/8). Until its release, the reason rows cannot be done; the code-only rows and every other section of this change do not depend on it and can land first.
 
-One constraint goes back to go-apperr#8: the issue proposes sending the reason to Connect clients in an `ErrorInfo` detail. `SCANNER_LINK_TOKEN_UNKNOWN` must stay on the server. The implementation either uses a go-apperr option to keep a reason off the wire, or, if the release has none, raises it on the issue before relying on the release.
+One constraint goes back to go-apperr#8: the issue proposes sending the reason to Connect clients in an `ErrorInfo` detail. `SCANNER_LINK_TOKEN_UNKNOWN` must stay on the server. The implementation either uses a go-apperr option to keep a reason off the wire, or, if the release has none, raises it on the issue before relying on the release. go-apperr v1.3.0 settles it: `apperr.WithReason` is logged as `attrs.reason` but never sent to Connect clients, so the scanner refusals reach the client identical; a reception server test compares the two refusals a client receives.
 
 ### Time comes from the caller
 
