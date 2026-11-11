@@ -69,9 +69,9 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: DOM structure
 - **WHEN** the sheet is rendered
-- **THEN** the CE host (`<bottom-sheet>`) SHALL contain a popover element (`popover="manual"`) as the Top-Layer host
-- **AND** the popover host SHALL have an accessible name (`aria-label` or `aria-labelledby`) and SHALL carry `role="dialog"` and `aria-modal="true"` (a `popover` has no implicit dialog semantics, so these SHALL be set explicitly)
-- **AND** the internal DOM SHALL be `[popover] > .scroll-area > .dismiss-zone + section.sheet-body`
+- **THEN** the CE host (`<bottom-sheet>`) SHALL contain a native `<dialog popover="manual">` element as the Top-Layer host
+- **AND** the popover host SHALL have an accessible name (`aria-label` or `aria-labelledby`) and SHALL carry `aria-modal="true"`; the `<dialog>` element gives it the dialog role without an explicit `role` attribute
+- **AND** the internal DOM SHALL be `[popover] > .scroll-area > .dismiss-zone + sheet-surface > section.sheet-body`, where the `sheet-surface` element takes no box of its own (`display: contents`), so the sheet body is laid out and snaps as the scroll area's child
 - **AND** `.scroll-area` SHALL be a `<div>` element serving as the scroll-snap container (`overflow-y: auto`, `scroll-snap-type: y mandatory`, `block-size: 100svh`, `overscroll-behavior: none`)
 - **NOTE** `.scroll-area` MUST use viewport-relative height (`100svh`, not `100%`) because percentage block-size does not resolve against the popover's fixed-position height inside the Top Layer — the scroll container would expand to content size, preventing overflow and disabling scroll-snap. `svh` (not `dvh`/`vh`) is used so the height does not jump when the iOS Safari address bar resizes mid-swipe.
 - **AND** `.sheet-body` SHALL be a `<section>` element (semantic content container) with `contain: layout`
@@ -115,7 +115,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 #### Scenario: Responsive swipe-down dismiss detection
 - **WHEN** the user swipes the sheet down so the sheet body scrolls off the viewport (the dismiss zone becomes the settled snap target)
 - **THEN** the CE SHALL detect the dismiss via an `IntersectionObserver` observing the sheet body's visibility within the popover
-- **AND** on the sheet body leaving the viewport the CE SHALL call `hidePopover()`, set `open` to `false`, and dispatch `sheet-closed`
+- **AND** on the sheet body leaving the viewport (no more than 10% of it still visible) the CE SHALL call `hidePopover()`, set `open` to `false`, and dispatch `sheet-closed`
 - **AND** dismiss detection SHALL NOT depend on any `scrollTop / maxScroll` ratio threshold, nor on committing `close()` on the `scrollsnapchange` event
 - **NOTE** The `IntersectionObserver` fires regardless of how the sheet moved (user swipe, programmatic close scroll, or snap settle), so every dismiss path converges in one callback. This replaces the prior `scrollsnapchange` + scroll-ratio detection.
 
@@ -129,7 +129,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 #### Scenario: Dismiss detection ignores programmatic and initial-snap scroll
 - **WHEN** the sheet opens and the `initial-snap` sequence (or any programmatic scroll) momentarily rests the scroll position on the dismiss zone before settling on `.sheet-body`
 - **THEN** the CE SHALL NOT dismiss the sheet
-- **AND** dismiss SHALL be honored only once the sheet has settled on `.sheet-body` and the sheet body subsequently leaves the viewport (guarded by the just-opened guard)
+- **AND** dismiss SHALL be honored only once the sheet has settled on `.sheet-body` and the sheet body subsequently leaves the viewport, with no more than 10% of it still visible (guarded by the just-opened guard)
 - **NOTE** This prevents the iOS/WebKit "flash then close" defect, where the programmatic re-snap trace (scroll ratio `1 → 0`) was previously misread as a user swipe-to-dismiss by scroll-ratio heuristics.
 
 #### Scenario: Fallback dismiss detection where scrollsnapchange is unsupported
@@ -182,9 +182,8 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Dismissable mode with close-request dismiss (ESC / Android back)
 - **WHEN** `dismissable` is `true` (default)
-- **THEN** pressing Escape (desktop) SHALL close the sheet, handled by a CE `keydown` listener (a `popover="manual"` does not emit a native `cancel`/close request), which SHALL initiate the scroll-to-closed-stop dismiss
-- **AND** the Android back gesture/button SHALL close the sheet via the consumer's `popstate` handling (history-driven), which sets `open` to `false` and triggers the programmatic close path
-- **AND** each SHALL result in `open` being set to `false` and a `sheet-closed` event being dispatched
+- **THEN** pressing Escape (desktop) SHALL close the sheet, handled by a CE `keydown` listener (a `popover="manual"` does not emit a native `cancel`/close request), which SHALL initiate the scroll-to-closed-stop dismiss, set `open` to `false` and dispatch `sheet-closed`
+- **AND** the Android back gesture/button SHALL close the sheet via the consumer's `popstate` handling (history-driven), which sets `open` to `false` and triggers the programmatic close path, where the sheet closes and dispatches `sheet-hidden` but not `sheet-closed`
 
 #### Scenario: Close animation completes within 160ms (legacy duration removed)
 - **WHEN** `prefers-reduced-motion: reduce` is NOT active
@@ -194,20 +193,23 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **NOTE** This scenario documents the replacement of the fixed 160ms `--_duration` close fade; the perceived close latency is now bounded by the native smooth-scroll settle, not a CSS transition duration.
 
 #### Scenario: Sheet closed event
-- **WHEN** the sheet is closed by any mechanism (ESC / Android back, tap-outside, scroll-snap swipe, programmatic)
+- **WHEN** the user closes the sheet (ESC, tap-outside, scroll-snap swipe)
 - **THEN** the CE SHALL dispatch a `sheet-closed` CustomEvent with `bubbles: true`
 - **AND** the parent component SHALL respond by setting `open` to `false`
+- **WHEN** the parent sets `open` to `false` itself (including the Android back gesture handled by the consumer)
+- **THEN** the CE SHALL close without dispatching `sheet-closed`, so the parent's response to that event cannot loop, and SHALL dispatch `sheet-hidden` once the sheet has finished closing, so a parent that opens another sheet next can wait for it
 
 #### Scenario: Handle bar rendering
 - **WHEN** the sheet is open
-- **THEN** a handle bar (2.5rem wide, 0.25rem tall, rounded) SHALL be rendered at the top of the sheet body
-- **AND** the handle bar SHALL be styled with `oklch(100% 0 0deg / 20%)` background
+- **THEN** a handle bar (32 px wide, 4 px tall, fully rounded) SHALL be rendered at the top of the sheet body, in the middle of a 48 px tall area
+- **AND** the handle bar SHALL be in the `on-surface-variant` color role
 
 #### Scenario: Sheet body structure
 - **WHEN** the sheet is rendered
-- **THEN** the sheet body (`<section>`) SHALL have `border-radius: var(--radius-sheet)` on top corners
-- **AND** background SHALL be `var(--color-surface-raised)`
-- **AND** box-shadow SHALL be `var(--shadow-sheet)`
+- **THEN** the sheet body (`<section>`) SHALL have the extra-large shape (28 px) on its top corners
+- **AND** its background SHALL be the `surface-container` color role
+- **AND** it SHALL cast the level 1 elevation shadow
+- **AND** it SHALL be at most 640 px wide
 - **AND** `max-block-size` SHALL be `90svh`
 - **AND** overflow-y SHALL be `auto` for scrollable content
 - **AND** `contain` SHALL be `layout` (layout containment boundary — see layout stability scenario)
@@ -242,7 +244,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 ### Requirement: Artist-selection bottom sheet
 
 A bottom sheet SHALL allow the user to select one or more followed artists as a
-filter. Artists SHALL be presented as pill-shaped chip elements. Each artist chip
+filter. Artists SHALL be presented as Material 3 filter chips. Each artist chip
 SHALL be prefixed with the number of that artist's upcoming concerts in the loaded
 dashboard set. The artist chips SHALL be ordered by that concert count descending
 (ties broken by artist name ascending), and artists with zero upcoming concerts
@@ -250,11 +252,11 @@ SHALL NOT be listed. A "全て解除" (Clear all) button SHALL appear beside the
 title and allow the user to deselect all pending selections across every facet in
 the sheet before confirming.
 
-The sheet content SHALL be structured as a `<section>` element (not `<fieldset>`)
-with an `<h2>` heading as the title. The chip list SHALL carry `aria-labelledby`
-referencing the heading ID. `role="group"` SHALL NOT be applied to the `<ul>`
-element as it overrides the native `list` role and causes screen readers to lose
-item count information.
+The sheet's title SHALL be the bottom sheet's own heading (see "Sheet heading"),
+with the "全て解除" button at the end of the heading row. Each facet's chip list
+SHALL carry `aria-labelledby` referencing that facet's heading. `role="group"`
+SHALL NOT be applied to the `<ul>` element as it overrides the native `list` role
+and causes screen readers to lose item count information.
 
 #### Scenario: Opening the bottom sheet
 
@@ -285,7 +287,7 @@ item count information.
 
 #### Scenario: Chip selected state
 - **WHEN** the user taps an artist chip
-- **THEN** the chip SHALL display a checkmark and a brand-colour tinted background to indicate selection
+- **THEN** the chip SHALL display a leading checkmark and the `secondary-container` fill to indicate selection
 
 #### Scenario: Clear all pending selections
 - **WHEN** one or more chips are in the pending-selected state (in any facet)
@@ -314,16 +316,35 @@ item count information.
 
 ### Requirement: Top-layer Popover Text Color Inheritance
 
-All popover and dialog elements promoted to the browser's top-layer SHALL inherit the application's text color. The global CSS layer SHALL set `color: var(--color-text-primary)` on `:where([popover], dialog)` to prevent top-layer elements from inheriting the browser-default `color: black` from `<html>`.
+All popover and dialog elements promoted to the browser's top-layer SHALL inherit the application's text color. The global CSS layer SHALL set the `on-surface` color role on `:where([popover], dialog)` to prevent top-layer elements from inheriting the browser-default `color: black` from `<html>`.
 
 #### Scenario: Bottom-sheet text is readable on dark background
 
 - **WHEN** a `bottom-sheet` component opens as a popover in the top-layer
-- **THEN** all text inside the bottom-sheet SHALL inherit `color: var(--color-text-primary)` (near-white)
-- **AND** the text SHALL be readable against the dark sheet background (`var(--color-surface-overlay)`)
+- **THEN** all text inside the bottom-sheet SHALL inherit the `on-surface` color role (near-white)
+- **AND** the text SHALL be readable against the dark sheet background (the `surface-container` color role)
 
 #### Scenario: Global rule uses zero specificity
 
 - **WHEN** the global CSS sets `color` on popover/dialog elements
 - **THEN** the rule SHALL use `:where()` pseudo-class for zero specificity
 - **AND** any block-level CSS rule SHALL be able to override the color without specificity conflicts
+
+### Requirement: Sheet heading
+
+A bottom sheet with a heading SHALL show it directly below the handle bar, in the title-large style with 24 px of space at both ends, and SHALL name the sheet for assistive technology with that heading. A sheet SHALL NOT draw a heading of its own. An action that applies to the whole sheet, such as 全て解除, MAY sit at the end of the heading row.
+
+#### Scenario: Sheet with a heading
+
+- **WHEN** the All Nearby filter sheet opens
+- **THEN** エリアと期間 is shown below the handle bar in the title-large style, and the sheet's accessible name is エリアと期間
+
+#### Scenario: Space below the heading
+
+- **WHEN** a sheet shows a heading above its content
+- **THEN** there is 16 px of space between the heading and the content
+
+#### Scenario: Sheet without a heading
+
+- **WHEN** a sheet has no heading
+- **THEN** its content starts directly below the handle bar area, and the sheet is still named for assistive technology

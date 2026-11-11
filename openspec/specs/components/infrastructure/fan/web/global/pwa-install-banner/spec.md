@@ -217,7 +217,7 @@ The system SHALL expose a reactive property and a method to support the install 
 
 ### Requirement: Install banner presentation and attention cue
 
-The `pwa-install-banner` SHALL use the same presentation and attention cue as `signup-prompt-banner`. A banner is persistent, so it SHALL sit on a dark surface marked by a brand-gradient line and SHALL NOT use the brand-gradient fill of the transient snack bar. It SHALL show one row, the message followed by the install button, with no icon and no close control. The install button SHALL be the filled button at the compact size of the snack bar's action. The message and the button label SHALL share one text size that follows the banner's width, between 12px and 16px, so that both fit on one line without truncation on every screen from 320px to 412px wide, in Japanese and English. While the banner is visible, a light SHALL run along its top brand line and then across the install button, once when the banner appears and then every 12 seconds, at most 5 times per route the fan opens; the banner and the button SHALL keep their position and size while it runs.
+The `pwa-install-banner` SHALL use the same presentation and attention cue as `signup-prompt-banner`. A banner is persistent, so it SHALL sit on a dark surface marked by a brand-gradient line and SHALL NOT use the brand-gradient fill of the transient snack bar. It SHALL show one row, the message followed by the install button, with no icon and no close control. The install button SHALL be the filled button at the compact size of the snack bar's action. The message's text size SHALL follow the banner's width, between 12px and 16px, so that the message and the button label both fit on one line without truncation on every screen from 320px to 412px wide, in Japanese and English. While the banner is visible, a light SHALL run along its top brand line and then across the install button, once when the banner appears and then every 12 seconds, at most 5 times per route the fan opens; the banner and the button SHALL keep their position and size while it runs.
 
 #### Scenario: Banner is fixed at the bottom above the nav bar
 
@@ -242,12 +242,12 @@ The `pwa-install-banner` SHALL use the same presentation and attention cue as `s
 
 - **WHEN** the banner is shown on a screen 320px, 360px, 375px or 412px wide, in Japanese or in English
 - **THEN** the message and the install button label SHALL each fit on one line, with no ellipsis and no clipped text
-- **AND** the message and the button label SHALL have the same text size, between 12px and 16px
+- **AND** the message SHALL have a text size between 12px and 16px
 
 #### Scenario: Install button is the filled compact button
 
 - **WHEN** the banner is rendered
-- **THEN** the install button SHALL have the `primary` role's fill with its white `on-primary` label at 4.5:1 or more, 36px tall, with the shared 12px corner radius and bold label
+- **THEN** the install button SHALL have the `primary` role's fill with its white `on-primary` label at 4.5:1 or more, at the compact size (32px tall, `label-large`, a touch target of at least 48 × 48 px), with the shared 12px corner radius
 
 #### Scenario: Banner message text
 

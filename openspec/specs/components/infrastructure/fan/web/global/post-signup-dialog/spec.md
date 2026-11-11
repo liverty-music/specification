@@ -32,7 +32,7 @@ All user-visible strings in the post-signup dialog SHALL come from the translati
 #### Scenario: aria-label follows active locale
 - **WHEN** the post-signup dialog is displayed
 - **AND** the active locale is `en`
-- **THEN** the dialog's accessible name SHALL be the English text of the dialog label
+- **THEN** the dialog's accessible name SHALL be the English text of the current step's heading
 
 #### Scenario: Translation key parity
 - **WHEN** a string of the post-signup dialog exists in the Japanese translation resource

@@ -48,7 +48,7 @@ The `page-header` CE SHALL encapsulate the shared header styles: padding, bottom
 
 #### Scenario: Visual consistency across routes
 - **WHEN** `page-header` is rendered in my-artists, settings, and tickets routes
-- **THEN** all three headers share identical padding (`--space-xs`), border (`1px solid` at 10% white), background (`--color-surface-raised`), and `<h1>` typography
+- **THEN** all three headers share identical padding (12 px), border (`1px solid` at 10% white), background (a gradient from the `surface-container` color role on the left to the brand primary at 8% opacity on the right), and `<h1>` typography (the headline-small style)
 
 ### Requirement: Page header participates in route grid layout
 The `page-header` CE host element SHALL set `grid-area: header` so it integrates with the app shell's `grid-template-areas` without additional route-level CSS.
