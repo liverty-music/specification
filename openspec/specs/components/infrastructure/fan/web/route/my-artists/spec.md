@@ -114,9 +114,9 @@ The My Artists list view SHALL display a header row showing hype tier icons and 
 
 Each artist row in the My Artists list view SHALL include a 4-stop discrete dot slider for hype level selection, enabling 1-tap changes without opening a bottom sheet.
 
-The slider component SHALL be a pure presentation component with zero business logic. It SHALL expose `hype` as a `twoWay` bindable and render the active dot accordingly. The slider SHALL NOT contain authentication, onboarding, persistence, or event dispatch logic.
+The artist row SHALL be a presentation component with no business logic of its own. It SHALL take the artist and render the active dot from the artist's current hype level, and SHALL tell the page which artist and level the fan picked with a bubbling `hype-changed` event. The row SHALL NOT contain authentication, onboarding or persistence logic.
 
-The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` as the group container. Each hype stop SHALL be a `<label>` wrapping a native `<input type="radio">` (visually hidden) and a visual dot `<span>`. The radio inputs SHALL use Aurelia 2's `model.bind`/`checked.bind` pattern with two-way binding on `hype`. When the user taps a dot, the radio's native behavior updates `hype` via Aurelia binding, which pushes to the parent's data via `twoWay` mode. The native `change` event bubbles through the light DOM to the parent, which decides whether to accept or revert the change.
+The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` as the group container. Each hype stop SHALL be a `<label>` wrapping a native `<input type="radio">` (visually hidden) and a visual dot `<span>`. Each radio input SHALL carry its level as its model (`model.bind`). When the user taps a dot, the radio's native `change` event bubbles through the light DOM and the row reports the pick to the page in a `hype-changed` event; the page decides whether to accept or revert the change, and the radio of the artist's current level is the checked one afterwards.
 
 #### Scenario: Slider renders on each artist row
 
