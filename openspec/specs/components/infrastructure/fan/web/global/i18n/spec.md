@@ -219,9 +219,9 @@ The system SHALL maintain a single registry table in this spec listing every Lay
   - `Navigation tab — Tickets` — JA: `Tickets` / EN: `Tickets`
   - `Navigation tab — Settings` — JA: `Settings` / EN: `Settings`
   - `Personal timetable promise` — JA: `あなただけのタイムテーブル` / EN: `your personal timetable`
-  - `HOME STAGE lane` — JA: `HOME STAGE` / EN: `HOME STAGE`
-  - `NEAR STAGE lane` — JA: `NEAR STAGE` / EN: `NEAR STAGE`
-  - `AWAY STAGE lane` — JA: `AWAY STAGE` / EN: `AWAY STAGE`
+  - `HOME lane` — JA: `HOME` / EN: `HOME` (the timetable's stage header and the help sheet's lane legend; a lane is "the HOME lane" in prose)
+  - `NEAR lane` — JA: `NEAR` / EN: `NEAR`
+  - `AWAY lane` — JA: `AWAY` / EN: `AWAY`
   - `Hype concept label` — JA: `Hype` / EN: `Hype`
   - `Hype tier — Watch` — JA: `Watch` / EN: `Watch`
   - `Hype tier — Home` — JA: `Home` / EN: `Home`

@@ -165,11 +165,11 @@ Every snack bar's message and its action label SHALL keep a contrast ratio of at
 
 ### Requirement: Snack bars sit above the bottom navigation and any banner
 
-Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. While a screen shows a control floating over its bottom edge (the Discovery swap tile), the snack bar SHALL sit one `space-3xs` step above that control instead, and the control SHALL NOT move; such a control always sits above any visible banner, so this placement takes precedence over the banner placement. The FAB stays sunk in the navigation bar in all cases (see FAB Menu).
+Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. While a screen shows a control floating over its bottom edge (the Discovery swap tile, or the Done bar of My Artists' edit mode), the snack bar SHALL sit one `space-3xs` step above that control instead, and the control SHALL NOT move; such a control always sits above any visible banner, so this placement takes precedence over the banner placement. The FAB stays sunk in the navigation bar in all cases (see FAB Menu).
 
 #### Scenario: No banner is visible
 - **WHEN** a snack bar opens and no persistent bottom banner is visible
-- **THEN** the gap between the snack bar's bottom edge and the navigation bar's top edge SHALL be one `space-s` step (16 to 20px)
+- **THEN** the gap between the snack bar's bottom edge and the navigation bar's top edge SHALL be one `space-s` step (16px)
 
 #### Scenario: A hidden banner adds no height
 - **WHEN** a banner's host is on the screen but the banner is not visible (the app is installed, or a post-signup surface hides it)
@@ -199,6 +199,11 @@ Every snack bar, whatever its severity or sender, SHALL be placed at the bottom 
 - **WHEN** a snack bar opens on Discovery while the swap tile is shown
 - **THEN** the snack bar's bottom edge SHALL sit one `space-3xs` step above the swap tile's top edge
 - **AND** the swap tile SHALL stay where it was and stay tappable
+
+#### Scenario: The Done bar of edit mode stays tappable
+- **WHEN** a snack bar opens on My Artists in edit mode
+- **THEN** the snack bar's bottom edge SHALL sit one `space-3xs` step above the Done bar's top edge
+- **AND** a tap at the centre of the Done button SHALL reach the Done button
 
 ### Requirement: Snacks appear one at a time
 

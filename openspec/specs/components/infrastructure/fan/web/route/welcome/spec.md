@@ -54,7 +54,7 @@ The landing page Screen 1 SHALL provide a single, clearly labeled affordance tha
 - **WHEN** an unauthenticated user visits `/` and views Screen 1, and preview data is available
 - **THEN** the system SHALL display a labeled scroll-affordance button within Screen 1
 - **AND** the button SHALL be rendered as a `<button>` element
-- **AND** the button SHALL have a minimum tap target of 44×44px
+- **AND** the button SHALL have a minimum tap target of 48×48px
 - **AND** the button SHALL be focusable via keyboard navigation
 - **AND** the visible focus indicator SHALL be preserved under keyboard focus
 
@@ -288,7 +288,7 @@ The system SHALL display an interactive, read-only dashboard preview on the Welc
 
 ### Requirement: Sign-in help link next to Log In
 
-Wherever the welcome page shows the `[Log In]` CTA, it SHALL show a "can't sign in" text link directly below it that opens the passkey recovery screen. The link SHALL be a native link with a minimum tap target of 44px height.
+Wherever the welcome page shows the `[Log In]` CTA, it SHALL show a "can't sign in" text link directly below it that opens the passkey recovery screen. The link SHALL be a native link with a minimum tap target of 48px height.
 
 #### Scenario: Link below Log In
 

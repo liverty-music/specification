@@ -162,7 +162,7 @@ The row of the other four statuses SHALL be rendered only when the user is authe
 
 ### Requirement: Ticket Status buttons accessibility
 
-The ticket sale notification button and each status in the row SHALL be a button exposing whether it is selected (`aria-pressed`), with at most one of the five selected. Each status in the row SHALL have an accessible name made of its canonical label, and the notification button an accessible name made of its visible text; each SHALL have a tap target of at least 44px.
+The ticket sale notification button and each status in the row SHALL be a button exposing whether it is selected (`aria-pressed`), with at most one of the five selected. Each status in the row SHALL have an accessible name made of its canonical label, and the notification button an accessible name made of its visible text; each SHALL have a tap target of at least 48px.
 
 #### Scenario: Pressed state
 

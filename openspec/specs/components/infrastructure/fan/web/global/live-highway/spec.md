@@ -94,11 +94,10 @@ The `LiveHighway` component SHALL render date groups and delegate event selectio
 ### Requirement: Three-Lane Live Highway Layout
 The system SHALL display live events in a three-column equal-width timeline layout organized by geographical proximity and date, with festival-style sticky STAGE headers using per-stage identity colors and a vibrant dark-themed aesthetic. The dashboard SHALL handle data loading errors gracefully and distinguish between empty data and error states.
 
-#### Scenario: Dashboard data loading uses promise.bind
+#### Scenario: Dashboard shows loading skeletons and a retryable error
 - **WHEN** the dashboard loads event data
-- **THEN** the template SHALL use `promise.bind` to declaratively handle pending, success, and error states
-- **AND** the pending state SHALL display loading skeletons matching the three-lane card layout
-- **AND** the error state SHALL display an error message with a "Retry" button
+- **THEN** the pending state SHALL display loading skeletons matching the three-lane card layout, until the first load has settled
+- **AND** a failed first load SHALL display an error message with a "Retry" button in place of the skeletons and the lanes
 
 #### Scenario: Dashboard displays empty state
 - **WHEN** the dashboard data loads successfully but no events are found
@@ -124,15 +123,15 @@ The system SHALL display live events in a three-column equal-width timeline layo
   - `[data-stage="home"]`: `--color-stage-home` (orange)
   - `[data-stage="near"]`: `--color-stage-near` (cyan)
   - `[data-stage="away"]`: `--color-stage-away` (magenta)
-- **AND** text color SHALL be `--color-surface-base` (dark) for contrast against the vibrant backgrounds
-- **AND** the labels SHALL use `--font-display` with `font-weight: normal` (400, Righteous single weight), uppercase text
-- **AND** the header SHALL use `position: sticky; inset-block-start: 0` with an opaque background
+- **AND** text color SHALL be the `surface` color role (dark) for contrast against the vibrant backgrounds
+- **AND** the labels SHALL read `HOME`, `NEAR` and `AWAY` (the lane names of the Brand Expression Registry) in the `headline-small` type style, so they are in the brand typeface at weight 400, in uppercase text
+- **AND** the header row SHALL stay at the top of the timetable while the lanes scroll beneath it, with an opaque background
 
 #### Scenario: Lane 1 - HOME STAGE
 - **WHEN** displaying the HOME STAGE lane
 - **THEN** the system SHALL show events in the user's registered prefecture (proto field: `home`)
 - **AND** cards SHALL feature the artist name as the dominant visual element
-- **AND** cards SHALL use `container-type: inline-size` for responsive font sizing
+- **AND** each lane SHALL be an inline-size container, so its cards size their text from the lane's width
 
 #### Scenario: Lane 2 - NEAR STAGE
 - **WHEN** displaying the NEAR STAGE lane
@@ -155,7 +154,7 @@ The system SHALL display live events in a three-column equal-width timeline layo
 #### Scenario: Stage-colored lane accents
 - **WHEN** rendering the lane columns in the timetable
 - **THEN** each lane SHALL have a subtle `border-block-start` accent using its stage color at 40% opacity
-- **AND** lane separators SHALL use `border-inline-end` with the adjacent stage color at 15% opacity
+- **AND** lane separators SHALL use `border-inline-end` with white at 5% opacity
 
 #### Scenario: Date separator gradient treatment
 - **WHEN** rendering a date separator between date groups

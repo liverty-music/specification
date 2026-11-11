@@ -894,7 +894,7 @@ Whenever the dashboard shows an empty timetable, the empty state SHALL offer, ne
 
 ### Requirement: The ticket section shows the four statuses in one row
 
-The concert detail sheet's ticket section SHALL show the ticket sale notification button on its own full-width row and the other four statuses as one row of compact buttons in journey order, 📝 申込済み › 💰 当選・未入金 › 🎟️ 入金済み, followed by 💔 落選 set apart by a separator. The row SHALL keep every status's canonical label, icon and hue, wrap rather than overflow on a narrow screen, and give each button a tap target of at least 44px.
+The concert detail sheet's ticket section SHALL show the ticket sale notification button on its own full-width row and the other four statuses as one row of compact buttons in journey order, 📝 申込済み › 💰 当選・未入金 › 🎟️ 入金済み, followed by 💔 落選 set apart by a separator. The row SHALL keep every status's canonical label, icon and hue, wrap rather than overflow on a narrow screen, and give each button a tap target of at least 48px.
 
 #### Scenario: One row for four statuses
 
@@ -910,7 +910,7 @@ The concert detail sheet's ticket section SHALL show the ticket sale notificatio
 #### Scenario: Canonical presentation kept
 
 - **WHEN** any status button is rendered
-- **THEN** its label, icon and hue come from the canonical journey-status presentation map, and its tap target is at least 44px
+- **THEN** its label, icon and hue come from the canonical journey-status presentation map, and its tap target is at least 48px
 
 ### Requirement: Month-jump buttons move the timetable between months
 

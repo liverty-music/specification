@@ -22,7 +22,8 @@ The system SHALL provide a centralized `<svg-icon>` custom element as the single
 #### Scenario: Size variants
 - **WHEN** `<svg-icon>` is rendered with a `size` attribute
 - **THEN** the host element SHALL set `data-size` to the given value
-- **AND** the component SHALL support sizes: xs (0.75rem), sm (1rem), md (1.25rem), lg (1.5rem), xl (2.5rem)
+- **AND** the component SHALL support sizes: sm (16 px), md (20 px), lg (24 px), xl (40 px)
+- **AND** an icon that stands on its own, such as in a list item, a navigation bar or a floating button, SHALL use lg
 
 #### Scenario: Size from a stylesheet
 - **WHEN** a stylesheet gives an `<svg-icon>` element a size
@@ -82,7 +83,7 @@ The system SHALL provide a `<circular-progress>` custom element, shared by the f
 
 ### Requirement: One button style in four variants
 
-Every text button in the fan app SHALL use one shared button style, in one of four variants. All four SHALL share the same corner radius (12px), padding and label weight, so that any text button reads as a button from its shape alone. The one exception is the action on a snack bar or a bottom banner, which SHALL use a compact size (a smaller label and padding, 36px tall) with the same radius and weight, so the message keeps the width of its row. On a bottom banner the compact button's label SHALL take the banner's own text size, the same as the message. Every variant with a fill SHALL keep its label at 4.5:1 or more at every size, so that a compact label does not depend on WCAG's large-text minimum. Icon-only buttons are not covered by this requirement.
+Every text button in the fan app SHALL use one shared button style, in one of four variants. All four SHALL share the same corner radius (12px), padding and label weight, so that any text button reads as a button from its shape alone. The one exception is the action on a snack bar or a bottom banner, which SHALL use the compact size, Material 3's extra-small button (32px tall, 12px from its edge to the label, the `label-large` type style), with the same radius and weight, so the message keeps the width of its row. A compact button SHALL still be at least 48 × 48 px to touch. Every variant with a fill SHALL keep its label at 4.5:1 or more at every size, so that a compact label does not depend on WCAG's large-text minimum. Icon-only buttons are not covered by this requirement.
 
 - **filled** (the default): a solid fill in the `primary` colour role (brand-primary's hue and chroma) with its white `on-primary` label, for the main action on a screen and the action on a bottom banner.
 - **outlined**: a transparent fill with a visible border, for secondary and dismissive actions (cancel, later, back).
@@ -109,14 +110,13 @@ A text button SHALL NOT be rendered as plain text without a fill or a border.
 
 #### Scenario: Compact button on a snack bar
 - **WHEN** a snack bar shows an action
-- **THEN** the action SHALL be 36px tall with a label smaller than the default button's
-- **AND** it SHALL keep the shared 12px corner radius and the bold label weight
+- **THEN** the action SHALL be the compact size: 32px tall, with the `label-large` type style
+- **AND** it SHALL keep the shared 12px corner radius and label weight, and a touch target of at least 48 × 48 px
 
 #### Scenario: Compact filled button on a bottom banner
 - **WHEN** the install banner or the signup prompt shows its action
-- **THEN** the action SHALL be the filled variant, 36px tall
-- **AND** its label SHALL have the same text size as the banner's message
-- **AND** it SHALL keep the shared 12px corner radius and the bold label weight
+- **THEN** the action SHALL be the filled variant at the compact size, 32px tall, with the `label-large` type style
+- **AND** it SHALL keep the shared 12px corner radius and label weight, and a touch target of at least 48 × 48 px
 
 #### Scenario: Catalog matches the specification
 - **WHEN** the button catalog shows all four variants side by side
@@ -140,3 +140,27 @@ A confirmation dialog SHALL fade in when it opens and fade out when it closes, o
 
 - **WHEN** the fan has asked the system for reduced motion and closes a confirmation dialog
 - **THEN** the dialog disappears at once
+
+### Requirement: One list item
+
+Every row of a list in the fan app that shows an icon, a label, an optional value and an optional caret, such as the rows of Settings and of the All Nearby filter sheet, SHALL be the same list item, in the Material 3 layout: at least 56 px tall, 16 px of space at both ends, a 24 px leading icon, the label in the body-large style, and the value in the label-small style. A row that does something on tap SHALL be a button or a link, with a state layer.
+
+#### Scenario: Settings row and filter row match
+
+- **WHEN** a Settings row with an icon, a value and a caret is compared with an All Nearby filter row
+- **THEN** both have the same height, the same space at both ends and the same text styles
+
+#### Scenario: Long value
+
+- **WHEN** a row's value is too long to fit
+- **THEN** the value is cut off with an ellipsis and the label keeps its full width
+
+#### Scenario: Long label
+
+- **WHEN** a row's label, such as the fan's own name, is longer than the row and the row also has a value
+- **THEN** the label wraps onto more lines and the value stays visible, cut off with an ellipsis when it does not fit
+
+#### Scenario: Row with two lines
+
+- **WHEN** a row also has a line of supporting text in the body-medium style
+- **THEN** the row grows to fit it and stays a single target
