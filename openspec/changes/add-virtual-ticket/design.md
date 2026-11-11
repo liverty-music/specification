@@ -34,31 +34,56 @@ The colour of the face's lower part comes from `artistHue(name)` (`src/adapter/v
 
 **Goals:**
 
-- One face component, `virtual-ticket`, that renders the same DOM in every browser. A renderer either draws that DOM into WebGL (Chrome with HTML-in-Canvas) or leaves it as DOM (everything else).
-- The admission stamp is real text inside the face (入場済 and the admit time), so it is selectable and read aloud.
+- The ticket is a keepsake, not a list of facts: a printed object with art, foil and its own typography, in a design the fan picks. The owner set this goal on 2026-11-10 after seeing the first release, which listed the items as text.
+- One component, `virtual-ticket`, renders the same DOM in every browser, so every item stays selectable text that a screen reader reads. WebGL draws under or through that DOM; it never replaces it.
+- The admission stamp is real text on the front (入場済, ringed by the event's date).
 
 **Non-Goals:**
 
 - The dashboard event card (owner's decision: later).
 - Changing the QR code, its signing, the 15 s rotation or the 5 s polling.
-- WebGL effects on Safari. The owner chose the CSS stamp only. The snapshot-to-WebGL shockwave worked in the spike, but its speed on an iPhone is unmeasured.
+- Changing the tickets list, which keeps the 特定興行入場券 face of every ticket.
+- Following the device's tilt on iOS. Safari on iOS gives the orientation only after the page asks with `DeviceOrientationEvent.requestPermission()`, which shows a permission dialog (https://www.w3.org/TR/orientation-event/#dom-deviceorientationevent-requestpermission); the ticket sways by itself there.
 
 ## Decisions
 
-### The face is DOM; the renderer is chosen by feature detection
+### Two sides (owner's decision, 2026-11-10)
 
-`virtual-ticket` renders the face as an ordinary element inside a `<canvas>`. The renderer checks `'requestPaint' in canvas && 'texElementSubImage2D' in WebGL2RenderingContext.prototype`.
+The ticket has a front and a back and turns over at a tap or with the button below it.
 
-- **Supported:** it lazy-loads PixiJS, wraps the face in `HTMLSource`, and keeps `updateElementGeometry` in step with the sprite on every tick, so hit testing, selection and accessibility bounds follow the drawn face.
-- **Not supported:** it moves the face out of the canvas, because canvas children are fallback content and stay hidden, and it hides the canvas.
+- **Front:** the cover as art, the headline, the facts as ruled cells and a stub below a tear line. No personal details, no QR code, no ticket id. Because nothing on it is personal, the share image is the front as it is.
+- **Back:** the 特定興行入場券 face. It carries what チケット不正転売禁止法 第2条第3項 asks a covered ticket to display: that paid transfer without the organizer's consent is prohibited (第1号, shown as 無断有償譲渡禁止) and that the eligible person's name and contact details were confirmed at the sale (第3号, shown as 入場資格者の氏名・連絡先確認済み). The name itself need not be displayed by the law; the back shows it with the phone number so the fan can check what was registered. Source: 文化庁's pages on チケット不正転売禁止法 and their Q&A for organizers (https://www.bunka.go.jp/seisaku/bunka_gyosei/ticket_resale_ban/index.html).
 
-Alternative: draw the face with Canvas 2D or PixiJS text. The text would no longer be selectable or read aloud, and every face item would be laid out twice, once for the canvas and once for the accessibility tree. Rejected.
+The side that is turned away is `inert`, so neither a pointer nor a screen reader reaches it.
 
-### PixiJS waits for 8.23 (owner's decision)
+Alternative: one face with the personal details masked for sharing (the first release). The masked bars looked like damage in the shared image, and the statements crowded the art. Rejected by the owner.
 
-The WebGL path starts when the first `pixi.js` release containing pixijs#12341 is published under npm `latest` (expected 8.23.0). Until then, every browser takes the DOM path, which is complete on its own: the stamp, the share image and offline use all work without PixiJS. The frontend tasks are ordered so that the DOM path ships first.
+### Two ways to draw one DOM
 
-Alternative: pin `8.22.0-dev.2ab93d2`. It worked in the spike. But it needs an npm `overrides` entry for `pixi-filters`' peer range, and the frontend's rule for overrides requires a written exit condition. Rejected by the owner in favour of waiting.
+`virtual-ticket` lays the ticket out at one design size (20rem by 34rem) and scales it to its stage, so type and spacing keep their proportions on a narrow screen. It is drawn in one of two ways, chosen by feature detection (`'requestPaint' in HTMLCanvasElement.prototype && 'texElementSubImage2D' in WebGL2RenderingContext.prototype`):
+
+- **Sheet (Chrome and Edge 157 and later):** the card is moved into a `<canvas>`, and both sides become `HTMLSource` textures on one mesh (`ticket-sheet-renderer.ts`). The mesh's vertices are moved every frame: it turns about its vertical axis, its top runs ahead of its foot and it bows across its width, so the ticket bends like paper. The foil and the stamp's shockwave run through the text. `updateElementGeometry` tells the browser where the facing side was drawn, so taps and text selection hit it.
+- **DOM (Safari, Firefox, and a fan who asked to reduce motion):** both sides stay in the page; a canvas under the front's text draws the art, the foil and the paper (`ticket-renderer.ts`), and the card turns with a CSS 3D transform. With reduced motion this renderer draws one still frame per change.
+
+When the sheet cannot start, or WebGL is unavailable, the component falls back one step: sheet to DOM, DOM to the plain cover image under the text.
+
+Alternative: draw the text with PixiJS. It would no longer be selectable or read aloud, and every item would be laid out twice. Rejected.
+
+### PixiJS is pinned to a dev build (owner's decision, 2026-11-10; replaces "wait for 8.23")
+
+`pixi.js` is pinned to `8.22.0-dev.f7d8c62`, the `dev` build that contains pixijs#12341; 8.22.0 on `latest` fails in Chrome 157 only in `HTMLSource`. The owner chose to ship the sheet now rather than wait. The pin needs an npm `overrides` entry: `pixi-filters` peers `pixi.js >=8.0.0-0`, a semver range does not match a prerelease of another version, and `npm ci` fails with `ERESOLVE` without it (seen in the frontend PR's first CI run, 2026-11-11). The override hands `pixi-filters` the root's `pixi.js`; the frontend's AGENTS.md records it with its exit condition. Exit condition: when a `pixi.js` release containing pixijs#12341 is on npm `latest` (expected 8.23.0), move to it and delete the pin and the override.
+
+### Design presets, kept on the device (owner's decision, 2026-11-10)
+
+Six presets (`default`, `rock`, `pop`, `jazz`, `classic`, `electronic`) share one layout. A preset sets the paper, two inks, one accent and the faces of the headline and the values in CSS (`ticket-presets.css`), and the art's duotone grading and foil in the renderers (`ticket-presets.ts`). The layout follows a professional ticket reference the owner supplied: the photo leads, two inks and one accent, small labels over large values in ruled cells, a stub with bars in a white box.
+
+The fan's choice is kept per ticket in `localStorage` (`tickets.presets`, a JSON map of ticket id to preset name) behind `src/adapter/storage/ticket-preset-storage.ts`, and removed on sign-out. It is not sent to the server, so another device shows the default (owner's decision).
+
+Alternative: a store in the wallet's IndexedDB database, as for the stamps. It needs `DB_VERSION` 3, and a build can never be rolled back past a database version; a small preference is not worth that. Rejected.
+
+The presets' display faces (Anton, Fredoka, Abril Fatface, Playfair Display, Orbitron, Space Mono; `@fontsource`, self-hosted) are imported when a virtual ticket is first shown and are not precached: without them the ticket is set in the app's own faces. They are Latin faces; Japanese text falls back to the app's faces.
+
+The ticket is a printed object, so its stylesheets set literal colours, sizes and type. `stylelint.config.js` allows that for `src/routes/tickets/virtual-ticket/*.css` only; margins, focus outlines, `z-index` and the block length stay bound.
 
 ### The stamp starts in `refreshStates`
 
@@ -75,37 +100,32 @@ Alternative: `localStorage`. The frontend review rule keeps storage behind `src/
 
 The animation plays when the ticket is `entered`, its id is not in the set, and `prefers-reduced-motion` is not `reduce`. The id is added after the animation ends. A dialog closed mid-animation leaves the id unrecorded, so the stamp plays again on the next open.
 
-### Stamp effects per path (Safari: owner's decision)
+### Stamp effects
 
-- **WebGL path:**
-  1. The stamp element scales from 2.5× to 1× with a back-ease over 380 ms.
-  2. It lands with a multiply blend.
-  3. A ShockwaveFilter (from `pixi-filters/shockwave` only) and about 40 particles follow for about 1.2 s.
-- **DOM path:** a CSS animation with the same scale and ease, `mix-blend-mode: multiply`, and a short shadow sink. No WebGL.
+The stamp is a DOM element on the front's stub, over the decorative bars, so it covers no fact; on an entered ticket the bars fade under it. It carries no admit time (owner's decision: the time is not needed on a keepsake).
 
-Both are about 1.5 s. With reduced motion, the stamp is shown at rest.
+1. It comes down from 1.6× with an ease-in and lands at 20% of 1.5 s; only `transform` and `opacity` move.
+2. Where it lands, a ShockwaveFilter, a short colour split and about 44 sparks run for about 1.4 s, all dying away along one curve. In the sheet they run through the text; in the DOM way, through the art.
+
+With reduced motion, the stamp is shown at rest and nothing is drawn.
 
 ### Share image
 
-The share image sets `data-share` on the face (or on a clone of it). That CSS masks the full name and phone number and hides the stamp. The image has no QR code and no ticket id, because the face never contains them.
+The share image is the front, which holds no personal details, so nothing is masked. It is made the same way in both ways of drawing:
 
-- **WebGL path:** the face drawn on screen is the live DOM face, so masking it would also mask what the fan sees. The on-screen canvas is frozen while the masked texture exists:
-  1. Stop the ticker, so the visible canvas keeps its last frame. The face is not a live region, so a screen reader does not announce the masked text during the two paints the mask lasts (WAI-ARIA 1.2, https://www.w3.org/TR/wai-aria-1.2/#aria-live).
-  2. Set `data-share` on the live face, and wait for the next `paint` of the `HTMLSource`.
-  3. Extract the face sprite's frame. The design assumes that `extract` renders into an offscreen render texture and not into the visible canvas; task 4.4 verifies this by capturing the visible canvas during an export.
-  4. In a `finally` block, so a failure never leaves the face masked or frozen: remove `data-share`, wait for the next `paint`, then restart the ticker.
+1. Draw the front's art and paper with a second, off-screen `ticket-renderer` in the ticket's preset, without tilt animation, and copy its canvas. Without WebGL, the image gets the paper and the plain cover instead.
+2. Clone the front, without its cover, its canvas and its stamp. Mount the clone off screen inside a copy of the card, so the scoped stylesheets and the preset apply, and inline every computed style. Every style is read before any is written.
+3. Embed the faces the clone is set in: every `@font-face` the page has loaded for those families, with its file as a data URL. An SVG used as an image loads no external resources, the page's fonts among them (SVG Integration, secure static mode: https://www.w3.org/TR/svg-integration/#secure-static-mode), and the presets depend on their faces.
+4. Serialise the clone into an SVG `foreignObject` image, scaled with a CSS `transform` inside it. Observed on 2026-11-10 in Playwright WebKit (iPhone 14): it drew the `foreignObject` content at 1x in the corner of a `viewBox`-scaled SVG, while Chromium scaled it.
+5. On the export canvas: the art, the SVG image over it, then cut the outline (round corners, the two notches of the tear), and `toBlob`.
 
-  The first wait is what keeps the export masked: the spike exported the unmasked face without it. The frozen ticker is what keeps the view unchanged. A unit test fakes the paint events and asserts the order (ticker stopped, mask, paint, extract, unmask, paint, ticker restarted), including when the extract throws.
-- **DOM path:**
-  1. Clone the face and set `data-share` on the clone only, so the view never changes. In the clone, the cover `<img>` is hidden, so the cover's area is transparent.
-  2. Fetch the cover (this needs the CORS header) and decode it with `createImageBitmap`.
-  3. Serialise the clone and the face's CSS into an SVG `foreignObject` image.
-  4. On the export canvas, draw the cover bitmap into the cover's rectangle (measured on the live face, cropped as `object-fit: cover` crops it), then draw the SVG image over it, and call `toBlob`.
+The image is made at the layout size, not the size on screen: the ticket is tilted and scaled on screen.
 
-  The cover is drawn directly and never as an image nested in the SVG. WebKit misses nested images on the first draw (the spike needed a second draw about 50 ms later), and with no iPhone available, no delay could be measured. Drawing the cover directly removes the wait altogether. When the cover cannot be fetched (no connection, or an event without a cover), the image is made without it, as the face is shown without it.
-
-  iOS uses the system font. The owner accepted this, so web fonts are not inlined.
 - **Hand-off:** wrap the blob in `File([blob], 'liverty-ticket.png', { type: 'image/png' })`. Use `navigator.share({ files })` when `navigator.canShare({ files })` is true; otherwise download through an object URL.
+
+Alternative for the sheet: extract the WebGL frame of the live sheet. The stamp would have to be hidden and a repaint awaited while the visible canvas is frozen, and Safari would still need the SVG way. One way for every browser is simpler. Rejected.
+
+Verification (2026-11-11): `e2e/functional/virtual-ticket.spec.ts` passed in Chromium (`functional`) on the dev server: the shared file is a PNG of the front's shape with the test cover's hue in its art and no stamp ink. Share images of the default and rock presets, made from Storybook in headless Chromium, showed the art, the preset's embedded face and the notches. WebKit (`webkit-virtual-ticket`) runs in CI; it could not run on the owner's machine (missing system libraries).
 
 ### CORS header from the CDN backend bucket
 
@@ -127,24 +147,29 @@ The class docstring's CORS section, which says the served bucket has no CORS, is
 
 After the production `pulumi up`, the check is `curl -sI <an existing cover URL>`, looking for `access-control-allow-origin: *`. An existing cover is used because it is the case that a cached response could break. The cover `<img>` in the face gets `crossorigin="anonymous"` only after that check passes. In the reverse order, every fan's cover images would fail to load (measured in the spike).
 
+Result (2026-11-10): the production `pulumi up` (prod stack version 293, cloud-provisioning PR #748) succeeded at 01:44 UTC, and `gcloud compute backend-buckets describe liverty-music-prod` lists `customResponseHeaders: ['Access-Control-Allow-Origin: *']`. The header reached the edge about 4 minutes after the update. From 01:48 UTC, `curl -sI` on an existing cover (`https://cdn.liverty-music.app/cdn/<organizer>/<id>/large.webp`, cached before the change) returns `HTTP/2 200` with `access-control-allow-origin: *`, both without `Origin` and with `Origin: http://localhost:9000`. Task 3.6 may proceed.
+
 ### Loading and precache (owner's decision: precache)
 
-The renderer imports `pixi.js`, `pixi.js/html-source` and `pixi-filters/shockwave` dynamically, the way `dna-orb` loads Matter.js. The service worker's precache (vite-plugin-pwa `injectManifest`, which excludes only admin and organizer chunks) includes the chunk. The virtual ticket can then open with WebGL in a venue without signal.
+The component imports its renderers dynamically, the way `dna-orb` loads Matter.js; they import `pixi.js`, `pixi.js/html-source`, `pixi-filters/shockwave` and `pixi-filters/rgb-split`. The service worker's precache (vite-plugin-pwa `injectManifest`) includes both chunks, so the virtual ticket opens with its effects in a venue without signal.
+
+Measured on a production build (2026-11-11): `ticket-renderer` 304.8 KB (92.4 KB gzip), which holds PixiJS, and `ticket-sheet-renderer` 18.0 KB (6.3 KB gzip).
 
 ## Risks / Trade-offs
 
-- [The masked export races the repaint and leaks the full name] → Await the `paint` event before extracting, and test it with a unit test. The DOM path masks a clone, so it never depends on a repaint.
-- [WebKit drops images nested in an SVG `foreignObject` on the first draw] → The DOM-path export draws the cover bitmap directly onto the canvas, so it does not depend on WebKit's timing. This is verified in Playwright WebKit only, because the owner has no iPhone.
-- [The CORS rollout order is reversed and cover images break for everyone] → The frontend task that adds `crossorigin` depends on the header check passing in production, and the task says so.
-- [PixiJS 8.23 is late] → The DOM path is complete and ships first. The WebGL path is an addition.
-- [A larger precache, about 340 KB gzip before optimisation, for every fan] → Owner accepted it. Importing only the shockwave filter is expected to shrink it; the bundle size is reported in the frontend PR.
-- [HTML-in-Canvas changes shape again in Chrome] → Feature detection falls back to the DOM path, which is the Safari path and is tested on every PR.
+- [The speed of the WebGL art on an iPhone is unmeasured; the owner has no iPhone] → The resolution is capped at 2 device pixels per CSS pixel, and WebKit runs the flow in CI. A slow phone still shows every item, because the text is DOM.
+- [A `dev` build of PixiJS in production] → The version is pinned exactly, the sheet is behind feature detection with the DOM way as fallback, and the exit condition is written above.
+- [HTML-in-Canvas changes shape again in Chrome] → Feature detection falls back to the DOM way, which is the Safari way and is tested on every PR.
+- [WebKit draws the SVG `foreignObject` image before its embedded fonts are ready] → Unverified locally. The image then shows the fallback face; CI's WebKit run checks the image's content, not its typeface.
+- [The CORS rollout order is reversed and cover images break for everyone] → Done in the right order (see the result above).
+- [A larger precache for every fan: about 99 KB gzip] → Owner accepted precaching; the measured size is a third of the spike's estimate.
+- [The preset faces are Latin only] → Japanese names are set in the app's faces. Open: whether to add Japanese display faces.
 
 ## Migration Plan
 
 1. cloud-provisioning: the CORS response header on the CDN backend bucket. Merge, then the owner runs the production `pulumi up`. Merging also auto-runs the dev `pulumi up`; dev is stopped, so that run is not verified.
 2. Check the header on an existing production cover URL with `curl`.
-3. frontend, DOM path: the virtual ticket, the stamp and the share image, with `crossorigin` on the cover. Release.
-4. frontend, WebGL path: after `pixi.js` 8.23 is on npm `latest`. Release.
+3. frontend, first release (v1.155.0): the virtual ticket as one DOM face, the stamp and the masked share image, with `crossorigin` on the cover.
+4. frontend, the collectible: two sides, presets, the WebGL art and the sheet, and the share image of the front. Release.
 
 Rollback: remove `crossorigin` (frontend) before removing the header. A build with `DB_VERSION` 1 cannot open a database already upgraded to version 2 (`VersionError`), and the fan would lose the offline ticket list. So the frontend is never rolled back to an older build. Instead, a fix-forward build turns the virtual ticket off and keeps `DB_VERSION` 2 and the new store.
