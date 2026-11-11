@@ -152,7 +152,7 @@ At 320 px the four navigation tabs share the width with the FAB notch, and at la
 
 ### 48 px targets without visible growth
 
-A control whose visible shape must stay small (the 36 px compact button, the hype dots, chips) extends its target with a transparent `::after` centred on the control, as the organizer console does through `--md-target-size`. A control that may simply grow does so. The hype dots need checking at 320 px: four 48 px targets take 192 px, which leaves 128 px for the artist name.
+A control whose visible shape must stay small (the 32 px compact button, the hype dots, chips) extends its target with a transparent `::after` centred on the control, as the organizer console does through `--md-target-size`. A control that may simply grow does so. The hype dots need checking at 320 px: four 48 px targets take 192 px, which leaves 128 px for the artist name.
 
 ### Breakpoints are not linted
 

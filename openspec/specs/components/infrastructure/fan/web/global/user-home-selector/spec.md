@@ -71,12 +71,12 @@ The frontend SHALL use a unified `userHome.*` i18n namespace for all home area s
   - `userHome.prefectures.*` for prefecture names
   - `userHome.cities.*` for quick-select city names
 
-#### Scenario: Description copy explains what HOME STAGE displays and asks for residence
+#### Scenario: Description copy explains what the HOME lane displays and asks for residence
 
 - **WHEN** the `user-home-selector` is opened
-- **THEN** the `userHome.description` JA value SHALL explain what the selected area controls (the HOME STAGE lane contents) AND ask which area the user resides in, presented as a single string composed of two clearly-separated clauses
+- **THEN** the `userHome.description` JA value SHALL explain what the selected area controls (the HOME lane's contents) AND ask which area the user resides in, presented as a single string composed of two clearly-separated clauses
 - **AND** the copy SHALL NOT use `あなたの地元` (which inaccurately implies a known home rather than a chosen area)
-- **AND** the canonical JA form SHALL be: `HOME STAGEには選択したエリアのライブが並びます。あなたの居住エリアはどこですか？`
+- **AND** the canonical JA form SHALL be: `HOMEのレーンには、選んだエリアのライブが並びます。あなたの居住エリアはどこですか？`
 
 ### Requirement: A person without a home is asked on the Dashboard and My Artists
 

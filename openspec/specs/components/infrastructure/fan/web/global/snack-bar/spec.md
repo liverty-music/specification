@@ -169,7 +169,7 @@ Every snack bar, whatever its severity or sender, SHALL be placed at the bottom 
 
 #### Scenario: No banner is visible
 - **WHEN** a snack bar opens and no persistent bottom banner is visible
-- **THEN** the gap between the snack bar's bottom edge and the navigation bar's top edge SHALL be one `space-s` step (16 to 20px)
+- **THEN** the gap between the snack bar's bottom edge and the navigation bar's top edge SHALL be one `space-s` step (16px)
 
 #### Scenario: A hidden banner adds no height
 - **WHEN** a banner's host is on the screen but the banner is not visible (the app is installed, or a post-signup surface hides it)

@@ -3,7 +3,7 @@
 ### Requirement: Three-Lane Live Highway Layout
 The system SHALL display live events in a three-column equal-width timeline layout organized by geographical proximity and date, with festival-style sticky STAGE headers using per-stage identity colors and a vibrant dark-themed aesthetic. The dashboard SHALL handle data loading errors gracefully and distinguish between empty data and error states.
 
-#### Scenario: Dashboard data loading uses promise.bind
+#### Scenario: Dashboard shows loading skeletons and a retryable error
 - **WHEN** the dashboard loads event data
 - **THEN** the pending state SHALL display loading skeletons matching the three-lane card layout, until the first load has settled
 - **AND** a failed first load SHALL display an error message with a "Retry" button in place of the skeletons and the lanes

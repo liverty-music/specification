@@ -61,6 +61,12 @@ None. CSS architecture rules stay in `stylelint.config.js` and its tests, which 
 - `components/infrastructure/fan/web/global/bottom-nav-bar`: 64 px height.
 - `components/infrastructure/fan/web/global/page-header`, `page-help`, `live-highway`: scenarios that name removed tokens now name roles and type styles.
 - `components/infrastructure/fan/web/route/my-artists`, `route/welcome`, `route/dashboard`, `global/app-shell`, `global/event-detail-sheet`: tap targets rise from 44 px to 48 px.
+- `components/infrastructure/fan/web/global/pwa-install-banner`, `signup-prompt-banner`: the banner's button is the compact 32 px size and only the message follows the banner's width.
+- `components/infrastructure/fan/web/global/snack-bar`: the snack bar also sits above the Done bar of My Artists' edit mode.
+- `components/infrastructure/fan/web/global/i18n`: the lane registry row is `HOME lane`, without `STAGE`.
+- `components/infrastructure/fan/web/global/user-home-selector`: its description copy and the heading of that scenario follow the lane's new name (`HOMEのレーンには…`). Corrected at archive directly in the living spec, with no delta in this change: the copy had been in the app since group 4, and no test cites that scenario.
+- `components/infrastructure/fan/web/global/post-signup-dialog`: the dialog is named by the current step's heading.
+- `components/infrastructure/organizer/web/global/snack-bar`: a snack does not cover the console's floating button (added after the archive review; the behaviour shipped in group 12).
 
 ### Removed Capabilities
 

@@ -2,7 +2,7 @@
 
 ### Requirement: Material 3 type styles
 
-Text SHALL take its size, line height, weight and tracking from one of the Material 3 type styles below, or from that style's emphasized version, which is the same style one step heavier (400 becomes 500, 500 becomes 600). The sizes SHALL be fixed: they SHALL NOT change with the width of the window or of a container, and they SHALL scale with the text size the user sets in the browser. Sizes are stated at the browser's default text size of 16 px.
+Text SHALL take its size, line height, weight and tracking from one of the Material 3 type styles below, or from that style's emphasized version, which is the same style one step heavier (400 becomes 500, 500 becomes 600). The sizes SHALL be fixed, apart from the exceptions named under "Text styles are not set per screen": they SHALL NOT change with the width of the window or of a container, and they SHALL scale with the text size the user sets in the browser. Sizes are stated at the browser's default text size of 16 px.
 
 | Style | Size / line height (px) | Weight | Tracking (px) |
 |---|---|---|---|
@@ -39,7 +39,7 @@ Text SHALL take its size, line height, weight and tracking from one of the Mater
 
 ### Requirement: Text styles are not set per screen
 
-Body text SHALL use the body-large style unless a screen gives it another type style. A heading's look SHALL come from the type style it is given, independently of its heading level, and a screen SHALL NOT define a look of its own for text. The one exception is an artist name on a timetable card, which is sized to its lane.
+Body text SHALL use the body-large style unless a screen gives it another type style. A heading's look SHALL come from the type style it is given, independently of its heading level, and a screen SHALL NOT define a look of its own for text. The exceptions are an artist name on a timetable card, which is sized to its lane; the message of a bottom banner, which is sized to the banner's width between 12 px and 16 px so that it and its button fit one line (`pwa-install-banner`, `signup-prompt-banner`); and the labels of the navigation bar on a window narrower than 360 px, which take the label-small size without its tracking (`bottom-nav-bar`).
 
 #### Scenario: Same role, same look
 
