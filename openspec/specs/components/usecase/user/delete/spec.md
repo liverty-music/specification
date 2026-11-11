@@ -22,7 +22,7 @@ Delete SHALL load the User through User.Get, failing with NotFound for an unknow
 
 #### Scenario: User holding a ticket
 
-- **WHEN** the User holds an Issued Ticket for an Event whose local date is today or later in Japan time
+- **WHEN** the User holds an Issued Ticket for an Event whose local date is on or after the current date at the Event's Venue (entity/venue "Current date at a venue")
 - **THEN** Delete fails with FailedPrecondition and the User and its identity remain
 
 #### Scenario: User whose concerts are over

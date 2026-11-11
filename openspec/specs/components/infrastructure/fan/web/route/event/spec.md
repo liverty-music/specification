@@ -105,7 +105,7 @@ When the Event is CANCELLED, the Event page SHALL show a banner stating that the
 
 ### Requirement: Ended event
 
-When the Event's local date is before today's date in Japan time, the Event page SHALL show that the event has ended and SHALL show no ticket section.
+When the Event's local date is before the current date at its Venue (entity/venue "Current date at a venue"), the Event page SHALL show that the event has ended and SHALL show no ticket section.
 
 #### Scenario: Day after the show
 
