@@ -175,7 +175,18 @@ Verification after the fixes, on a production build (`vite preview`):
 
 - `e2e/functional/virtual-ticket-webgl.spec.ts` (Chromium with software WebGL): the front is drawn under the policy (`data-drawn="true"`), the card tilts when `deviceorientation` events arrive, and the shared image carries the cover's hue in its art. The long flow in `virtual-ticket.spec.ts` now runs with WebGL turned off, so it tests the fallback on purpose.
 - Edge 157 over CDP with the same mocked backend: the ticket is drawn as a sheet; closed and reopened it has one canvas and is drawn; the button below it receives its tap; the back, a preset change and the share image work; no page error is logged.
-- Not verified: a real phone. The Pixel check is task 4.9.
+- A real phone: see the next section.
+
+## Second round on the Pixel (2026-11-11)
+
+With the effects running (v1.160.0), the owner found on the Pixel that the text was blurry, the colours washed out, the buttons below the ticket off screen, little left to swipe, and the turn slow. Each was reproduced in Edge 157 started with `--force-device-scale-factor=2.625` against a production build, with the service worker bypassed (it had served an older build to earlier captures).
+
+- **Blurry text.** Two causes, each confirmed by removing its fix. PixiJS's `HTMLSource` (`8.22.0-dev.f7d8c62`) takes the element's `offsetWidth` as its size in pixels, so each side became a 320x544 texture whatever the resolution; a subclass scales it (840x1428 at 2.625). PixiJS filters render at resolution 1 by default; the foil, shockwave and colour split inherit the target's resolution. Edge contrast in a crop of the facts: DOM 5.4, before 4.11, texture fix only 4.47, both 4.97.
+- **Washed colours.** Drawn as a sheet, the art's renderer did not run. It now runs in both ways of drawing, and the sheet's pass treats the whole ticket as paper (a faint foil and the glare), so the art is foiled once. The foil itself was then narrowed to the band of light and the glare halved (owner's request: the foil hid the cover's colours). On a solid test cover (20, 160, 90), mean distance of the art from the cover went from 159.5 to 95.0 and saturation from 0.52 to 0.69 (the cover's is 0.88).
+- **Layout and gestures.** The ticket's width is bounded so its controls and both actions fit in the bottom sheet's body (at most 90svh, `bottom-sheet.css`); the stage lets vertical drags through (`touch-action: pan-y`), since a phone tilts the ticket with the device; the turn takes 0.55 s.
+- **The stamp.** A stamp to be pressed appears once both renderers have started (or failed to), and its impact is scheduled from that point, so it lands in the drawing that is shown, once.
+
+Released as frontend v1.162.0 and v1.164.0. The owner checked v1.164.0 on the Pixel on 2026-11-11 and reported it fine (task 4.9).
 
 ## Risks / Trade-offs
 
