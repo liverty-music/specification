@@ -36,4 +36,4 @@
 - [x] 5.2 Listen for `deviceorientation` wherever the event exists, and call `requestPermission()` on the first touch only where the sensor is already granted. Verify in the same spec that the card tilts when orientation events arrive.
 - [x] 5.3 Fix the sheet in the app: the controls above the canvas's margin, the paint-record failure handled, and the ticket's size read outside the canvas. Verify in Edge or Chrome 157 or later against a production build: open, close and reopen, tap the button below the ticket, turn over, change the design and share, with no page error.
 - [x] 5.4 Let the ticket take the sheet's width (up to 26rem) and draw at the scaled resolution. Add `data:` to the fan app's `font-src`.
-- [x] 5.5 Show the transfer prohibition in the tickets list and on the order screen without the condition on the always-true flag.
+- [x] 5.5 Show the transfer prohibition in the tickets list and on the order screen without the condition on the always-true flag. What either screen shows does not change (design.md Non-Goals); the condition is removed so no screen reads the flag as if it could be false.

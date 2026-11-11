@@ -42,7 +42,7 @@ The colour of the face's lower part comes from `artistHue(name)` (`src/adapter/v
 
 - The dashboard event card (owner's decision: later).
 - Changing the QR code, its signing, the 15 s rotation or the 5 s polling.
-- Changing the tickets list, which keeps the 特定興行入場券 face of every ticket.
+- Changing what the tickets list shows: it keeps the 特定興行入場券 face of every ticket. Task 5.5 only removes a condition on the transfer notice, in the list and on the order screen, that is never false (the Ticket entity's flag is always true), so both show the same as before.
 - Asking for the device's orientation where that opens a permission dialog (Safari on iOS: https://www.w3.org/TR/orientation-event/#dom-deviceorientationevent-requestpermission). The ticket sways by itself there.
 
 ## Decisions
@@ -179,7 +179,7 @@ Verification after the fixes, on a production build (`vite preview`):
 
 ## Risks / Trade-offs
 
-- [The speed of the WebGL art on an iPhone is unmeasured; the owner has no iPhone] → The resolution is capped at 2 device pixels per CSS pixel, and WebKit runs the flow in CI. A slow phone still shows every item, because the text is DOM.
+- [The speed of the WebGL art on an iPhone is unmeasured; the owner has no iPhone] → The resolution is capped at 3 device pixels per CSS pixel, and WebKit runs the flow in CI. A slow phone still shows every item, because the text is DOM.
 - [A `dev` build of PixiJS in production] → The version is pinned exactly, the sheet is behind feature detection with the DOM way as fallback, and the exit condition is written above.
 - [HTML-in-Canvas changes shape again in Chrome] → Feature detection falls back to the DOM way, which is the Safari way and is tested on every PR.
 - [WebKit draws the SVG `foreignObject` image before its embedded fonts are ready] → Unverified locally. The image then shows the fallback face; CI's WebKit run checks the image's content, not its typeface.
