@@ -8,10 +8,14 @@ Searches external sources for an Artist's announced concerts from a given date o
 
 ### Requirement: Search returns grouped future events
 
-Search SHALL return the Artist's concerts dated on or after the given date as DiscoveredSeries, one per tour or show, and two separately announced shows SHALL be two series even when they share a title. A series whose events are at two or more venues SHALL be a TOUR series; any other series, a one-off show or several days at one venue, SHALL be a SINGLE series. A venue not yet announced SHALL NOT count as a venue. Events dated before the given date SHALL be left out. An Artist with no official site SHALL still be searched by name.
+Search SHALL return the Artist's concerts whose local date is on or after the current date at their Venue at the given time (see Venue) as DiscoveredSeries, one per tour or show, and two separately announced shows SHALL be two series even when they share a title. A series whose events are at two or more venues SHALL be a TOUR series; any other series, a one-off show or several days at one venue, SHALL be a SINGLE series. A venue not yet announced SHALL NOT count as a venue. Events dated before the current date at their Venue SHALL be left out. An Artist with no official site SHALL still be searched by name.
 
 #### Scenario: Past event left out
-- **WHEN** the source lists a show dated before the given date
+- **WHEN** the source lists a show dated before the current date at its Venue
+- **THEN** Search does not return it
+
+#### Scenario: Yesterday's show early in the morning
+- **WHEN** Search runs at 2026-11-10 23:30 UTC, which is 2026-11-11 at the Venue, and the source lists a show dated 2026-11-10
 - **THEN** Search does not return it
 
 #### Scenario: Two standalone shows with one title
@@ -32,7 +36,7 @@ Search SHALL return the Artist's concerts dated on or after the given date as Di
 
 ### Requirement: Search removes repeated events
 
-Search SHALL return at most one event per local date, normalized venue name and start time, keeping the first; two events at one venue on one date with different start times SHALL both be returned, and two with no start time SHALL collapse to one. Venue names that differ only in notation SHALL normalize to the same name: full-width versus half-width characters, compatibility characters (such as the radical ⽇ for 日), middle-dot variants, and whitespace.
+Search SHALL return at most one event per local date, venue name and start time, keeping the first; two events at one venue on one date with different start times SHALL both be returned, and two with no start time SHALL collapse to one. Two venue names SHALL be the same when their normalized forms (see Venue, "Listed venue name normalization") are equal ignoring whitespace, middle-dot variants and Latin letter case; this covers full-width versus half-width characters, compatibility characters (such as the radical ⽇ for 日), middle-dot variants, whitespace and letter case. No other rule, such as a list of renamed venues or a prefecture in parentheses, SHALL make two venue names the same.
 
 #### Scenario: First and second stage kept
 - **WHEN** the source lists 2026-08-07 at one venue at 18:00 and at 21:00
@@ -44,6 +48,10 @@ Search SHALL return at most one event per local date, normalized venue name and 
 
 #### Scenario: Same venue in two notations
 - **WHEN** the source lists one date and start time once at "渋谷CLUB QUATTRO" and once at "渋谷 CLUB QUATTRO"
+- **THEN** Search returns it once
+
+#### Scenario: Same venue in another letter case
+- **WHEN** the source lists one date and start time once at "Zepp Haneda" and once at "ZEPP HANEDA"
 - **THEN** Search returns it once
 
 ### Requirement: Search returns source text as written

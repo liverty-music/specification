@@ -91,7 +91,7 @@ DiscoverForArtist SHALL search a series of the artist only when all of these hol
 
 - It has no Organizer. A first-party Series sells only through its Organizer's own TicketSales.
 - TicketJourney.ListUserIDsTrackingSeries returns at least one fan for it.
-- It has an upcoming event (Concert.ListByArtist with upcoming concerts only).
+- It has an upcoming event (Concert.ListUpcomingByArtist).
 - No sale returned by TicketSale.ListBySeries for it is not yet over.
 - TicketSaleSearch.ListBySeries shows it was never searched, or last searched 10 or more days ago. Days are counted as calendar days in Japan time (Asia/Tokyo), so a series searched on a given date is searched again from the run 10 dates later, whatever the time of day of either run.
 

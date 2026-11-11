@@ -8,7 +8,7 @@ Stores a new first-party Series together with its Events, each DRAFT and each a 
 
 ### Requirement: Draft stored whole
 
-CreateDraft SHALL store the first-party Series with its Organizer, title, type, source page, description and visibility, and its Events, each DRAFT, each with its per-account limit, 4 when none is given, and each a Concert with the given performers, all together or none of them. It SHALL fail with InvalidArgument when a per-account limit breaks the Event rules, and with FailedPrecondition when a referenced Organizer, Venue or Artist does not exist.
+CreateDraft SHALL store the first-party Series with its Organizer, title, type, source page, description and visibility, and its Events, each DRAFT, each with its per-account limit, 4 when none is given, and each a Concert with the given performers, all together or none of them. It SHALL fail with InvalidArgument when a per-account limit breaks the Event rules, with FailedPrecondition when a referenced Organizer, Venue or Artist does not exist, and with AlreadyExists when a Series with the given id already exists; in every failure it stores nothing, and in particular no Event is added to an existing Series.
 
 #### Scenario: Draft with two events
 - **WHEN** a draft with two events and one performer is created, one event with a per-account limit of 2 and one without
@@ -21,3 +21,7 @@ CreateDraft SHALL store the first-party Series with its Organizer, title, type, 
 #### Scenario: Unknown venue
 - **WHEN** an event refers to a Venue that does not exist
 - **THEN** CreateDraft fails with FailedPrecondition and stores nothing
+
+#### Scenario: Id already taken
+- **WHEN** CreateDraft is called with the id of a Series that already exists
+- **THEN** it fails with AlreadyExists, stores nothing, and the existing Series keeps exactly the Events it had

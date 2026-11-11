@@ -8,7 +8,7 @@ Records a completed refund: the Order becomes Refunded with its provider refund 
 
 ### Requirement: Refund recorded together
 
-CommitRefund SHALL take an Order, the refund's reason (Cancellation or Dispute), the amount refunded to the user's card, the provider refund ID and the time, and SHALL set the Order to Refunded with that reason, amount, provider refund ID and refund time, set every Issued Ticket of the Order to Voided, set every Listed ResaleListing of those Tickets to Cancelled, and, when a Settlement is given, set it to Reversed and record each given split's provider payout reversal ID, all together or not at all. The amount is 0 and the provider refund ID is empty when nothing was left to refund or the reason is Dispute. When no Settlement is given, only the Order, its Tickets and their listings change. A Ticket already Voided by a resale and its Sold listing stay as they are. It SHALL fail with InvalidArgument, changing nothing, when no reason is given or the amount is below 0, and with FailedPrecondition when the given Settlement is already Reversed, and then changes nothing. When the Order is not Paid, because an earlier call already made it Refunded, CommitRefund SHALL change nothing and keep the first refund's reason, amount, provider refund ID and refund time; with a Settlement given it fails with FailedPrecondition as above.
+CommitRefund SHALL take an Order, the refund's reason (Cancellation or Dispute), the amount refunded to the user's card, the provider refund ID and the time, and SHALL set the Order to Refunded with that reason, amount, provider refund ID and refund time, set every Issued Ticket of the Order to Voided, set every Listed ResaleListing of those Tickets to Cancelled, and, when a Settlement is given, set it to Reversed and record each given split's provider payout reversal ID, all together or not at all. The amount is 0 and the provider refund ID is empty when nothing was left to refund or the reason is Dispute. When no Settlement is given, only the Order, its Tickets and their listings change. A Ticket already Voided by a resale and its Sold listing stay as they are. It SHALL fail with InvalidArgument, changing nothing, when no reason is given or the amount is below 0, and with FailedPrecondition when the given Settlement is already Reversed, and then changes nothing. When the Order is already Refunded, because an earlier call made it so, CommitRefund SHALL change nothing and keep the first refund's reason, amount, provider refund ID and refund time; with a Settlement given it fails with FailedPrecondition as above. When the Order is Pending or Void, CommitRefund SHALL fail with FailedPrecondition and change nothing: such an Order was never paid, so a refund recorded against it is an error, not a repeat. When no Order has the given id, CommitRefund SHALL fail with NotFound and change nothing.
 
 #### Scenario: Refund recorded
 - **WHEN** CommitRefund is called for a Paid Order with 2 Issued Tickets and a Released Settlement, with the reason Cancellation and the amount 6000 yen
@@ -41,6 +41,14 @@ CommitRefund SHALL take an Order, the refund's reason (Cancellation or Dispute),
 #### Scenario: Order already refunded
 - **WHEN** CommitRefund is called without a Settlement for an Order that is already Refunded, with another amount
 - **THEN** nothing changes and the first refund's reason, amount and time are kept
+
+#### Scenario: Order never paid
+- **WHEN** CommitRefund is called for an Order that is Pending or Void
+- **THEN** it fails with FailedPrecondition, nothing changes and nothing is announced
+
+#### Scenario: Unknown order
+- **WHEN** CommitRefund is called with an id no Order has
+- **THEN** it fails with NotFound and nothing is announced
 
 #### Scenario: Settlement already reversed
 - **WHEN** the given Settlement is already Reversed

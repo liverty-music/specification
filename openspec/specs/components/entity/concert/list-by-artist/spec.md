@@ -6,17 +6,21 @@ Lists the Concerts at which one Artist performs, of every date, each with its Ve
 
 ## Requirements
 
-### Requirement: Concerts of one artist, oldest first
+### Requirement: Empty artist is invalid
 
-ListByArtist SHALL return every Concert whose performers include the Artist, ordered by local date ascending, each with its Venue (name and admin area), Series and performers. When asked for upcoming concerts only, it SHALL return only Concerts dated on or after the current date. Concerts that are not visible to fans (see Concert) SHALL be left out. An Artist with no concerts, or an unknown Artist, SHALL yield an empty list.
+ListByArtist SHALL fail with InvalidArgument when the Artist is not given.
+
+#### Scenario: Missing artist
+- **WHEN** ListByArtist is called with no Artist
+- **THEN** it fails with InvalidArgument
+
+### Requirement: Concerts of one artist of every date, oldest first
+
+ListByArtist SHALL return every Concert whose performers include the Artist, of every date, ordered by local date ascending, each with its Venue (name and admin area), Series and performers. Concert.ListUpcomingByArtist lists only the Concerts from the current date onward. Concerts that are not visible to fans (see Concert) SHALL be left out. An Artist with no concerts, or an unknown Artist, SHALL yield an empty list.
 
 #### Scenario: Past and upcoming
-- **WHEN** the Artist performs on a past date and a future date and all concerts are asked for
+- **WHEN** the Artist performs on a past date and a future date
 - **THEN** both Concerts are returned, the past one first
-
-#### Scenario: Upcoming only
-- **WHEN** the same Artist is listed with upcoming only
-- **THEN** only the future Concert is returned
 
 #### Scenario: Draft Organizer concert excluded
 - **WHEN** the Artist performs at a DRAFT Event of a first-party Series
@@ -29,11 +33,3 @@ ListByArtist SHALL return every Concert whose performers include the Artist, ord
 #### Scenario: Draft and cancelled dates of a published tour excluded
 - **WHEN** the Artist performs in a PUBLIC Series with one PUBLISHED, one DRAFT and one CANCELLED Event
 - **THEN** only the PUBLISHED Event's Concert is returned
-
-### Requirement: Empty artist is invalid
-
-ListByArtist SHALL fail with InvalidArgument when the Artist is not given.
-
-#### Scenario: Missing artist
-- **WHEN** ListByArtist is called with no Artist
-- **THEN** it fails with InvalidArgument

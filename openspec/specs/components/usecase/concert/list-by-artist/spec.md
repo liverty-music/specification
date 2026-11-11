@@ -8,7 +8,7 @@ ListByArtist returns every Concert in which the given Artist performs — past a
 
 ### Requirement: All of an artist's visible concerts
 
-ListByArtist SHALL return the Artist's Concerts of every date (Concert.ListByArtist, not limited to upcoming). An Artist with no Concerts, and an Artist that does not exist, SHALL yield an empty list, not an error.
+ListByArtist SHALL return the Artist's Concerts of every date (Concert.ListByArtist). An Artist with no Concerts, and an Artist that does not exist, SHALL yield an empty list, not an error.
 
 #### Scenario: Past concerts included
 - **WHEN** the Artist performed last month and performs next month
