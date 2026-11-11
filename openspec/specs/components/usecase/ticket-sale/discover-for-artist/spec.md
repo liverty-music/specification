@@ -17,7 +17,7 @@ Follow-->>UC: ListAll (each followed artist)
 break the artist's activity ended
   Note over UC: return 0
 end
-UC->>Concert: ListByArtist "upcoming only"
+UC->>Concert: ListUpcomingByArtist
 loop each series of the artist with no Organizer
   UC->>TicketJourney: ListUserIDsTrackingSeries
   UC->>TicketSale: ListBySeries

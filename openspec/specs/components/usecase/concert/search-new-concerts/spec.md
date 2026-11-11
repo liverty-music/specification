@@ -30,7 +30,7 @@ break cannot be recorded
   Note over UC: fail without searching
 end
 UC->>Concert: Search "from the current date"
-UC->>Concert: ListByArtist "upcoming only"
+UC->>Concert: ListUpcomingByArtist
 UC->>DiscoveredSeries: FilterNewSeries
 Note over UC: drop events pending review as a ConcertCandidate
 alt at least one event remains

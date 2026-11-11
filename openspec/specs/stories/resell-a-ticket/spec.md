@@ -40,7 +40,7 @@ tf 29 cmd SettlementUseCase_ReleaseDueSettlements
 
 ### Requirement: Resale closes when admission opens
 
-No ticket SHALL be listed, applied for or allocated through official resale after the event's resale deadline, which is its last draw: 12:00 Japan time on the event's day or 3 hours before the start time, when the admission window opens, whichever is earlier. A listing that has not been allocated by then SHALL leave its Ticket valid for entry.
+No ticket SHALL be listed, applied for or allocated through official resale after the event's resale deadline, which is its last draw: 12:00 on the event's day in the time zone of the event's Venue or 3 hours before the start time, when the admission window opens, whichever is earlier. A listing that has not been allocated by then SHALL leave its Ticket valid for entry.
 
 #### Scenario: Unsold at the deadline
 - **WHEN** a fan's listing has not sold when the admission window opens
