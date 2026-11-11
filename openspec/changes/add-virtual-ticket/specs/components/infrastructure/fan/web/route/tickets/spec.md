@@ -5,7 +5,7 @@
 Tapping a ticket on the screen SHALL open its virtual ticket in a dialog over the list. The virtual ticket SHALL have two sides, and the fan SHALL be able to turn it over by tapping it or with a button below it.
 
 - The front SHALL show the event's cover image, its performers and title, the date, the venue and its prefecture, the open and start times, the ticket's seat type's name and that no seat is assigned. It SHALL hold no personal details, no QR code and no ticket id.
-- The back SHALL show the same event and seat items, the eligible person's full name and phone number, a statement that the eligible person's name and contact details were confirmed at the sale, and, for a ticket whose paid transfer without the organizer's consent is prohibited, a statement of that prohibition.
+- The back SHALL show the same event and seat items, the eligible person's full name and phone number, a statement that the eligible person's name and contact details were confirmed at the sale, and a statement that paid transfer without the organizer's consent is prohibited.
 
 The text of both sides SHALL be selectable and SHALL be read by a screen reader; the side that is turned away SHALL NOT be reachable. The actions the list offers for that ticket (show the QR code, list for official resale, withdraw a listing) and sharing its image SHALL be placed outside the ticket. The virtual ticket SHALL open without a connection from the last loaded list; when the cover image cannot be loaded, the front SHALL be shown without it.
 
@@ -16,7 +16,7 @@ The text of both sides SHALL be selectable and SHALL be read by a screen reader;
 
 #### Scenario: Fan turns the ticket over
 
-- **WHEN** the fan taps the virtual ticket of a ticket whose paid transfer without consent is prohibited
+- **WHEN** the fan taps the virtual ticket of a ticket
 - **THEN** the ticket turns to its back, which shows the event and seat items, the fan's full name and phone number, 無断有償譲渡禁止 and 入場資格者の氏名・連絡先確認済み, and the front can no longer be reached until the ticket is turned back
 
 #### Scenario: Tapping a button in the list
