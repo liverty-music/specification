@@ -76,7 +76,8 @@ reconcile migrates, so reverted state is never resurrected.
 #### Scenario: Per-item drain for the follow queue
 - **WHEN** the follow store migrates the guest follow queue
 - **THEN** it SHALL remove from `guest.followedArtists` exactly the artists
-  whose `Follow` call succeeded, in one write after the migration loop
+  whose migration fully succeeded (`Follow`, and `SetHype` where the fan chose
+  a level), in one write after the migration loop
 - **AND** the leftover queue SHALL therefore contain only items that failed
 - **AND** a subsequent reconcile SHALL retry only those failed items, never
   re-following an artist the loop migrated
@@ -188,9 +189,10 @@ follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partia
 - **THEN** the system SHALL log the error
 - **AND** the system SHALL continue with remaining calls (best-effort)
 - **AND** the system SHALL still mark onboarding complete (`onboardingComplete`)
-- **AND** each artist SHALL be removed from `guest.followedArtists` as its
-  `Follow` succeeds, so only the failed items remain in localStorage for boot
-  reconciliation to retry idempotently on the next authenticated start
+- **AND** the artists whose migration fully succeeded SHALL be removed from
+  `guest.followedArtists` in one write after the loop, so only the failed items
+  remain in localStorage for boot reconciliation to retry idempotently on the
+  next authenticated start
 
 #### Scenario: Merge progress indication
 
