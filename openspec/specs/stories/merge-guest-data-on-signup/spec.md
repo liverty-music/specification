@@ -75,11 +75,14 @@ reconcile migrates, so reverted state is never resurrected.
 
 #### Scenario: Per-item drain for the follow queue
 - **WHEN** the follow store migrates the guest follow queue
-- **THEN** it SHALL remove each artist from `guest.followedArtists` as that
-  artist's `Follow` call succeeds
+- **THEN** it SHALL remove from `guest.followedArtists` exactly the artists
+  whose `Follow` call succeeded, in one write after the migration loop
 - **AND** the leftover queue SHALL therefore contain only items that failed
 - **AND** a subsequent reconcile SHALL retry only those failed items, never
-  re-following an already-migrated artist
+  re-following an artist the loop migrated
+- **NOTE** The one write replaces a write per artist. A migration cut short
+  before the write (the page closes mid-loop) leaves the whole queue for the
+  next reconcile.
 
 ### Requirement: Guest Data Storage
 
