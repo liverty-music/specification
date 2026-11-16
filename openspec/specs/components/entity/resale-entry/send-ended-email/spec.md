@@ -1,22 +1,18 @@
 # components/entity/resale-entry/send-ended-email Specification
 
 ## Purpose
-Sends the email telling a fan that their ResaleEntry lapsed or lost, at most once per entry.
+Sends the email telling a fan that their ResaleEntry lapsed or lost, as the caller composed it. Whether the email is due and recording that it was sent are the caller's, so it is sent at most once per entry.
 
 ## Requirements
 
-### Requirement: One email per ended entry
+### Requirement: The ended email is sent as given
 
-SendEndedEmail SHALL take a Lapsed or Lost ResaleEntry and a message, send the message to the fan's email address and set the entry's ended email send time, unless that time is already set, in which case it SHALL send nothing. It SHALL fail with FailedPrecondition for an Entered or Won entry and with NotFound for an unknown entry.
+SendEndedEmail SHALL take a ResaleEntry's id, the fan's email address and a message, and send the message to that address, tagged with the entry's id. Whether the email is due (a Lapsed or Lost entry whose ended email was not sent, ResaleEntry.EndedEmailDue), and recording that it was sent (ResaleEntry.MarkEndedEmailSent), are the caller's. It SHALL fail with InvalidArgument when the address or the message is empty and with Unavailable when email cannot be sent.
 
 #### Scenario: First send
-- **WHEN** a Lapsed entry has no ended email send time
-- **THEN** the email is sent and the time is set
+- **WHEN** SendEndedEmail is called with an address and a message
+- **THEN** the email is sent
 
-#### Scenario: Sent already
-- **WHEN** the entry's ended email send time is set
-- **THEN** no email is sent
-
-#### Scenario: Entry still in the draw
-- **WHEN** the entry is Entered
-- **THEN** SendEndedEmail fails with FailedPrecondition
+#### Scenario: Mail unavailable
+- **WHEN** email cannot be sent
+- **THEN** SendEndedEmail fails with Unavailable

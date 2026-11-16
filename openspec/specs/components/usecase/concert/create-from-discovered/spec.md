@@ -86,7 +86,7 @@ CreateFromDiscovered SHALL skip a series with no title or no events, and an even
 
 ### Requirement: One Series per discovered series
 
-For each discovered series, CreateFromDiscovered SHALL look up the Artist's Events on the series' dates (Concert.FindEventsByArtistAndDate). When any of them has the same date and normalized listed venue name as one of the series' events, the series SHALL join that Event's Series — the one with the smallest id when several match. Otherwise a new Series SHALL be created with the discovered title, type and source page (Series.Create) before any of its events is stored or staged. The Series type SHALL come from the discovery, never from the number of events.
+For each discovered series, CreateFromDiscovered SHALL look up the Artist's Events on the series' dates (Concert.FindEventsByArtistAndDate). When any of them has the same date and the same listed venue (see Venue, "Same listed venue") as one of the series' events, the series SHALL join that Event's Series — the one with the smallest id when several match. Otherwise a new Series SHALL be created with the discovered title, type and source page (Series.Create) before any of its events is stored or staged. The Series type SHALL come from the discovery, never from the number of events.
 
 #### Scenario: Re-discovered tour joins its series
 - **WHEN** a tour is discovered again and one of its dates matches an Event of the Artist at the same venue
@@ -102,7 +102,7 @@ For each discovered series, CreateFromDiscovered SHALL look up the Artist's Even
 
 ### Requirement: Re-discovery of the artist's own event
 
-When the Artist already has an Event on an event's date at the same normalized listed venue, CreateFromDiscovered SHALL NOT look up the venue. When that Event has the same start time (or both have none), nothing is stored. When the event brings a start time and that Event has none, the time SHALL be filled onto it (Concert.FillEventStartTimes) and nothing else stored; one unknown-start Event SHALL be filled by at most one event of the batch. Otherwise the event SHALL be handled as a resolved event at that Event's Venue.
+When the Artist already has an Event on an event's date at the same listed venue (see Venue, "Same listed venue"), CreateFromDiscovered SHALL NOT look up the venue. When that Event has the same start time (or both have none), nothing is stored. When the event brings a start time and that Event has none, the time SHALL be filled onto it (Concert.FillEventStartTimes) and nothing else stored; one unknown-start Event SHALL be filled by at most one event of the batch. Otherwise the event SHALL be handled as a resolved event at that Event's Venue.
 
 #### Scenario: Exact re-discovery
 - **WHEN** the event matches the Artist's Event at the same venue, date and start time

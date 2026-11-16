@@ -21,7 +21,7 @@ UC->>Order: Get
 UC->>User: Get
 UC->>TicketStock: Get
 UC->>Concert: ListByIDs
-UC->>LotteryEntry: SendLossEmail "one email per entry"
+UC->>LotteryEntry: SendLossEmail "when LossEmailDue, then MarkLossEmailSent"
 UC->>UC: Deliver "lottery_loss, once per entry"
 ```
 
@@ -40,7 +40,7 @@ It SHALL send, with LotteryEntry.SendLossEmail to the user's email address and i
 - by the entry's lost reason: that the entry was not drawn, that the entry won but its card could not be charged, so the win was cancelled, or that the concert is 中止 (cancelled), so the entry ended;
 - that the card was not charged, and that the amount held on the card is given back, which may still show on the card statement for a few days.
 
-When reading or sending fails, SendLotteryLoss SHALL fail with that error and is run again; LotteryEntry.SendLossEmail keeps it to one email per entry.
+When reading or sending fails, SendLotteryLoss SHALL fail with that error and is run again; it SHALL send the email only while none has been sent for the entry (LotteryEntry.LossEmailDue) and then record the send (LotteryEntry.MarkLossEmailSent), so a run again after the email was sent sends no second email.
 
 #### Scenario: Entry not drawn
 - **WHEN** a fan's entry for 2 tickets is announced Lost with the lost reason "not drawn"

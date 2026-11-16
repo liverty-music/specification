@@ -20,11 +20,18 @@ Change `restructure-backend-responsibilities` fixes the direction of the layers 
 
 ### New Capabilities
 
-None.
+- `entity/venue/select-place`: the choice of a venue's place among the places a map search returned, which the Google Maps client made by taking the first result.
 
 ### Modified Capabilities
 
-None. Moving a rule to another layer keeps every outcome and error code a client observes; no spec states which layer decides a rule (the only specs that mention SQL or the database clock are frontend routes). `.openspec.yaml` sets `skip_specs: true`. Each moved rule is still checked against the spec that states it, for example `usecase/user/list-deletion-blockers`, `usecase/order/refund`, `entity/event`, `entity/series/publish-events`, `entity/ticket-sale` and `entity/checkout`.
+- `entity/venue/search-place`: returns the places found, most relevant first, and no place (not NotFound) when there is no match; it no longer chooses one.
+- `entity/venue`: a new requirement, "Same listed venue", states when two listed venue names name the same venue: equal normalized forms once whitespace, middle-dot variants and Latin letter case are ignored, the rule `entity/concert/search` already used for the events of one search.
+- `entity/discovered-series/filter-new-series`, `usecase/concert/search-new-concerts` and `usecase/concert/create-from-discovered`: their venue comparisons use "Same listed venue" instead of equal normalized names, so "Zepp Haneda" and "ZEPP HANEDA" are one venue everywhere.
+- `entity/lottery-entry/send-loss-email`, `entity/resale-listing/send-sold-email` and `entity/resale-entry/send-ended-email`: the mail port only sends; whether the email is due (`LossEmailDue`, `SoldEmailDue`, `EndedEmailDue`) and recording the send move out of it. `usecase/notification/send-lottery-loss`, `send-resale-sold` and `send-resale-entry-ended` state that they send only while the email is due and then record the send.
+- `entity/lottery-entry/run-lottery-draw`: the draw rule is unchanged; the requirement names the two steps (ShuffleDrawOrder, AdmitInDrawOrder) production runs instead of the unused RunLotteryDraw function.
+- `entity/artist/resolve-official-site-url`: the catalog read (ListOfficialSiteRelations) returns the official-homepage links as stated and SelectOfficialSite picks one; the selection rule and the failure codes are unchanged.
+
+Every other moved rule keeps every outcome and error code a client observes, and no spec states which layer decides it. Each moved rule is still checked against the spec that states it, for example `usecase/user/list-deletion-blockers`, `usecase/order/refund`, `entity/event`, `entity/series/publish-events`, `entity/ticket-sale` and `entity/checkout`.
 
 ## Impact
 

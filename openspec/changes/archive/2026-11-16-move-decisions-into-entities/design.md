@@ -226,7 +226,7 @@ Ownership checks (`x.UserID != caller`, seven usecases) become one `BelongsTo` m
 
 ### Function size
 
-`.golangci.yml` enables funlen (60 lines, 40 statements, comments ignored), gocognit (20) and cyclop (15). `_test.go` files are excluded; `cmd/` and the analysis CLIs are included. The section that adds them comes last, because the moves above rewrite most of the functions behind the 84 findings these values report today (29 funlen, 40 gocognit, 15 cyclop; measured 2026-11-10). Each remaining violation is split by responsibility. A `//nolint` is proposed to the user with its reason and added only after they agree.
+`.golangci.yml` enables funlen (60 lines, 40 statements, comments ignored), gocognit (20) and cyclop (15). `_test.go` files and the local analysis CLIs (`cmd/analyze-*`, `cmd/replay-ab-log`, `cmd/annotated-fixture`, which are not deployed) are excluded; the deployed `cmd/` binaries are included. The section that adds them comes last, because the moves above rewrite most of the functions behind the 84 findings these values report today (29 funlen, 40 gocognit, 15 cyclop; measured 2026-11-10). Each remaining violation is split by responsibility. A `//nolint` is proposed to the user with its reason and added only after they agree.
 
 ### Tests
 

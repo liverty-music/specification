@@ -6,8 +6,8 @@ Looks up, in the music catalog, the official homepage of the artist with a given
 
 ## Requirements
 
-### Requirement: ResolveOfficialSiteURL picks the most relevant active homepage
-Among the catalog's official-homepage links for the MBID that have not ended, ResolveOfficialSiteURL SHALL consider only the links that point at a site's top page (a URL with no path other than `/`, no query and no fragment) when at least one such link exists, and all active links otherwise. Among the links it considers, it SHALL return the first link credited to the catalog's name for the artist (compared ignoring case); when there is none, the first uncredited link; otherwise the first link. When no official-homepage link is active, it SHALL return no URL and no error.
+### Requirement: SelectOfficialSite picks the most relevant active homepage
+The music catalog's official-homepage links for an MBID SHALL be read as they are (ListOfficialSiteRelations: the catalog's name for the artist and every official-homepage link, with its credit and whether it has ended), and SelectOfficialSite SHALL pick the official site among them. Among the links that have not ended, SelectOfficialSite SHALL consider only the links that point at a site's top page (a URL with no path other than `/`, no query and no fragment) when at least one such link exists, and all active links otherwise. Among the links it considers, it SHALL return the first link credited to the catalog's name for the artist (compared ignoring case); when there is none, the first uncredited link; otherwise the first link. When no official-homepage link is active, it SHALL return no URL.
 
 #### Scenario: Top page preferred over a label page
 - **WHEN** the active links are `https://columbia.jp/artist-info/04limitedsazabys/` listed first and `https://www.04limitedsazabys.com/` listed second, both uncredited
@@ -35,19 +35,19 @@ Among the catalog's official-homepage links for the MBID that have not ended, Re
 
 #### Scenario: All links ended
 - **WHEN** every official-homepage link for the MBID has ended
-- **THEN** no URL is returned and there is no error
+- **THEN** no URL is returned
 
 #### Scenario: No homepage link
-- **WHEN** the catalog has no official-homepage link for the MBID
-- **THEN** no URL is returned and there is no error
+- **WHEN** the catalog has no official-homepage link for the MBID, only links of other types
+- **THEN** ListOfficialSiteRelations returns no link and there is no error, and no URL is returned
 
-### Requirement: ResolveOfficialSiteURL reports catalog failures
-ResolveOfficialSiteURL SHALL fail with NotFound when the catalog has no artist for the MBID, with Unavailable when the catalog cannot be reached, and with Internal for an unexpected catalog response.
+### Requirement: ListOfficialSiteRelations reports catalog failures
+ListOfficialSiteRelations SHALL fail with NotFound when the catalog has no artist for the MBID, with Unavailable when the catalog cannot be reached, and with Internal for an unexpected catalog response.
 
 #### Scenario: Catalog unreachable
 - **WHEN** the catalog cannot be reached
-- **THEN** ResolveOfficialSiteURL fails with Unavailable
+- **THEN** ListOfficialSiteRelations fails with Unavailable
 
 #### Scenario: MBID unknown to the catalog
 - **WHEN** the catalog has no artist for the MBID, as for an MBID removed from the catalog or one the catalog never had
-- **THEN** ResolveOfficialSiteURL fails with NotFound
+- **THEN** ListOfficialSiteRelations fails with NotFound

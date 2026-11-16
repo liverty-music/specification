@@ -17,7 +17,7 @@ UC->>ResaleListing: Get
 UC->>User: Get
 UC->>Order: Get
 UC->>Concert: ListByIDs
-UC->>ResaleListing: SendSoldEmail "one email per listing"
+UC->>ResaleListing: SendSoldEmail "when SoldEmailDue, then MarkSoldEmailSent"
 ```
 
 ## Requirements
@@ -37,7 +37,7 @@ It SHALL send, with ResaleListing.SendSoldEmail to the user's email address and 
 - that the refund goes to the card with the Order's card brand and last four digits, and that when it appears on the statement depends on the card issuer;
 - that the resold ticket is no longer valid for entry.
 
-When reading or sending fails, SendResaleSold SHALL fail with that error and is run again; ResaleListing.SendSoldEmail keeps it to one email per listing.
+When reading or sending fails, SendResaleSold SHALL fail with that error and is run again; it SHALL send the email only while none has been sent for the listing (ResaleListing.SoldEmailDue) and then record the send (ResaleListing.MarkSoldEmailSent), so a run again after the email was sent sends no second email.
 
 #### Scenario: Sold email
 - **WHEN** a listing priced 5000 yen is announced as refunded
