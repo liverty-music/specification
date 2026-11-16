@@ -30,7 +30,8 @@ loop each series with a title and events
       end
     else otherwise
       UC->>Venue: SearchPlace "once per name and admin area"
-      alt no match
+      UC->>Venue: SelectPlace "the place named like the listed venue, else the most relevant"
+      alt no place chosen
         UC->>ConcertCandidate: Upsert "no resolved preview"
       else place found
         UC->>Venue: GetByPlaceID
@@ -118,7 +119,7 @@ When the Artist already has an Event on an event's date at the same listed venue
 
 ### Requirement: Venue resolution
 
-For any other event, CreateFromDiscovered SHALL look up the venue by its listed name and admin area (Venue.SearchPlace), at most once per name and admin area within the batch. When the place is found, the Venue SHALL be found or created in this order: by place id (Venue.GetByPlaceID); by listed venue name and admin area (Venue.GetByListedName), giving that Venue the place id when it has none (Venue.BackfillPlaceID); otherwise created with the place's canonical name, place id, coordinates, the listed venue name and the discovered admin area (Venue.Create). Any lookup failure other than no match SHALL fail the whole batch.
+For any other event, CreateFromDiscovered SHALL look up the places for the venue's listed name and admin area (Venue.SearchPlace), at most once per name and admin area within the batch, and choose one with Venue.SelectPlace: the first place whose canonical name is the same listed venue as the listed name, otherwise the most relevant. When a place is chosen, the Venue SHALL be found or created in this order: by place id (Venue.GetByPlaceID); by listed venue name and admin area (Venue.GetByListedName), giving that Venue the place id when it has none (Venue.BackfillPlaceID); otherwise created with the place's canonical name, place id, coordinates, the listed venue name and the discovered admin area (Venue.Create). Any lookup failure other than no match SHALL fail the whole batch.
 
 #### Scenario: Known place
 - **WHEN** the place is found and a Venue holds its place id
@@ -134,10 +135,10 @@ For any other event, CreateFromDiscovered SHALL look up the venue by its listed 
 
 ### Requirement: Unresolved venue is staged
 
-When the venue lookup finds no match, CreateFromDiscovered SHALL stage the event (ConcertCandidate.Upsert) with no resolved preview, SHALL NOT create a Venue and SHALL NOT publish it.
+When no place is chosen (the search finds none), CreateFromDiscovered SHALL stage the event (ConcertCandidate.Upsert) with no resolved preview, SHALL NOT create a Venue and SHALL NOT publish it.
 
 #### Scenario: Venue not found
-- **WHEN** the venue lookup finds no match
+- **WHEN** no place is chosen
 - **THEN** a ConcertCandidate without resolved place is stored and nothing is published
 
 ### Requirement: Suppressed slot is skipped
