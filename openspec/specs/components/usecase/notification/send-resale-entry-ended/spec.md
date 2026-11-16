@@ -3,6 +3,24 @@
 ## Purpose
 NotificationUseCase.SendResaleEntryEnded tells a fan, by email and push notification, that their official resale (公式リセール) entry lapsed because its card authorization would expire, or ended without a ticket: it lost at the event's last draw, its concert was cancelled, it won but its card could not be charged, it won but the payment could not be completed before the show, or it won but a listing allocated to it was cancelled after the charge, so the charge is refunded.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as NotificationUseCase.SendResaleEntryEnded
+participant ResaleEntry
+participant User
+participant Concert
+Note over UC: runs for each ResaleEntry that became Lapsed or Lost
+Note over UC: on a failure it fails and is run again
+UC->>ResaleEntry: Get
+UC->>User: Get
+UC->>Concert: ListByIDs
+UC->>ResaleEntry: EndedEmailDue
+UC->>ResaleEntry: SendEndedEmail "once per entry"
+UC->>ResaleEntry: MarkEndedEmailSent
+UC->>UC: Deliver "resale_entry_lapsed or resale_entry_lost, once per entry"
+```
+
 ## Requirements
 
 ### Requirement: Lapse and loss messages

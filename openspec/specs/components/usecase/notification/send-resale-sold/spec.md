@@ -17,7 +17,9 @@ UC->>ResaleListing: Get
 UC->>User: Get
 UC->>Order: Get
 UC->>Concert: ListByIDs
-UC->>ResaleListing: SendSoldEmail "when SoldEmailDue, then MarkSoldEmailSent"
+UC->>ResaleListing: SoldEmailDue
+UC->>ResaleListing: SendSoldEmail "once per listing"
+UC->>ResaleListing: MarkSoldEmailSent
 ```
 
 ## Requirements

@@ -21,7 +21,9 @@ UC->>Order: Get
 UC->>User: Get
 UC->>TicketStock: Get
 UC->>Concert: ListByIDs
-UC->>LotteryEntry: SendLossEmail "when LossEmailDue, then MarkLossEmailSent"
+UC->>LotteryEntry: LossEmailDue
+UC->>LotteryEntry: SendLossEmail "once per entry"
+UC->>LotteryEntry: MarkLossEmailSent
 UC->>UC: Deliver "lottery_loss, once per entry"
 ```
 
