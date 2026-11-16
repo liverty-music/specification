@@ -1,8 +1,8 @@
-# Artist.ResolveOfficialSiteURL
+# Artist.SelectOfficialSite and Artist.ListOfficialSiteRelations
 
 ## Purpose
 
-Looks up, in the music catalog, the official homepage of the artist with a given MBID.
+Reads the official-homepage links the music catalog has for an artist's MBID and picks the artist's official homepage from them.
 
 ## Requirements
 
