@@ -8,7 +8,7 @@ Drops from newly DiscoveredSeries the events already known — among an Artist's
 
 ### Requirement: Novelty by date, venue and start time
 
-FilterNewSeries SHALL compare events by local date and normalized listed venue name, and within the same date and venue SHALL treat start time asymmetrically:
+FilterNewSeries SHALL compare events by local date and listed venue name, two names being the same listed venue (see Venue, "Same listed venue"), and within the same date and venue SHALL treat start time asymmetrically:
 - an event with no start time is known when anything is known at that date and venue;
 - an event with a start time is known only when that exact start time is known there, so a start time announced after an unknown-start Concert is kept.
 
@@ -32,6 +32,10 @@ Existing Concerts without a listed venue name SHALL be ignored. Events with a bl
 
 #### Scenario: Venue name drift
 - **WHEN** an existing Concert lists "大阪・フェスティバルホール" and a discovered event at the same date and start lists "フェスティバルホール"
+- **THEN** the event is dropped
+
+#### Scenario: Letter case and spacing differ
+- **WHEN** an existing Concert lists "Zepp Haneda" and a discovered event at the same date and start lists "ZEPP HANEDA"
 - **THEN** the event is dropped
 
 #### Scenario: Same date, different venue

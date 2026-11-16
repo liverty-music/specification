@@ -2,21 +2,21 @@
 
 ## Purpose
 
-Looks up a venue name, optionally with its admin area, in an external map catalog and returns the best matching place: its place id, canonical name and location.
+Looks up a venue name, optionally with its admin area, in an external map catalog and returns the places it finds, most relevant first, each with its place id, canonical name and location; Venue.SelectPlace chooses among them.
 
 ## Requirements
 
-### Requirement: Best match or NotFound
+### Requirement: Places in order of relevance
 
-SearchPlace SHALL return the single best matching place for the name and admin area, and SHALL fail with NotFound when the catalog has no match and with Unavailable when the catalog cannot be reached.
+SearchPlace SHALL return the places the catalog finds for the name and admin area, most relevant first, and SHALL return no place and no error when the catalog has no match. It SHALL fail with Unavailable when the catalog cannot be reached. It SHALL NOT choose among the places; Venue.SelectPlace does.
 
 #### Scenario: Known venue
 - **WHEN** "日本武道館" with JP-13 is searched
-- **THEN** one place with its place id and canonical name is returned
+- **THEN** the places found are returned, each with its place id and canonical name, most relevant first
 
 #### Scenario: No match
 - **WHEN** the catalog has no match
-- **THEN** SearchPlace fails with NotFound
+- **THEN** no place is returned and there is no error
 
 ### Requirement: Canonical name in the venue country's language
 

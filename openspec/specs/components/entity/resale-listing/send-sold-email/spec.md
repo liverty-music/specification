@@ -1,22 +1,17 @@
 # components/entity/resale-listing/send-sold-email Specification
 
 ## Purpose
-Sends the user of a Sold ResaleListing the email saying their Ticket was resold and how much is refunded, at most once per listing.
+Sends the user of a Sold ResaleListing the email saying their Ticket was resold and how much is refunded, as the caller composed it. Whether the email is due and recording that it was sent are the caller's, so it is sent at most once per listing.
 
 ## Requirements
 
-### Requirement: One sold email per listing
-
-SendSoldEmail SHALL take a ResaleListing, an email address, a language and the message content, send the email and record its send time on the listing. When the listing already has a sold email send time, it SHALL send nothing. It SHALL fail with Unavailable when mail cannot be sent, recording nothing, so it can be tried again.
+### Requirement: The sold email is sent as given
+SendSoldEmail SHALL take a ResaleListing's id, an email address and the finished message, and send the message as an email to that address, tagged with the listing's id. Whether the email is due, and recording that it was sent, are the caller's (ResaleListing.SoldEmailDue, ResaleListing.MarkSoldEmailSent). It SHALL fail with InvalidArgument when the address or the message is empty and with Unavailable when mail cannot be sent, so it can be tried again.
 
 #### Scenario: First send
-- **WHEN** SendSoldEmail is called for a Sold listing without a send time
-- **THEN** one email is sent and the send time is recorded
-
-#### Scenario: Sent before
-- **WHEN** SendSoldEmail is called for a listing with a send time
-- **THEN** no email is sent
+- **WHEN** SendSoldEmail is called with an address and a message
+- **THEN** one email is sent
 
 #### Scenario: Mail unavailable
 - **WHEN** sending fails
-- **THEN** SendSoldEmail fails with Unavailable and no send time is recorded
+- **THEN** SendSoldEmail fails with Unavailable

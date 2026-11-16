@@ -30,7 +30,8 @@ loop each series with a title and events
       end
     else otherwise
       UC->>Venue: SearchPlace "once per name and admin area"
-      alt no match
+      UC->>Venue: SelectPlace "the place named like the listed venue, else the most relevant"
+      alt no place chosen
         UC->>ConcertCandidate: Upsert "no resolved preview"
       else place found
         UC->>Venue: GetByPlaceID
@@ -86,7 +87,7 @@ CreateFromDiscovered SHALL skip a series with no title or no events, and an even
 
 ### Requirement: One Series per discovered series
 
-For each discovered series, CreateFromDiscovered SHALL look up the Artist's Events on the series' dates (Concert.FindEventsByArtistAndDate). When any of them has the same date and normalized listed venue name as one of the series' events, the series SHALL join that Event's Series — the one with the smallest id when several match. Otherwise a new Series SHALL be created with the discovered title, type and source page (Series.Create) before any of its events is stored or staged. The Series type SHALL come from the discovery, never from the number of events.
+For each discovered series, CreateFromDiscovered SHALL look up the Artist's Events on the series' dates (Concert.FindEventsByArtistAndDate). When any of them has the same date and the same listed venue (see Venue, "Same listed venue") as one of the series' events, the series SHALL join that Event's Series — the one with the smallest id when several match. Otherwise a new Series SHALL be created with the discovered title, type and source page (Series.Create) before any of its events is stored or staged. The Series type SHALL come from the discovery, never from the number of events.
 
 #### Scenario: Re-discovered tour joins its series
 - **WHEN** a tour is discovered again and one of its dates matches an Event of the Artist at the same venue
@@ -102,7 +103,7 @@ For each discovered series, CreateFromDiscovered SHALL look up the Artist's Even
 
 ### Requirement: Re-discovery of the artist's own event
 
-When the Artist already has an Event on an event's date at the same normalized listed venue, CreateFromDiscovered SHALL NOT look up the venue. When that Event has the same start time (or both have none), nothing is stored. When the event brings a start time and that Event has none, the time SHALL be filled onto it (Concert.FillEventStartTimes) and nothing else stored; one unknown-start Event SHALL be filled by at most one event of the batch. Otherwise the event SHALL be handled as a resolved event at that Event's Venue.
+When the Artist already has an Event on an event's date at the same listed venue (see Venue, "Same listed venue"), CreateFromDiscovered SHALL NOT look up the venue. When that Event has the same start time (or both have none), nothing is stored. When the event brings a start time and that Event has none, the time SHALL be filled onto it (Concert.FillEventStartTimes) and nothing else stored; one unknown-start Event SHALL be filled by at most one event of the batch. Otherwise the event SHALL be handled as a resolved event at that Event's Venue.
 
 #### Scenario: Exact re-discovery
 - **WHEN** the event matches the Artist's Event at the same venue, date and start time
@@ -118,7 +119,7 @@ When the Artist already has an Event on an event's date at the same normalized l
 
 ### Requirement: Venue resolution
 
-For any other event, CreateFromDiscovered SHALL look up the venue by its listed name and admin area (Venue.SearchPlace), at most once per name and admin area within the batch. When the place is found, the Venue SHALL be found or created in this order: by place id (Venue.GetByPlaceID); by listed venue name and admin area (Venue.GetByListedName), giving that Venue the place id when it has none (Venue.BackfillPlaceID); otherwise created with the place's canonical name, place id, coordinates, the listed venue name and the discovered admin area (Venue.Create). Any lookup failure other than no match SHALL fail the whole batch.
+For any other event, CreateFromDiscovered SHALL look up the places for the venue's listed name and admin area (Venue.SearchPlace), at most once per name and admin area within the batch, and choose one with Venue.SelectPlace: the first place whose canonical name is the same listed venue as the listed name, otherwise the most relevant. When a place is chosen, the Venue SHALL be found or created in this order: by place id (Venue.GetByPlaceID); by listed venue name and admin area (Venue.GetByListedName), giving that Venue the place id when it has none (Venue.BackfillPlaceID); otherwise created with the place's canonical name, place id, coordinates, the listed venue name and the discovered admin area (Venue.Create). Any lookup failure other than no match SHALL fail the whole batch.
 
 #### Scenario: Known place
 - **WHEN** the place is found and a Venue holds its place id
@@ -134,10 +135,10 @@ For any other event, CreateFromDiscovered SHALL look up the venue by its listed 
 
 ### Requirement: Unresolved venue is staged
 
-When the venue lookup finds no match, CreateFromDiscovered SHALL stage the event (ConcertCandidate.Upsert) with no resolved preview, SHALL NOT create a Venue and SHALL NOT publish it.
+When no place is chosen (the search finds none), CreateFromDiscovered SHALL stage the event (ConcertCandidate.Upsert) with no resolved preview, SHALL NOT create a Venue and SHALL NOT publish it.
 
 #### Scenario: Venue not found
-- **WHEN** the venue lookup finds no match
+- **WHEN** no place is chosen
 - **THEN** a ConcertCandidate without resolved place is stored and nothing is published
 
 ### Requirement: Suppressed slot is skipped

@@ -17,7 +17,8 @@ break nobody follows any artist
 end
 UC->>Artist: ListStaleOfficialSite "age 7 days, limit a seventh of the followed artists"
 loop each due artist, one at a time
-  UC->>Artist: ResolveOfficialSiteURL
+  UC->>Artist: ListOfficialSiteRelations
+  UC->>Artist: SelectOfficialSite
   opt a URL is found
     UC->>Artist: GetOfficialSite
     alt the artist has no official site
@@ -34,10 +35,10 @@ Note over UC: a failed artist records no check, and the run stops after 3 consec
 ## Requirements
 
 ### Requirement: RefreshOfficialSite brings the stored site in line with the catalog
-OfficialSiteRefreshUseCase.RefreshOfficialSite SHALL take an artist id and MBID, look the homepage up with Artist.ResolveOfficialSiteURL and then:
+OfficialSiteRefreshUseCase.RefreshOfficialSite SHALL take an artist id and MBID, read the catalog's homepage links with Artist.ListOfficialSiteRelations, pick the homepage with Artist.SelectOfficialSite and then:
 - when a URL is found and the artist has no official site (Artist.GetOfficialSite returns NotFound), store it as a new OfficialSite with Artist.CreateOfficialSite;
 - when a URL is found and it differs from the stored site's url, replace it with Artist.UpdateOfficialSiteURL;
-- when the found URL equals the stored url, when no URL is found, or when Artist.ResolveOfficialSiteURL fails with NotFound (the catalog has no artist for the MBID), leave the stored site as it is.
+- when the found URL equals the stored url, when no URL is found, or when Artist.ListOfficialSiteRelations fails with NotFound (the catalog has no artist for the MBID), leave the stored site as it is.
 After that it SHALL record the check with Artist.MarkOfficialSiteChecked at the current time.
 
 #### Scenario: Catalog resolves to a different site
@@ -61,14 +62,14 @@ After that it SHALL record the check with Artist.MarkOfficialSiteChecked at the 
 - **THEN** no site is stored and the check time is now
 
 #### Scenario: MBID unknown to the catalog
-- **WHEN** Artist.ResolveOfficialSiteURL fails with NotFound
+- **WHEN** Artist.ListOfficialSiteRelations fails with NotFound
 - **THEN** RefreshOfficialSite succeeds, the stored site is unchanged, and the check time is now, so the artist is not due again until 7 days later
 
 ### Requirement: RefreshOfficialSite reports failures without recording a check
-When Artist.ResolveOfficialSiteURL (other than NotFound), Artist.GetOfficialSite (other than NotFound), Artist.CreateOfficialSite or Artist.UpdateOfficialSiteURL fails, OfficialSiteRefreshUseCase.RefreshOfficialSite SHALL fail with that error and SHALL NOT record a check, so the artist stays due. It SHALL fail with the error of Artist.MarkOfficialSiteChecked.
+When Artist.ListOfficialSiteRelations (other than NotFound), Artist.GetOfficialSite (other than NotFound), Artist.CreateOfficialSite or Artist.UpdateOfficialSiteURL fails, OfficialSiteRefreshUseCase.RefreshOfficialSite SHALL fail with that error and SHALL NOT record a check, so the artist stays due. It SHALL fail with the error of Artist.MarkOfficialSiteChecked.
 
 #### Scenario: Catalog unreachable
-- **WHEN** Artist.ResolveOfficialSiteURL fails with Unavailable
+- **WHEN** Artist.ListOfficialSiteRelations fails with Unavailable
 - **THEN** RefreshOfficialSite fails with Unavailable, the stored site is unchanged and no check time is recorded
 
 ### Requirement: RefreshOfficialSite runs daily for a small batch of due artists

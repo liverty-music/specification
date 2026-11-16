@@ -21,7 +21,8 @@ Note over UC: in the background after answering, every failure ignored
 UC->>Artist: GetOfficialSite
 opt NotFound and the artist has an MBID
   UC->>Artist: Get
-  UC->>Artist: ResolveOfficialSiteURL
+  UC->>Artist: ListOfficialSiteRelations
+  UC->>Artist: SelectOfficialSite
   opt a site is found
     UC->>Artist: CreateOfficialSite
   end
@@ -60,7 +61,7 @@ When the fan already follows the artist, Follow SHALL succeed without changing t
 
 ### Requirement: Official site resolved in the background
 
-After a new Follow is stored, Follow SHALL, in the background and after answering the fan, look up the artist's official site when none is stored (Artist.GetOfficialSite returns NotFound) and the artist has an MBID: it reads the artist (Artist.Get), resolves the site from the MBID (Artist.ResolveOfficialSiteURL) and, when a site is found, stores it (Artist.CreateOfficialSite). An artist that already has a site, has no MBID, or has no site in the catalog is left as is. Every failure in this work SHALL be ignored.
+After a new Follow is stored, Follow SHALL, in the background and after answering the fan, look up the artist's official site when none is stored (Artist.GetOfficialSite returns NotFound) and the artist has an MBID: it reads the artist (Artist.Get), reads the catalog's homepage links for the MBID (Artist.ListOfficialSiteRelations) and picks the site (Artist.SelectOfficialSite) and, when a site is found, stores it (Artist.CreateOfficialSite). An artist that already has a site, has no MBID, or has no site in the catalog is left as is. Every failure in this work SHALL be ignored.
 
 #### Scenario: Artist without an official site
 

@@ -7,7 +7,7 @@ Computes a lottery draw: orders the given entries at random and admits whole ent
 
 ### Requirement: Random order with greedy whole-entry fit
 
-RunLotteryDraw SHALL put the entries in a uniformly random order, numbering each with its draw position from 0, then walk that order once and admit each entry whose ticket count is greater than 0 and fits the remaining quantity, deducting its whole count. An entry that does not fit SHALL be placed among the losers and the walk SHALL continue, so a later, smaller entry can still fill the remaining quantity. Every entry SHALL appear exactly once, either as a winner or as a loser.
+A lottery draw (ShuffleDrawOrder, then AdmitInDrawOrder) SHALL put the entries in a uniformly random order, numbering each with its draw position from 0, then walk that order once and admit each entry whose ticket count is greater than 0 and fits the remaining quantity, deducting its whole count. An entry that does not fit SHALL be placed among the losers and the walk SHALL continue, so a later, smaller entry can still fill the remaining quantity. Every entry SHALL appear exactly once, either as a winner or as a loser.
 
 #### Scenario: Demand above quantity
 
