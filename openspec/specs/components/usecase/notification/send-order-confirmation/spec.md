@@ -18,7 +18,9 @@ UC->>User: Get
 UC->>Concert: ListByIDs
 UC->>Event: GetOrganizerID
 UC->>Organizer: Get
-UC->>Order: SendConfirmationEmail "one email per Order"
+UC->>Order: ConfirmationEmailDue
+UC->>Order: SendConfirmationEmail "once per Order"
+UC->>Order: MarkConfirmationSent
 opt source is a LotteryEntry or a ResaleEntry
   UC->>UC: Deliver "lottery_win or resale_win, opens the Tickets screen, once"
 end
@@ -44,25 +46,21 @@ It SHALL send, with Order.SendConfirmationEmail to the user's email address and 
 - that tickets cannot be cancelled or refunded except when the concert is 中止 (cancelled);
 - how to show the tickets.
 
-When reading or sending fails, SendOrderConfirmation SHALL fail with that error and is run again; Order.SendConfirmationEmail keeps it to one email per Order.
+When reading or sending fails, SendOrderConfirmation SHALL fail with that error and is run again; it SHALL send the email only while none has been sent for the Order (Order.ConfirmationEmailDue) and then record the send (Order.MarkConfirmationSent), so a run again after the email was sent sends no second email.
 
 #### Scenario: Checkout paid
-
 - **WHEN** a fan's Order for 2 tickets of 6000 yen is announced as paid
 - **THEN** the fan receives one email with the concert, 2 tickets, 6000 yen 税込, the card's last four digits, the Organizer's business details, the resale prohibition and the cancellation policy
 
 #### Scenario: Lottery win
-
 - **WHEN** the Order of a won lottery entry is announced as paid
 - **THEN** the winner receives the same confirmation email for their tickets, first saying that the entry won
 
 #### Scenario: Order announced twice
-
 - **WHEN** the same announcement is delivered twice
 - **THEN** the fan receives one email
 
 #### Scenario: Mail unavailable
-
 - **WHEN** Order.SendConfirmationEmail fails with Unavailable
 - **THEN** SendOrderConfirmation fails and the email is sent when it runs again
 
