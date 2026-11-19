@@ -5,6 +5,14 @@ name: CI
 # either one satisfy it (liverty-music/backend#669), and a workflow without
 # one is not a gate at all: OpenSpec Checks used to be a separate workflow
 # that a pull request could merge past while it failed.
+#
+# Every check runs on every pull request; there is no path filter. A filter
+# lists the files a check reads, and a file it misses lets a pull request
+# skip the check and still report `CI Success`: of the last 100 merged pull
+# requests before the filter was removed, 10 skipped both checks, and 2 of
+# them (#1310, #1311) changed `.mise/config.toml`, which pins the OpenSpec CLI
+# the checks run. openspec-checks took 13 to 24 seconds in its last 14
+# successful runs.
 
 on:
   push:
@@ -17,32 +25,9 @@ permissions:
   pull-requests: write
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      src: ${{ steps.filter.outputs.src }}
-      openspec: ${{ steps.filter.outputs.openspec }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
-        id: filter
-        with:
-          filters: |
-            src:
-              - "proto/**"
-              - "buf.yaml"
-              - "Makefile"
-              - ".github/workflows/**"
-            openspec:
-              - "openspec/**"
-              - "scripts/check-spec-layout.py"
-              - "scripts/check-diagrams.py"
-              - "scripts/check-scenario-coverage.py"
-              - ".github/workflows/ci.yml"
-
   buf-checks:
-    needs: changes
-    if: needs.changes.outputs.src == 'true' && github.event_name == 'pull_request'
+    # Pull requests only: breaking detection compares against the PR base.
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -77,9 +62,8 @@ jobs:
         run: python3 scripts/check-forbidden-words.py
 
   openspec-checks:
-    needs: changes
     # Pull requests only: the steps diff against the pull request's base.
-    if: needs.changes.outputs.openspec == 'true' && github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     env:
       # Keep in sync with the version pinned in README.md / AGENTS.md.
@@ -224,10 +208,11 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [changes, buf-checks, forbidden-words, openspec-checks]
+    needs: [buf-checks, forbidden-words, openspec-checks]
     if: always()
     steps:
       - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # release/v1
         with:
+          # Skipped only on a push to main, where there is no PR base.
           allowed-skips: buf-checks, openspec-checks
           jobs: ${{ toJSON(needs) }}
