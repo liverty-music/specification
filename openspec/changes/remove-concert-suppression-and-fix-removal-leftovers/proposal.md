@@ -28,6 +28,7 @@ An admin deletes a Concert only to clean up test data: the delete button is reac
 - `components/usecase/concert/create-from-discovered`: the suppressed-slot skip is removed, a resolved event is no longer qualified as unsuppressed, and the ingest signal no longer counts suppressed events. Purpose and sequence diagram edited at archive (Purpose).
 - `components/usecase/order/refund`: Refund acts at its own current time instead of taking it as an input (backend#701); the outcome is the same.
 - `components/adapter/admin/api/rpc/order`: the Refund boundary passes the Order and the reason, not the time.
+- `components/adapter/fan/api/webhook/payment-events`: a dispute calls Refund with the Order and the reason Dispute, not the time the notice was received; Refund takes its own current time.
 - `components/usecase/concert/search-new-concerts`: drops the mention of SuppressedConcerts.
 - `components/usecase/concert-candidate/approve`: the requirement that approval does not check suppression is removed.
 - `components/usecase/series/publish`: drops the sentence and scenario about a slot where an admin deleted a Concert.
