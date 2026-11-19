@@ -35,6 +35,8 @@ The system SHALL maintain a single registry table in this spec listing every Lay
   - `Screen title — OSS Licenses` — JA: `OSS Licenses` / EN: `OSS Licenses` (key `nav.legalLicenses`)
   - `Screen title — Signing In` — JA: `Signing In` / EN: `Signing In` (key `nav.signInCallback`)
   - `Screen title — Identity Verification` — JA: `Identity Verification` / EN: `Identity Verification` (key `nav.identityVerificationCallback`)
+  - `Screen title — Passkeys` — JA: `Passkeys` / EN: `Passkeys` (key `nav.passkeysCallback`)
+  - `Screen title — Page Not Found` — JA: `Page Not Found` / EN: `Page Not Found` (key `nav.notFound`)
   - `Personal timetable promise` — JA: `あなただけのタイムテーブル` / EN: `your personal timetable`
   - `HOME lane` — JA: `HOME` / EN: `HOME` (the timetable's stage header and the help sheet's lane legend; a lane is "the HOME lane" in prose)
   - `NEAR lane` — JA: `NEAR` / EN: `NEAR`
