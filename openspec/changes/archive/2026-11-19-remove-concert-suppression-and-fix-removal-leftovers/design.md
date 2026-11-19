@@ -38,6 +38,7 @@ The rows locked are the ones `eventRemovalLockQueries` lock today (TicketStocks,
 
 - First, the code stops reading and writing `suppressed_concerts`: `SuppressedConcert` entity and repository, the `Exists` gate and its tally in `CreateFromDiscovered`, the insert in `Delete`, DI wiring and mocks.
 - Then a migration drops `suppressed_concerts` (a table, so `schema.sql` and `atlas migrate diff`). Splitting keeps running pods of the previous release (which still read the table) working while the new release rolls out; the AtlasMigration can run before the new pods are ready.
+- Recorded before the drop (task 5.1, prod, read-only, 2026-11-19, with v1.133.0 running, which no longer reads or writes the table): `suppressed_concerts` holds 26 rows, 10 of them on today's date or later. No row shares a Venue and date with a PUBLISHED Event (0 rows, and 0 for the exact slot including the start time), so no real concert was being hidden at the time of the drop.
 
 ### D4 — delete_ticket_stock keeps its decision in SQL (backend#741)
 
@@ -46,6 +47,7 @@ The rows locked are the ones `eventRemovalLockQueries` lock today (TicketStocks,
 - Each DELETE in the function is filtered by `status = 5` (Void), the state its check allowed, as `removeEvents` already does: an Order that is not Void is left in place and its RESTRICT foreign key fails the whole delete.
 - Locks: the function locks the stock row `FOR UPDATE`. An Order insert takes `FOR KEY SHARE` on the same row through its foreign key, so an insert after the lock waits and then fails, and an insert before it is committed before the check runs. The race in backend#741 is therefore probably already prevented; that is inferred from PostgreSQL's row-lock conflicts, not observed. A test that runs a lottery-entry insert concurrently with the delete verifies it, and the filters are a second guard either way.
 - A table test over every `entity.OrderStatus` value checks that only Void Orders let the delete through, so a new status cannot silently become removable.
+- Observed (task 2.2, `TestTicketStockRepository_DeleteConcurrentLotteryEntry`, local PostgreSQL): with the insert committed before the delete, the delete fails with FailedPrecondition and the Pending Order and the stock remain. With the insert started after the delete's `FOR UPDATE`, the insert waits on the stock row and, once the delete commits, fails with a foreign-key violation; no Pending Order exists and only the Void Order was removed. The lock alone prevents the race in both orders; the Void filters remain the second guard.
 
 ### D5 — Leftovers
 

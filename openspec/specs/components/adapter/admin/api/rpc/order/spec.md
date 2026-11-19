@@ -15,25 +15,6 @@ Refund SHALL require a signed-in caller holding the admin role. A caller who is 
 - **WHEN** a signed-in caller without the admin role calls Refund
 - **THEN** the call fails with PermissionDenied and the Order is unchanged
 
-### Requirement: Refund passes the reason and the current time
-
-Refund SHALL fail with InvalidArgument, before any usecase runs, when no Order is given or the reason is unspecified. Otherwise it SHALL call OrderUseCase.Refund with the Order, the requested reason and the current time, and return the refunded Order. The usecase's NotFound, FailedPrecondition and InvalidArgument SHALL be returned with the same codes.
-
-#### Scenario: Admin refunds a cancelled event's order
-
-- **WHEN** an admin calls Refund for a Paid Order with the reason 中止 (cancellation)
-- **THEN** OrderUseCase.Refund runs with that reason and the current time and the refunded Order is returned
-
-#### Scenario: Reason missing
-
-- **WHEN** an admin calls Refund without a reason
-- **THEN** it fails with InvalidArgument and nothing is refunded
-
-#### Scenario: Unknown order
-
-- **WHEN** an admin calls Refund for an Order that does not exist
-- **THEN** it fails with NotFound
-
 ### Requirement: Admins read an order with its settlement
 
 Get SHALL require a signed-in caller holding the admin role. A caller who is not signed in SHALL fail with Unauthenticated; a signed-in caller without the admin role SHALL fail with PermissionDenied; both checks come before anything is read. Get SHALL fail with InvalidArgument when no Order is given, and with NotFound when the Order does not exist. Otherwise it SHALL run OrderUseCase.GetWithSettlement and return the Order together with its Settlement and the Settlement's splits, or the Order alone when it was never paid (Pending or Void). Errors from the usecase SHALL be returned unchanged.
@@ -81,3 +62,22 @@ ListByEvent SHALL require a signed-in caller holding the admin role. A caller wh
 
 - **WHEN** a signed-in caller without the admin role calls ListByEvent
 - **THEN** the call fails with PermissionDenied and nothing is returned
+
+### Requirement: Refund passes the reason
+
+Refund SHALL fail with InvalidArgument, before any usecase runs, when no Order is given or the reason is unspecified. Otherwise it SHALL call OrderUseCase.Refund with the Order and the requested reason, and return the refunded Order. The usecase's NotFound, FailedPrecondition and InvalidArgument SHALL be returned with the same codes.
+
+#### Scenario: Admin refunds a cancelled event's order
+
+- **WHEN** an admin calls Refund for a Paid Order with the reason 中止 (cancellation)
+- **THEN** OrderUseCase.Refund runs with that reason and the refunded Order is returned
+
+#### Scenario: Reason missing
+
+- **WHEN** an admin calls Refund without a reason
+- **THEN** it fails with InvalidArgument and nothing is refunded
+
+#### Scenario: Unknown order
+
+- **WHEN** an admin calls Refund for an Order that does not exist
+- **THEN** it fails with NotFound
