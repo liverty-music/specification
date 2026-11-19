@@ -39,11 +39,14 @@ Requirements whose text names a timestamp in the past participle, or a listing's
 - `components/entity/suppressed-concert` (Purpose): attribute `suppressed time` to `suppress time`.
 - `components/entity/ticket-sale` (Purpose): `discovered time` to `find time`; the requirement "The discovered time is set once" becomes "The find time is set once".
 - `components/entity/ticket-sale/upsert-discovered`: find time.
+- `components/entity/ticket-sale-reminder` (Purpose): attribute `sent time` to `send time`.
+- `components/entity/ticket-sale-reminder/record-sent`: send time.
 - `components/entity/ticket-sale-search` (Purpose): `searched time` to `search time`; the requirement "Searched time is not in the future" becomes "Search time is not in the future".
 - `components/entity/ticket-sale-search/list-by-series`, `components/entity/ticket-sale-search/record`: search time; the requirement "Record sets the searched time of every given series" becomes "Record sets the search time of every given series".
 - `components/entity/wallet-public-key` (Purpose): attribute `registered time` to `register time`.
 - `components/entity/wallet-public-key/register`: register time.
-- `components/usecase/concert/search-new-concerts`, `components/usecase/resale-listing/list`, `components/usecase/scanner/list-by-event`, `components/usecase/scanner/open`, `components/usecase/ticket/admit`, `components/usecase/ticket-sale/scan-due-reminders`, `components/usecase/wallet-public-key/get`, `components/usecase/wallet-public-key/register`: the same renames in their text. Their sequence diagrams name no timestamps, so their Purposes are unchanged. The entity operations they rely on are listed above.
+- `components/usecase/resale-listing/list`: a listing is returned with its close time and sell time; the requirement "The fan's listings with their deadline" becomes "The fan's listings with their close time".
+- `components/usecase/concert/search-new-concerts`, `components/usecase/scanner/list-by-event`, `components/usecase/scanner/open`, `components/usecase/ticket/admit`, `components/usecase/ticket-sale/scan-due-reminders`, `components/usecase/wallet-public-key/get`, `components/usecase/wallet-public-key/register`: the same renames in their text. Their sequence diagrams name no timestamps, so their Purposes are unchanged. The entity operations they rely on are listed above.
 - `components/adapter/fan/api/rpc/resale-listing`: a returned listing carries its close time and sell time.
 - `components/adapter/organizer/api/rpc/scanner-device`: a call carries a sign time.
 

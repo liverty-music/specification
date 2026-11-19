@@ -1,17 +1,22 @@
 # Spec Delta
 
+## RENAMED Requirements
+
+- FROM: `### Requirement: The fan's listings with their deadline`
+- TO: `### Requirement: The fan's listings with their close time`
+
 ## MODIFIED Requirements
 
-### Requirement: The fan's listings with their deadline
+### Requirement: The fan's listings with their close time
 
-List SHALL take the calling fan and the current time and return the fan's listings from ResaleListing.ListByUser, each with its resale fee, its refund amount and its deadline, read from its Ticket's event with Event.Get. A Listed listing that is expired at the current time SHALL be returned Expired. It SHALL return an empty list when the fan has no listing.
+List SHALL take the calling fan and the current time and return the fan's listings from ResaleListing.ListByUser, each with its resale fee, its refund amount and its close time, read from its Ticket's event with Event.Get. A Listed listing that is expired at the current time SHALL be returned Expired. It SHALL return an empty list when the fan has no listing.
 
 #### Scenario: Listing on sale
 - **WHEN** a fan with one open listing priced 5000 yen reads their listings
-- **THEN** it is returned Listed with the fee 500 yen, the refund amount 4500 yen and its deadline
+- **THEN** it is returned Listed with the fee 500 yen, the refund amount 4500 yen and its close time
 
 #### Scenario: Listing that did not sell
-- **WHEN** the fan reads a Listed listing after its deadline
+- **WHEN** the fan reads a Listed listing after its close time
 - **THEN** it is returned Expired
 
 #### Scenario: Sold and refunded
