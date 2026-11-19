@@ -66,12 +66,12 @@ service ConcertService {
   // listings, the reversed Settlements, and the event's scanners with their
   // admissions and rejected scans. An Organizer's ticket sale left naming no
   // event, and a first-party Series left with no event, with its seat types,
-  // are removed too; a discovered Series and its discovered sales stay. Everything is removed together or not at all.
+  // are removed too; a discovered Series and its discovered sales stay.
+  // Everything is removed together or not at all.
   //
-  // The event's venue, date and start time are suppressed so that discovery
-  // does not add the concert again; an Organizer can still publish at that
-  // slot. The operation is idempotent: deleting an event that no longer exists
-  // succeeds and suppresses nothing.
+  // Nothing records the event's venue, date and start time: a later discovery
+  // or publish at that slot creates a new event. The operation is idempotent:
+  // deleting an event that no longer exists succeeds and changes nothing.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
