@@ -105,8 +105,8 @@ service SeriesService {
   //   - the series has a PUBLISHED or CANCELLED Event and the type, source page
   //     or visibility differs from the stored one;
   //   - a PUBLISHED Event's start time changes while a TicketSale offers it;
-  //   - a PUBLISHED Event's new start time lands on a suppressed slot or on an
-  //     Event of another first-party series.
+  //   - a PUBLISHED Event's new start time lands on an Event of another
+  //     first-party series.
   // - UNAVAILABLE: The map catalog could not be reached to read a new place.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Update(UpdateRequest) returns (UpdateResponse);
@@ -122,8 +122,7 @@ service SeriesService {
   // claimed: it joins this series as PUBLISHED, kept by id with the fans
   // tracking it, the DRAFT Event is removed, and the claimed Event is not
   // announced. An Event of any other first-party series is never claimed. A
-  // slot an admin suppressed does not block the publish. A pending
-  // ConcertCandidate of the series is dropped.
+  // pending ConcertCandidate of the series is dropped.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The series does not exist or is not owned by the
