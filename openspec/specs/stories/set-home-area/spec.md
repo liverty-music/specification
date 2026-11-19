@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `user-home-selector` frontend component and its `userHome.*` i18n namespace used in both onboarding and Settings.
+Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `home-area-selector` frontend component and its `homeAreaSelector.*` i18n namespace used in both onboarding and Settings.
 
 ## Requirements
 
-### Requirement: Home area persists across onboarding, settings, and dashboard
+### Requirement: Home area persists across onboarding, settings, and timetable
 
 The frontend SHALL store the user's home area server-side via RPC, replacing
 local-storage-based persistence for authenticated users. Home area SHALL be owned
@@ -29,9 +29,9 @@ the user store and SHALL NOT branch on authentication state.
 - **THEN** the frontend SHALL call the backend to update the home with the new structured home
 - **AND** SHALL NOT write to local storage for the home area
 
-#### Scenario: Dashboard reads home from the user store
+#### Scenario: Timetable reads home from the user store
 
-- **WHEN** the dashboard loads
+- **WHEN** the timetable loads
 - **THEN** the lane assignment logic SHALL read the home area from the user store
 - **AND** SHALL NOT fetch the user profile independently
 - **AND** SHALL NOT branch on authentication state to choose the source
@@ -46,11 +46,11 @@ the user store and SHALL NOT branch on authentication state.
 
 - **WHEN** a guest (unauthenticated) user selects their home area
 - **THEN** the user store SHALL store the selection in local storage
-- **AND** the dashboard and settings SHALL read the home area from the user
+- **AND** the timetable and settings SHALL read the home area from the user
   store's observable value (which stays reactive when the guest changes it)
 
-#### Scenario: Dashboard reloads data after authenticated home change
+#### Scenario: Timetable reloads data after authenticated home change
 
-- **WHEN** an authenticated user changes their home area via the home-area selector on the dashboard
-- **THEN** the dashboard SHALL reload concert data after the home update completes
+- **WHEN** an authenticated user changes their home area via the home-area selector on the timetable
+- **THEN** the timetable SHALL reload concert data after the home update completes
 - **AND** the reloaded data SHALL reflect the new lane classification based on the updated home

@@ -18,7 +18,7 @@ The fan web app SHALL model onboarding as a single persisted yes/no state, not a
 ```mermaid
 stateDiagram-v2
     [*] --> onboarding
-    onboarding --> completed : meaningful dashboard arrival OR sign-in / sign-up
+    onboarding --> completed : meaningful timetable arrival OR sign-in / sign-up
     completed --> [*]
 ```
 
@@ -27,9 +27,9 @@ stateDiagram-v2
 - **WHEN** a user opens the app for the first time on a device with no stored onboarding state
 - **THEN** the fan SHALL be in onboarding
 
-#### Scenario: Completion latches on first meaningful dashboard arrival
+#### Scenario: Completion latches on first meaningful timetable arrival
 
-- **WHEN** a fan in onboarding reaches the dashboard
+- **WHEN** a fan in onboarding reaches the timetable
 - **AND** the timetable is real (a home area is set and the concert data has loaded)
 - **AND** the fan follows at least one artist
 - **THEN** onboarding SHALL become completed
@@ -37,21 +37,21 @@ stateDiagram-v2
 
 #### Scenario: Completion latches after choosing the home area on arrival
 
-- **WHEN** a fan in onboarding who follows at least one artist reaches the dashboard without a home area
+- **WHEN** a fan in onboarding who follows at least one artist reaches the timetable without a home area
 - **AND** the fan chooses a home area in the home-area sheet
 - **AND** the timetable then loads, including when it loads from concert data already fetched earlier in the same session
 - **THEN** onboarding SHALL become completed exactly once
 
 #### Scenario: Latch is independent of whether the celebration is shown
 
-- **WHEN** a fan in onboarding reaches a meaningful first dashboard (home area set, data loaded, at least one followed artist)
+- **WHEN** a fan in onboarding reaches a meaningful first timetable (home area set, data loaded, at least one followed artist)
 - **AND** the light celebration is suppressed (it was already shown in an earlier session, or the timetable holds no concert)
 - **THEN** onboarding SHALL still become completed
 - **AND** the latch SHALL NOT be gated on the celebration overlay actually rendering
 
-#### Scenario: No latch for a zero-follow dashboard arrival
+#### Scenario: No latch for a zero-follow timetable arrival
 
-- **WHEN** a fan in onboarding with zero followed artists lands on the dashboard (e.g. via deep link, served the empty-state CTA)
+- **WHEN** a fan in onboarding with zero followed artists lands on the timetable (e.g. via deep link, served the empty-state CTA)
 - **THEN** onboarding SHALL NOT become completed
 - **AND** the fan SHALL stay in onboarding so the Discovery progress row and the page-help auto-open still apply until the fan follows an artist or signs in
 
@@ -64,5 +64,5 @@ stateDiagram-v2
 #### Scenario: Completion is one-way
 
 - **WHEN** onboarding is already completed
-- **AND** the user revisits the dashboard or any onboarding-relevant surface
+- **AND** the user revisits the timetable or any onboarding-relevant surface
 - **THEN** onboarding SHALL stay completed

@@ -35,7 +35,7 @@ Out of scope: the page-load LCP (≈ 4.4 s, app start and image fetch), which is
 
 ### Modified Capabilities
 
-<!-- To be decided in design: the bounds already live in components/infrastructure/fan/web/route/dashboard; this change may only implement them. -->
+<!-- To be decided in design: the bounds already live in components/infrastructure/fan/web/route/timetable; this change may only implement them. -->
 
 ## Impact
 

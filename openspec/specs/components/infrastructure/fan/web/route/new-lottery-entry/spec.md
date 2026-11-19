@@ -1,4 +1,4 @@
-# components/infrastructure/fan/web/route/lottery-entry Specification
+# components/infrastructure/fan/web/route/new-lottery-entry Specification
 
 ## Purpose
 The fan's lottery entry screen, where a fan picks a ticket count of one seat type (a TicketStock) in one Lottery sale, enters their 本人確認 (identity check) details and authorizes their card before confirming the LotteryEntry.
@@ -47,7 +47,7 @@ When the fan has given a full name and phone number before, the screen SHALL ope
 
 ### Requirement: The kept referral code goes with the entry
 
-When the screen authorizes the card with LotteryEntryService.AuthorizeCard, it SHALL send the referral code kept on the device by the Event page when the code has not expired and was kept for the Series of the entry's event, and SHALL send no code otherwise. Sending a code SHALL NOT change anything the fan sees. Confirming, failing or leaving the entry SHALL leave the kept code on the device.
+When the screen authorizes the card with LotteryEntryService.AuthorizeCard, it SHALL send the referral code kept on the device by the Concert page when the code has not expired and was kept for the Series of the entry's event, and SHALL send no code otherwise. Sending a code SHALL NOT change anything the fan sees. Confirming, failing or leaving the entry SHALL leave the kept code on the device.
 
 #### Scenario: Entry from a referral link
 - **WHEN** a fan who opened a link with `ref=member-a` for an event of XX Tour 2026 yesterday authorizes their card for a TicketStock of an event of XX Tour 2026

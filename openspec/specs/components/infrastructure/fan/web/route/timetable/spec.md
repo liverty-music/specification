@@ -1,97 +1,97 @@
-# Dashboard
+# Timetable
 
 ## Purpose
 
-Presents a fan's personalized view of upcoming concerts for followed artists, with filtering by artist, date, and ticket-journey status synchronized to the URL, concert detail views, and cached data loading with stale-data handling. Concerts of artists the fan does not follow are browsed in the All Nearby view on Discovery.
+Presents a fan's personalized view of upcoming concerts for followed artists, with filtering by artist, date, and ticket-journey status synchronized to the URL, concert detail views, and cached data loading with stale-data handling. Concerts of artists the fan does not follow are browsed in the Concerts view on Discovery.
 
 ## Requirements
 
 ### Requirement: Stale-data warning uses overlay pattern
-The dashboard stale-data warning SHALL render as a fixed-position overlay, consistent with the application's notification pattern (`toast-notification`, `error-banner`).
+The timetable stale-data warning SHALL render as a fixed-position overlay, consistent with the application's notification pattern (`toast-notification`, `error-banner`).
 
 #### Scenario: Stale banner appears as fixed overlay
-- **WHEN** the dashboard data reload fails and previous data exists (`isStale === true`)
+- **WHEN** the timetable data reload fails and previous data exists (`isStale === true`)
 - **THEN** the stale-data warning SHALL render as a `position: fixed` element at the top of the viewport
-- **AND** the warning SHALL NOT occupy a grid row in the dashboard layout
+- **AND** the warning SHALL NOT occupy a grid row in the timetable layout
 - **AND** the warning SHALL appear above page content but below top-layer elements (dialogs, popovers)
 
 #### Scenario: Stale banner does not affect scroll behavior
 - **WHEN** the stale-data warning is visible
-- **THEN** the `live-highway` scroll area SHALL occupy the full `main` grid area
+- **THEN** the `timetable-grid` scroll area SHALL occupy the full `main` grid area
 - **AND** scrolling the concert list SHALL NOT move the stale-data warning
 
 ---
 
 ### Requirement: Localized Concert Detail Sheet Copy
 
-The frontend SHALL render all user-facing text in the concert detail sheet via i18n keys under a dedicated `eventDetail.*` namespace, with parallel JA and EN translations in `frontend/src/locales/<locale>/translation.json`. No literal English (or any other language) text SHALL be embedded directly in the `event-detail-sheet.html` template.
+The frontend SHALL render all user-facing text in the concert sheet via i18n keys under a dedicated `concertSheet.*` namespace, with parallel JA and EN translations in `frontend/src/locales/<locale>/translation.json`. No literal English (or any other language) text SHALL be embedded directly in the `concert-sheet.html` template.
 
 #### Scenario: Static labels are i18n-keyed
 
-- **WHEN** the concert detail sheet renders any static label (date/time row prefix, action button text, ticket section heading, notification button)
-- **THEN** the label SHALL be sourced from an `eventDetail.*` i18n key
+- **WHEN** the concert sheet renders any static label (date/time row prefix, action button text, ticket section heading, notification button)
+- **THEN** the label SHALL be sourced from an `concertSheet.*` i18n key
 - **AND** the JA and EN translation files SHALL both contain a value for that key
 - **AND** the displayed string SHALL match the locale resolved by `@aurelia/i18n`
 
 #### Scenario: Required i18n keys
 
-- **WHEN** the concert detail sheet is implemented
-- **THEN** the following `eventDetail.*` keys SHALL be defined in both JA and EN translation files:
-  - `eventDetail.ariaLabel` — the sheet's `aria-label`
-  - `eventDetail.openStart` — the open/start time line with `{{open}}` and `{{start}}` interpolation placeholders. When the open time is unknown, the `{{open}}` slot SHALL be filled with the em-dash character `—` (U+2014) supplied directly by the component (locale-invariant; not routed through an i18n key).
-  - `eventDetail.openInGoogleMaps` — the Google Maps link label
-  - `eventDetail.ticketSection` — the ticket section heading (「チケット」)
-  - `eventDetail.notify.start`, `eventDetail.notify.next`, `eventDetail.notify.active` — the three labels of the ticket sale notification button
-  - `eventDetail.pushLine.*` — the push line of each status, in its push-on and push-off forms, and the guest's line
-  - `eventDetail.outOfRange.*` — the out-of-range notice, its buttons and its line after widening
-  - `eventDetail.viewOfficialInfo` — the official site button label (「公式サイトでチケットを見る」)
-  - `eventDetail.addToCalendar` — the add-to-calendar link label
+- **WHEN** the concert sheet is implemented
+- **THEN** the following `concertSheet.*` keys SHALL be defined in both JA and EN translation files:
+  - `concertSheet.ariaLabel` — the sheet's `aria-label`
+  - `concertSheet.openStart` — the open/start time line with `{{open}}` and `{{start}}` interpolation placeholders. When the open time is unknown, the `{{open}}` slot SHALL be filled with the em-dash character `—` (U+2014) supplied directly by the component (locale-invariant; not routed through an i18n key).
+  - `concertSheet.openInGoogleMaps` — the Google Maps link label
+  - `concertSheet.ticketSection` — the ticket section heading (「チケット」)
+  - `concertSheet.notify.start`, `concertSheet.notify.next`, `concertSheet.notify.active` — the three labels of the ticket sale notification button
+  - `concertSheet.pushLine.*` — the push line of each status, in its push-on and push-off forms, and the guest's line
+  - `concertSheet.outOfRange.*` — the out-of-range notice, its buttons and its line after widening
+  - `concertSheet.viewOfficialInfo` — the official site button label (「公式サイトでチケットを見る」)
+  - `concertSheet.addToCalendar` — the add-to-calendar link label
 
 #### Scenario: Journey status enum values are i18n-keyed
 
-- **WHEN** the concert detail sheet renders a `TicketJourneyStatus` value as a button label or as the currently-displayed status
-- **THEN** the surface form SHALL be sourced from a sub-namespace `eventDetail.journeyStatus.<value>` rather than the raw enum string
+- **WHEN** the concert sheet renders a `TicketJourneyStatus` value as a button label or as the currently-displayed status
+- **THEN** the surface form SHALL be sourced from a sub-namespace `concertSheet.journeyStatus.<value>` rather than the raw enum string
 - **AND** the JA and EN translation files SHALL both contain values for every supported `TicketJourneyStatus` value (currently `tracking`, `applied`, `lost`, `unpaid`, `paid`)
 - **AND** the raw enum string SHALL NOT appear in the rendered UI
 
 #### Scenario: Adding a new TicketJourneyStatus value
 
 - **WHEN** a new value is added to the `TicketJourneyStatus` type
-- **THEN** the change SHALL add a corresponding `eventDetail.journeyStatus.<newValue>` entry to both the JA and EN translation files
+- **THEN** the change SHALL add a corresponding `concertSheet.journeyStatus.<newValue>` entry to both the JA and EN translation files
 - **AND** the absence of either locale value SHALL be a defect
 
-### Requirement: Deep-link auto-open of a concert detail sheet
+### Requirement: Deep-link auto-open of a concert sheet
 
-When the dashboard loads at the `/concerts/:id` route (for example, from a tapped push notification), it SHALL automatically open the detail sheet for concert `:id` once the authoritative concert list has resolved, and SHALL derive the dashboard's artist filter from that concert. This reuses the existing `/concerts/:id` URL that the detail sheet already writes on manual open, so a deep-link and a manual card tap converge on the same URL and the same state.
+When the timetable loads at the `/concerts/:id` route (for example, from a tapped push notification), it SHALL automatically open the detail sheet for concert `:id` once the authoritative concert list has resolved, and SHALL derive the timetable's artist filter from that concert. This reuses the existing `/concerts/:id` URL that the detail sheet already writes on manual open, so a deep-link and a manual card tap converge on the same URL and the same state.
 
-The auto-open SHALL resolve the concert against the authoritative `listByFollower` fetch that the dashboard already performs — NOT against a cache first-paint, and without any additional get-by-id RPC, timer, or optimistic pre-open. When the concert is absent from the resolved list (for example, the recipient unfollowed the artist after the notification was sent, or the concert carries an invalid date / unresolved performer), the dashboard SHALL degrade gracefully: apply the artist filter if derivable and leave the sheet closed, never surfacing an error.
+The auto-open SHALL resolve the concert against the authoritative `listByFollower` fetch that the timetable already performs — NOT against a cache first-paint, and without any additional get-by-id RPC, timer, or optimistic pre-open. When the concert is absent from the resolved list (for example, the recipient unfollowed the artist after the notification was sent, or the concert carries an invalid date / unresolved performer), the timetable SHALL degrade gracefully: apply the artist filter if derivable and leave the sheet closed, never surfacing an error.
 
 #### Scenario: Deep-link opens the concert after the authoritative fetch resolves
 
-- **WHEN** the dashboard loads at `/concerts/<concertId>` and the `listByFollower` fetch resolves with a concert whose id is `<concertId>`
+- **WHEN** the timetable loads at `/concerts/<concertId>` and the `listByFollower` fetch resolves with a concert whose id is `<concertId>`
 - **THEN** the system SHALL open that concert's detail sheet
 - **AND** the sheet SHALL NOT be opened from a stale cache first-paint before the authoritative fetch resolves
 
 #### Scenario: Deep-link derives the artist filter from the opened concert
 
-- **WHEN** a concert detail sheet is auto-opened from a `/concerts/:id` deep-link
-- **THEN** the dashboard's `filteredArtistIds` SHALL be set to `[concert.artistId]` so only that artist's concerts remain behind the sheet
+- **WHEN** a concert sheet is auto-opened from a `/concerts/:id` deep-link
+- **THEN** the timetable's `filteredArtistIds` SHALL be set to `[concert.artistId]` so only that artist's concerts remain behind the sheet
 
-#### Scenario: Closing the deep-linked sheet does not reload the dashboard
+#### Scenario: Closing the deep-linked sheet does not reload the timetable
 
 - **WHEN** the fan closes a detail sheet that was auto-opened from a `/concerts/:id` deep-link
 - **THEN** the URL SHALL revert via `history.replaceState` without triggering router navigation
-- **AND** the dashboard already mounted behind the sheet SHALL be revealed without a re-fetch
+- **AND** the timetable already mounted behind the sheet SHALL be revealed without a re-fetch
 
 #### Scenario: Target concert absent degrades to filter-only
 
-- **WHEN** the dashboard loads at `/concerts/<concertId>` but the resolved `listByFollower` result contains no concert with id `<concertId>`
+- **WHEN** the timetable loads at `/concerts/<concertId>` but the resolved `listByFollower` result contains no concert with id `<concertId>`
 - **THEN** the system SHALL NOT open a detail sheet
 - **AND** SHALL NOT surface an error
 - **AND** SHALL apply the artist filter only when the artist is still derivable
 
 ### Requirement: URL-driven artist filter
-The dashboard SHALL accept an `artists` query parameter containing one or more artist IDs (comma-separated UUIDs). When present, only concerts belonging to the listed artists SHALL be displayed. When absent or empty, all followed-artist concerts SHALL be displayed as normal.
+The timetable SHALL accept an `artists` query parameter containing one or more artist IDs (comma-separated UUIDs). When present, only concerts belonging to the listed artists SHALL be displayed. When absent or empty, all followed-artist concerts SHALL be displayed as normal.
 
 #### Scenario: Single artist filter from URL
 - **WHEN** the user navigates to `/dashboard?artists=<artistId>`
@@ -114,7 +114,7 @@ The dashboard SHALL accept an `artists` query parameter containing one or more a
 - **THEN** the empty-state placeholder SHALL be displayed (same as the no-concerts state)
 
 ### Requirement: Filter state synchronised with URL
-When the user changes the active filter via the UI, the dashboard URL SHALL be updated to reflect the new filter state without triggering a full page reload.
+When the user changes the active filter via the UI, the timetable URL SHALL be updated to reflect the new filter state without triggering a full page reload.
 
 #### Scenario: User adds an artist to the filter
 - **WHEN** the user selects an artist in the filter bottom sheet and confirms
@@ -126,15 +126,15 @@ When the user changes the active filter via the UI, the dashboard URL SHALL be u
 - **THEN** the `artists` query param SHALL be re-parsed from the URL
 - **THEN** the same filtered view SHALL be restored
 
-### Requirement: Push notification deep-link to filtered dashboard
+### Requirement: Push notification deep-link to filtered timetable
 
-Tapping a new-concert push notification SHALL open the deep-linked concert's detail sheet on the dashboard, with the dashboard filtered to that concert's artist. The notification carries a `/concerts/<concertId>` URL (see the `concert-detail` deep-link auto-open requirement). The artist filter SHALL be **derived from the opened concert** (`filteredArtistIds = [concert.artistId]`), not carried as a `?artists=` query parameter in the notification URL.
+Tapping a new-concert push notification SHALL open the deep-linked concert's detail sheet on the timetable, with the timetable filtered to that concert's artist. The notification carries a `/concerts/<concertId>` URL (see the `concert-detail` deep-link auto-open requirement). The artist filter SHALL be **derived from the opened concert** (`filteredArtistIds = [concert.artistId]`), not carried as a `?artists=` query parameter in the notification URL.
 
 #### Scenario: Notification tap opens the concert filtered to its artist
 
 - **WHEN** a push notification with `data.url = "/concerts/<concertId>"` is tapped
 - **THEN** the browser SHALL navigate to `/concerts/<concertId>`
-- **AND** the dashboard SHALL derive the artist filter from the opened concert so only that artist's concerts remain behind the sheet
+- **AND** the timetable SHALL derive the artist filter from the opened concert so only that artist's concerts remain behind the sheet
 
 #### Scenario: Deep-link auto-open suppressed during onboarding
 
@@ -145,14 +145,14 @@ Tapping a new-concert push notification SHALL open the deep-linked concert's det
 ### Requirement: Filter availability for guest users
 
 The filter SHALL be available to unauthenticated (guest) users, who can follow
-artists locally, via the FAB action launcher's filter item and the artist facet in
+artists locally, via the action menu's filter item and the artist facet in
 the sheet. The filter SHALL NOT be gated by authentication; only the onboarding flow
 suppresses it (the filter item is not contributed to the launcher during onboarding).
 
 #### Scenario: Guest sees the filter trigger and artist facet
 
-- **WHEN** an unauthenticated (guest) user who has followed at least one artist views the dashboard outside of onboarding
-- **THEN** the FAB action launcher SHALL include the filter item
+- **WHEN** an unauthenticated (guest) user who has followed at least one artist views the timetable outside of onboarding
+- **THEN** the action menu SHALL include the filter item
 - **AND** activating it SHALL present the artist facet with that guest's followed artists
 
 #### Scenario: Filter still suppressed during onboarding
@@ -161,52 +161,52 @@ suppresses it (the filter item is not contributed to the launcher during onboard
 - **THEN** the filter item SHALL NOT be contributed to the launcher
 
 ### Requirement: ListFollowed results are cached in memory for the session
-The app SHALL cache the result of `ConcertService.ListFollowed` in memory for the duration of the session, using the shared caching mechanism used by other stores rather than bespoke per-store logic. The cache SHALL use a `staleTime` of 24 hours. While the cached value is within `staleTime`, the dashboard SHALL be served the cached value without issuing an RPC, including when the fan navigates back to Dashboard from another screen. The cached value SHALL be refreshed only by these triggers: the cached value passing `staleTime`, the installed PWA returning to the foreground, and the invalidation on follow described in "Concert cache is invalidated on follow". Because the cache lives in memory, restarting the app SHALL discard it, so the first Dashboard load after a restart calls `ConcertService.ListFollowed`.
+The app SHALL cache the result of `ConcertService.ListFollowed` in memory for the duration of the session, using the shared caching mechanism used by other stores rather than bespoke per-store logic. The cache SHALL use a `staleTime` of 24 hours. While the cached value is within `staleTime`, the timetable SHALL be served the cached value without issuing an RPC, including when the fan navigates back to Timetable from another screen. The cached value SHALL be refreshed only by these triggers: the cached value passing `staleTime`, the installed PWA returning to the foreground, and the invalidation on follow described in "Concert cache is invalidated on follow". Because the cache lives in memory, restarting the app SHALL discard it, so the first Timetable load after a restart calls `ConcertService.ListFollowed`.
 
-#### Scenario: Cache hit on Dashboard re-entry
-- **WHEN** the user navigates to Dashboard a second time within 24 hours without having followed or unfollowed any artists
+#### Scenario: Cache hit on Timetable re-entry
+- **WHEN** the user navigates to Timetable a second time within 24 hours without having followed or unfollowed any artists
 - **THEN** the cached `ConcertService.ListFollowed` result SHALL be returned immediately without blocking on an RPC
 - **AND** `ConcertService.ListFollowed` SHALL NOT be called
 
 #### Scenario: Cache miss on first load
-- **WHEN** the dashboard needs the followed artists' concerts and no cached value exists
+- **WHEN** the timetable needs the followed artists' concerts and no cached value exists
 - **THEN** `ConcertService.ListFollowed` SHALL be called and the result SHALL be stored in the cache with the current timestamp
 
 #### Scenario: Cache expiry after 24 hours
-- **WHEN** the dashboard needs the followed artists' concerts more than 24 hours after the cache was last populated
+- **WHEN** the timetable needs the followed artists' concerts more than 24 hours after the cache was last populated
 - **THEN** the cached value SHALL be served immediately and `ConcertService.ListFollowed` SHALL be called in the background to refresh the cache
 
 #### Scenario: Revalidation on PWA resume
-- **WHEN** the installed PWA returns to the foreground on the Dashboard after being backgrounded
+- **WHEN** the installed PWA returns to the foreground on the Timetable after being backgrounded
 - **THEN** the app SHALL revalidate the `ConcertService.ListFollowed` result in the background, even when the cached value is within 24 hours
 - **AND** the refreshed value SHALL replace the cached value in place without a full document reload
 
 ### Requirement: Concert cache is invalidated on follow
-A successful `FollowService.Follow`, `FollowService.Unfollow` or `FollowService.SetHype` SHALL invalidate the cached `ConcertService.ListFollowed` result, so the next dashboard load fetches fresh concert data. The invalidation SHALL NOT occur when the mutation RPC fails.
+A successful `FollowService.Follow`, `FollowService.Unfollow` or `FollowService.SetHype` SHALL invalidate the cached `ConcertService.ListFollowed` result, so the next timetable load fetches fresh concert data. The invalidation SHALL NOT occur when the mutation RPC fails.
 
 #### Scenario: Cache invalidated after follow
 - **WHEN** the user successfully follows or unfollows an artist, or changes an artist's hype
 - **THEN** the cached `ConcertService.ListFollowed` result SHALL be invalidated
-- **AND** the next dashboard load SHALL call `ConcertService.ListFollowed`
+- **AND** the next timetable load SHALL call `ConcertService.ListFollowed`
 
 #### Scenario: Cache not invalidated on follow RPC failure
 - **WHEN** the `FollowService.Follow`, `Unfollow` or `SetHype` call fails with an error
 - **THEN** the cached `ConcertService.ListFollowed` result SHALL remain valid
 
-### Requirement: FollowService.List provides hype data on every dashboard load
-Every dashboard load SHALL call `FollowService.List` to retrieve per-artist hype levels, which are not stored in the in-memory list of followed artists.
+### Requirement: FollowService.List provides hype data on every timetable load
+Every timetable load SHALL call `FollowService.List` to retrieve per-artist hype levels, which are not stored in the in-memory list of followed artists.
 
 #### Scenario: Follow state already in memory
-- **WHEN** the dashboard loads and the in-memory list of followed artists already has entries
+- **WHEN** the timetable loads and the in-memory list of followed artists already has entries
 - **THEN** `FollowService.List` SHALL still be called to retrieve current hype levels
 
 #### Scenario: Follow state not yet loaded
-- **WHEN** the dashboard loads and the in-memory list of followed artists is empty
+- **WHEN** the timetable loads and the in-memory list of followed artists is empty
 - **THEN** `FollowService.List` SHALL be called to populate the state and retrieve hype levels
 
 ### Requirement: Default today-onward timetable
 
-The dashboard "My Timetable" SHALL, by default, display only concerts whose date is on or after the current local date. The "today" boundary SHALL be anchored to the client's local date, and the dashboard SHALL request the timetable by passing that date as the `from` argument to `ConcertService.ListFollowed`.
+The timetable "My Timetable" SHALL, by default, display only concerts whose date is on or after the current local date. The "today" boundary SHALL be anchored to the client's local date, and the timetable SHALL request the timetable by passing that date as the `from` argument to `ConcertService.ListFollowed`.
 
 #### Scenario: Fresh load defaults to today onward
 
@@ -223,7 +223,7 @@ The dashboard "My Timetable" SHALL, by default, display only concerts whose date
 
 ### Requirement: URL-driven date filter
 
-The dashboard SHALL accept a date query parameter (e.g. `from`) containing a single calendar date. When present, the timetable SHALL display concerts on or after that date, including past concerts when the date precedes today. When absent, the timetable SHALL behave as the default today-onward view.
+The timetable SHALL accept a date query parameter (e.g. `from`) containing a single calendar date. When present, the timetable SHALL display concerts on or after that date, including past concerts when the date precedes today. When absent, the timetable SHALL behave as the default today-onward view.
 
 #### Scenario: Past date from URL
 
@@ -255,7 +255,7 @@ The filter bottom sheet SHALL include a date facet presented as a collapsed affo
 
 - **WHEN** the user picks a date earlier than today in the date field and taps confirm
 - **THEN** the bottom sheet SHALL close
-- **AND** the dashboard URL SHALL update to carry the chosen date without a full page reload
+- **AND** the timetable URL SHALL update to carry the chosen date without a full page reload
 - **AND** the timetable SHALL re-fetch via `ConcertService.ListFollowed` with `from` set to the chosen date and display the past-inclusive result
 
 #### Scenario: Collapsing back to today onward
@@ -281,7 +281,7 @@ The active date filter SHALL survive a page reload and be shareable via the URL,
 - **AND** the same past-inclusive timetable SHALL be restored
 
 ### Requirement: URL-driven journey filter
-The dashboard SHALL accept a `journey` query parameter containing one or more ticket-journey status values (comma-separated, from `tracking`, `applied`, `unpaid`, `paid`, `lost`). When present, only concerts whose `journeyStatus` is in the listed set SHALL be displayed. When absent or empty, concerts SHALL NOT be constrained by journey status.
+The timetable SHALL accept a `journey` query parameter containing one or more ticket-journey status values (comma-separated, from `tracking`, `applied`, `unpaid`, `paid`, `lost`). When present, only concerts whose `journeyStatus` is in the listed set SHALL be displayed. When absent or empty, concerts SHALL NOT be constrained by journey status.
 
 #### Scenario: Single status filter from URL
 - **WHEN** the user navigates to `/dashboard?journey=unpaid`
@@ -325,7 +325,7 @@ When both the artist filter and the journey filter are active, a concert SHALL b
 - **THEN** all of artist A's concerts SHALL be shown regardless of journey status
 
 ### Requirement: Journey filter state synchronised with URL
-When the user changes the journey filter via the UI, the dashboard URL SHALL be updated to reflect the new state without a full page reload, and the artist and journey parameters SHALL be written together in a single URL update.
+When the user changes the journey filter via the UI, the timetable URL SHALL be updated to reflect the new state without a full page reload, and the artist and journey parameters SHALL be written together in a single URL update.
 
 #### Scenario: User changes the journey filter
 - **WHEN** the user selects journey statuses in the filter sheet and confirms
@@ -340,8 +340,8 @@ When the user changes the journey filter via the UI, the dashboard URL SHALL be 
 - **WHEN** the user reloads the page while a journey filter is active
 - **THEN** the `journey` query param SHALL be re-parsed from the URL and the same filtered view SHALL be restored
 
-### Requirement: Dashboard service groups concerts by date
-The `DashboardService.loadDashboardEvents` method SHALL fetch followed artists, retrieve concerts for each artist in parallel, convert them to `LiveEvent` objects, and group them by date.
+### Requirement: Timetable service groups concerts by date
+The `TimetableService.loadTimetableEvents` method SHALL fetch followed artists, retrieve concerts for each artist in parallel, convert them to `LiveEvent` objects, and group them by date.
 
 #### Scenario: Multiple artists with concerts
 - **WHEN** the user follows 2 artists and each has concerts on different dates
@@ -349,14 +349,14 @@ The `DashboardService.loadDashboardEvents` method SHALL fetch followed artists, 
 
 #### Scenario: No followed artists
 - **WHEN** the user follows no artists
-- **THEN** `loadDashboardEvents` SHALL return an empty `DateGroup[]`
+- **THEN** `loadTimetableEvents` SHALL return an empty `DateGroup[]`
 
 #### Scenario: RPC call failure for one artist
 - **WHEN** concert fetching fails for one artist but succeeds for another
 - **THEN** the service SHALL return events from the successful artist (using `Promise.allSettled` resilience)
 
-### Requirement: Dashboard route manages stale data on reload failure
-The `Dashboard` route SHALL preserve existing data and mark it as stale when a data reload fails.
+### Requirement: Timetable route manages stale data on reload failure
+The `Timetable` route SHALL preserve existing data and mark it as stale when a data reload fails.
 
 #### Scenario: Successful data load
 - **WHEN** `loadData` succeeds
@@ -382,7 +382,7 @@ removed when content resolves, and SHALL not introduce layout shift when replace
 
 #### Scenario: Content region shows a skeleton while loading
 
-- **WHEN** a screen (e.g. the dashboard) is loading its primary content
+- **WHEN** a screen (e.g. the timetable) is loading its primary content
 - **THEN** it renders a skeleton matching the content's layout instead of a text-only loading state
 
 #### Scenario: No layout shift on resolve
@@ -402,7 +402,7 @@ status to its display label, icon, and semantic hue token; every component
 that renders a journey status SHALL derive its label, icon, and hue from this
 map rather than defining them inline. The map SHALL include an entry for each
 of `tracking`, `applied`, `unpaid`, `paid`, and `lost`, each providing a label
-(via the existing `eventDetail.journeyStatus.*` i18n key), an icon, and a hue
+(via the existing `concertSheet.journeyStatus.*` i18n key), an icon, and a hue
 token: icons SHALL be `tracking` 🔔, `applied` 📝, `unpaid` 💰, `paid` 🎟️,
 `lost` 💔 (🔔 because Tracking is the fan's request for ticket sale
 notifications, and 👀 already marks the Watch hype level, which pushes nothing); hues SHALL be the shared journey-hue token for that status —
@@ -411,20 +411,20 @@ red. The icon is the primary, always-present cue and SHALL be sufficient to
 distinguish the status on its own; the text label and the hue MAY both be
 omitted on compact surfaces (such as the concert-card badge) where the icon
 alone carries the status. Where a text label is shown, it SHALL be sourced
-from the canonical `eventDetail.journeyStatus.*` i18n key. A journey status
+from the canonical `concertSheet.journeyStatus.*` i18n key. A journey status
 rendered as an emoji without a visible text label SHALL carry a role that
 permits an accessible name (e.g. `role="img"`) together with the canonical
 label as that name (e.g. via `aria-label`); the canonical label SHALL NOT be
 exposed via `aria-label` on a bare element with an implicit `generic` role,
 since user agents do not reliably announce a name on such elements. A given
 journey status SHALL render with a consistent identity wherever it appears —
-the dashboard filter chips, the concert-card journey badge, and the
-status row of the concert detail sheet: the icon SHALL be the same across all
+the timetable filter chips, the concert-card journey badge, and the
+status row of the concert sheet: the icon SHALL be the same across all
 surfaces, and the hue and visible text label SHALL appear on the filter chips
 and the status row (both MAY be omitted on the concert-card badge, which
 renders the icon alone). Tracking has no button in that row: its control on
 the sheet is the ticket sale notification button, which shows the canonical
-icon 🔔 with its own labels (`eventDetail.notify.*`) and the section's button
+icon 🔔 with its own labels (`concertSheet.notify.*`) and the section's button
 style instead of the canonical label and hue.
 
 #### Scenario: Single source of truth
@@ -435,7 +435,7 @@ style instead of the canonical label and hue.
 #### Scenario: Map covers every status
 - **WHEN** the canonical map is defined
 - **THEN** it SHALL include an entry for each of `tracking`, `applied`, `unpaid`, `paid`, and `lost`
-- **AND** each entry SHALL provide a label (via the existing `eventDetail.journeyStatus.*` i18n key), an icon, and a hue token
+- **AND** each entry SHALL provide a label (via the existing `concertSheet.journeyStatus.*` i18n key), an icon, and a hue token
 
 #### Scenario: Icon per status
 - **WHEN** a journey status is rendered
@@ -448,7 +448,7 @@ style instead of the canonical label and hue.
 #### Scenario: Meaning survives without colour
 - **WHEN** any journey status is rendered
 - **THEN** it SHALL present its icon, so the status is distinguishable without relying on colour alone
-- **AND** where a text label is shown, the label SHALL be sourced from the canonical `eventDetail.journeyStatus.*` i18n key
+- **AND** where a text label is shown, the label SHALL be sourced from the canonical `concertSheet.journeyStatus.*` i18n key
 
 #### Scenario: Icon-only rendering retains an accessible name
 - **WHEN** a journey status is rendered as an emoji without a visible text label
@@ -460,13 +460,13 @@ style instead of the canonical label and hue.
 - **THEN** all three SHALL show the same icon sourced from the canonical map
 - **AND** the filter chip and the status-row button SHALL show the same text label and hue sourced from the canonical map
 - **AND** the card badge MAY show the icon alone, without the text label or hue background
-- **AND** for Tracking, the filter chip and the card badge SHALL show 🔔 from the canonical map, and the detail sheet's notification button SHALL show 🔔 with its `eventDetail.notify.*` label
+- **AND** for Tracking, the filter chip and the card badge SHALL show 🔔 from the canonical map, and the detail sheet's notification button SHALL show 🔔 with its `concertSheet.notify.*` label
 
 ### Requirement: Data-ready side effects gate on observed data arrival
-Side effects that must only run once a route's data is genuinely present (e.g. the Dashboard post-signup/guest celebration and the onboarding-completion latch) SHALL be triggered by observing the arrival of that data, NOT by relying on the router having awaited the fetch before the view attaches. Every arrival of the timetable SHALL count as an arrival, including one served from concert data already fetched earlier in the same session.
+Side effects that must only run once a route's data is genuinely present (e.g. the Timetable post-signup/guest celebration and the onboarding-completion latch) SHALL be triggered by observing the arrival of that data, NOT by relying on the router having awaited the fetch before the view attaches. Every arrival of the timetable SHALL count as an arrival, including one served from concert data already fetched earlier in the same session.
 
 #### Scenario: Celebration fires only once the timetable is real
-- **WHEN** the Dashboard loads data non-blocking and the data arrives after the view has attached
+- **WHEN** the Timetable loads data non-blocking and the data arrives after the view has attached
 - **THEN** the celebration decision SHALL be evaluated when the loaded data is observed to be present
 - **AND** the celebration SHALL NOT be presented over a still-loading (spinner) timetable
 
@@ -476,17 +476,17 @@ Side effects that must only run once a route's data is genuinely present (e.g. t
 - **AND** it SHALL NOT short-circuit on not-yet-loaded state when the route attaches
 
 #### Scenario: Home area chosen on arrival, timetable served from session data
-- **WHEN** a guest in onboarding who follows at least one artist arrives at the Dashboard without a home area
+- **WHEN** a guest in onboarding who follows at least one artist arrives at the Timetable without a home area
 - **AND** the guest chooses a home area in the home-area sheet
 - **AND** the timetable then appears from concert data already fetched earlier in the same session
 - **THEN** the celebration decision SHALL be evaluated exactly once
 - **AND** the onboarding-completion latch SHALL be evaluated exactly once
 
-### Requirement: Dashboard uses semantic HTML structure
-The dashboard route SHALL use semantic HTML elements instead of generic `<div>` elements for its concert timeline layout.
+### Requirement: Timetable uses semantic HTML structure
+The timetable route SHALL use semantic HTML elements instead of generic `<div>` elements for its concert timeline layout.
 
 #### Scenario: Date groups rendered as ordered list
-- **WHEN** the dashboard displays concert date groups
+- **WHEN** the timetable displays concert date groups
 - **THEN** date groups SHALL be rendered as `<ol>` with `<li>` elements
 - **AND** date labels SHALL use `<time>` elements
 
@@ -499,29 +499,29 @@ The dashboard route SHALL use semantic HTML elements instead of generic `<div>` 
 - **THEN** the lane SHALL display a dash placeholder using CSS `:empty` pseudo-element (or `[data-empty]` attribute fallback)
 - **AND** no conditional template markup SHALL be used for the empty state
 
-### Requirement: Signup Banner on Dashboard
+### Requirement: Signup Banner on Timetable
 
-The Dashboard page SHALL display a persistent fixed banner above the bottom navigation bar prompting unauthenticated users to sign up.
+The Timetable page SHALL display a persistent fixed banner above the bottom navigation bar prompting unauthenticated users to sign up.
 
-#### Scenario: Banner appears on dashboard for unauthenticated users
+#### Scenario: Banner appears on timetable for unauthenticated users
 
-- **WHEN** an unauthenticated user views the Dashboard
+- **WHEN** an unauthenticated user views the Timetable
 - **AND** the user has completed onboarding (onboardingStep >= 7) or has dismissed the notification dialog
 - **THEN** the system SHALL display the signup-prompt-banner
 
 #### Scenario: Banner not shown during onboarding steps 1-4
 
 - **WHEN** the user is at onboarding steps 1 through 4
-- **THEN** the dashboard signup banner SHALL NOT be rendered
+- **THEN** the timetable signup banner SHALL NOT be rendered
 
-#### Scenario: Banner not shown for authenticated users on dashboard
+#### Scenario: Banner not shown for authenticated users on timetable
 
-- **WHEN** an authenticated user views the Dashboard
+- **WHEN** an authenticated user views the Timetable
 - **THEN** the signup banner SHALL NOT be rendered
 
 ### Requirement: Concert cards show the fan's journey status
 
-Each discovered concert's card on the Dashboard SHALL show a badge with the fan's ticket journey status for that concert, and no badge when the fan has none. Each first-party concert's card SHALL instead show a purchased badge when the signed-in fan holds at least one Issued Ticket for it, and no badge otherwise; the fan's journey status is not shown on a first-party card. A guest sees no badges, as the story stories/track-ticket-journey states. When the fan's journey statuses or tickets cannot be loaded, the Dashboard SHALL still show the concerts, without the badges that depend on them and without an error message.
+Each discovered concert's card on the Timetable SHALL show a badge with the fan's ticket journey status for that concert, and no badge when the fan has none. Each first-party concert's card SHALL instead show a purchased badge when the signed-in fan holds at least one Issued Ticket for it, and no badge otherwise; the fan's journey status is not shown on a first-party card. A guest sees no badges, as the story stories/track-ticket-journey states. When the fan's journey statuses or tickets cannot be loaded, the Timetable SHALL still show the concerts, without the badges that depend on them and without an error message.
 
 #### Scenario: Tracked concert
 
@@ -564,7 +564,7 @@ A concert card SHALL be highlighted when the fan's hype level for its artist mat
 
 ### Requirement: Timetable rendering cost is bounded and must not dominate the main thread
 
-Displaying the dashboard timetable — on first navigation and on tab-switch
+Displaying the timetable — on first navigation and on tab-switch
 re-entry — SHALL cost main-thread time bounded by the dates in view, not by the
 number of loaded dates. This covers both building the timetable (creating and
 binding the date groups and cards) and the browser's style, layout and paint
@@ -578,16 +578,16 @@ pre-change baseline, on an account whose timetable holds at least 200 dates.
 
 #### Scenario: Tab-switch re-entry does not freeze on rendering
 
-- **WHEN** an authenticated fan with a populated timetable taps the dashboard
+- **WHEN** an authenticated fan with a populated timetable taps the timetable
   navigation tab from another tab
 - **THEN** the tap's Interaction to Next Paint (INP), measured on the reference
   profile, SHALL be at most 200 ms
 - **AND** the timetable content SHALL appear in that same next paint, with no
   skeleton shown in between
 
-#### Scenario: First dashboard load render cost is reduced
+#### Scenario: First timetable load render cost is reduced
 
-- **WHEN** an authenticated fan with a populated timetable loads the dashboard
+- **WHEN** an authenticated fan with a populated timetable loads the timetable
 - **THEN** the main-thread time to render the timetable once its data arrives,
   measured on the reference profile, SHALL be at most 200 ms
 
@@ -615,7 +615,7 @@ a perpetual per-frame style/paint invalidation.
 
 #### Scenario: Idle timetable does no continuous rendering work
 
-- **WHEN** the dashboard timetable is displayed and the fan is not interacting with
+- **WHEN** the timetable is displayed and the fan is not interacting with
   it
 - **THEN** over a 3-second idle capture on the reference profile, the Recalculate
   Style and Layout self-time attributable to card visuals is negligible (no ongoing
@@ -629,7 +629,7 @@ a perpetual per-frame style/paint invalidation.
 
 ### Requirement: The timetable frame paints without data
 
-The dashboard timetable's data-independent structure — the stage header naming
+The timetable's data-independent structure — the stage header naming
 the lanes, and the lane columns themselves — SHALL be painted as soon as the
 route's view attaches, before any concert data is available. While data is
 pending the view SHALL present a placeholder shaped like the timetable, and it
@@ -640,7 +640,7 @@ rendered group count alone, which cannot distinguish "not yet assigned" from
 
 #### Scenario: Frame appears before any concert data
 
-- **WHEN** a fan navigates to the dashboard and the concert data has not arrived
+- **WHEN** a fan navigates to the timetable and the concert data has not arrived
 - **THEN** the stage header and lane columns SHALL be visible
 - **AND** a timetable-shaped loading placeholder SHALL occupy the lanes
 - **AND** neither the "no concerts" empty state nor the guest empty state SHALL
@@ -684,7 +684,7 @@ later date rather than fail.
 
 ### Requirement: Page identity paints independent of the timetable render
 
-On dashboard tab-switch re-entry, the page identity — the shell header title and
+On timetable tab-switch re-entry, the page identity — the shell header title and
 the active bottom-nav tab — SHALL NOT be held back by an unbounded timetable
 render. The re-entry render SHALL be bounded by the rendered window, so that page
 identity and the restored timetable appear in the tap's next paint within the
@@ -696,7 +696,7 @@ celebration/onboarding latch, or an in-flight deep-link resolution.
 #### Scenario: Header and nav switch before the timetable renders
 
 - **WHEN** an authenticated fan with a populated, previously-cached timetable taps
-  the dashboard navigation tab from another tab
+  the timetable navigation tab from another tab
 - **THEN** the header title, the active tab and the restored timetable SHALL
   appear in the tap's next paint, with the tap's Interaction to Next Paint at
   most 200 ms on the reference profile
@@ -758,30 +758,30 @@ the stage header SHALL hold for every group.
 - **WHEN** any date group is built, including one added while scrolling
 - **THEN** its lane columns SHALL align with the stage header's columns
 
-### Requirement: Closing the detail sheet keeps the dashboard's filters in the URL
+### Requirement: Closing the detail sheet keeps the timetable's filters in the URL
 
-When the concert detail sheet closes by the sheet's own means (light dismiss or swipe down), the URL SHALL return to the dashboard URL the fan was on when the sheet opened, query parameters included, so the URL always restores the timetable the fan is looking at. A sheet auto-opened from a `/concerts/:id` deep-link SHALL close to the dashboard URL carrying the artist filter the deep-link derived. Closing SHALL still revert the URL via `history.replaceState` without triggering router navigation, and closing by the browser back button SHALL remain the browser's own navigation.
+When the concert sheet closes by the sheet's own means (light dismiss or swipe down), the URL SHALL return to the timetable URL the fan was on when the sheet opened, query parameters included, so the URL always restores the timetable the fan is looking at. A sheet auto-opened from a `/concerts/:id` deep-link SHALL close to the timetable URL carrying the artist filter the deep-link derived. Closing SHALL still revert the URL via `history.replaceState` without triggering router navigation, and closing by the browser back button SHALL remain the browser's own navigation.
 
 #### Scenario: Closing keeps the active filters in the URL
 
-- **WHEN** the detail sheet is opened while the dashboard is filtered (for example `/dashboard?artists=<id>`, a journey facet or a `from` date)
+- **WHEN** the detail sheet is opened while the timetable is filtered (for example `/dashboard?artists=<id>`, a journey facet or a `from` date)
 - **AND** the fan closes the sheet by light dismiss or swipe down
-- **THEN** the URL SHALL be that same filtered dashboard URL, query parameters included
+- **THEN** the URL SHALL be that same filtered timetable URL, query parameters included
 - **AND** reloading that URL SHALL show the same filtered timetable the fan was looking at
 
-#### Scenario: Closing a deep-linked sheet returns to the filtered dashboard URL
+#### Scenario: Closing a deep-linked sheet returns to the filtered timetable URL
 
 - **WHEN** the fan closes a detail sheet that was auto-opened from a `/concerts/:id` deep-link
 - **THEN** the URL SHALL be `/dashboard?artists=<concert.artistId>`, the filter the deep-link derived
 - **AND** reloading that URL SHALL show the same filtered timetable
 
-### Requirement: Concert detail sheet
+### Requirement: Concert sheet
 
-The system SHALL provide a detail view for a selected discovered concert using a popover-based sheet (not a modal dialog), ensuring compatibility with coach mark overlays in the top layer. A first-party concert (one whose Series belongs to an Organizer) SHALL NOT open the sheet; tapping its card opens its Event page instead (see "Dashboard routes event selection and shows its loading states").
+The system SHALL provide a detail view for a selected discovered concert using a popover-based sheet (not a modal dialog), ensuring compatibility with coach mark overlays in the top layer. A first-party concert (one whose Series belongs to an Organizer) SHALL NOT open the sheet; tapping its card opens its Concert page instead (see "Timetable routes event selection and shows its loading states").
 
-#### Scenario: Open detail from dashboard
+#### Scenario: Open detail from timetable
 
-- **WHEN** a user taps a discovered concert's card on the dashboard
+- **WHEN** a user taps a discovered concert's card on the timetable
 - **THEN** the system SHALL open a bottom sheet displaying the concert detail
 - **AND** the sheet SHALL be shown with `showPopover()` as a non-modal `popover="manual"` sheet, so it never blocks the page behind it and coach marks can still appear above it
 - **AND** the sheet element SHALL be a `<dialog>` providing native dialog semantics (implicit `role="dialog"`)
@@ -799,27 +799,27 @@ The system SHALL provide a detail view for a selected discovered concert using a
 
 - **WHEN** the concert detail view is open
 - **THEN** it SHALL render a tappable link that opens Google Maps with a query composed of venue name and admin area
-- **AND** the link's visible label SHALL be sourced from the `eventDetail.openInGoogleMaps` i18n key
+- **AND** the link's visible label SHALL be sourced from the `concertSheet.openInGoogleMaps` i18n key
 
 #### Scenario: Ticket / official info link
 
 - **WHEN** the concert detail view is open and `source_url` is present
 - **THEN** it SHALL render a button linking to `source_url` in a new tab
-- **AND** the button's visible label SHALL be sourced from the `eventDetail.viewOfficialInfo` i18n key
+- **AND** the button's visible label SHALL be sourced from the `concertSheet.viewOfficialInfo` i18n key
 
 #### Scenario: Display ticket journey status
 
 - **WHEN** the concert detail view is open
 - **AND** the user has a ticket journey for this event
 - **THEN** the sheet SHALL display the current ticket journey status
-- **AND** the displayed status text SHALL be sourced from `eventDetail.journeyStatus.<value>` (not the raw enum string)
-- **AND** the sheet SHALL provide the ticket sale notification button for Tracking (hidden while the status is Paid, as the event detail sheet surface states) and the row of the other four statuses
-- **AND** each control in that row SHALL have its label sourced from `eventDetail.journeyStatus.<value>`, and the notification button SHALL take its labels from `eventDetail.notify.*`
+- **AND** the displayed status text SHALL be sourced from `concertSheet.journeyStatus.<value>` (not the raw enum string)
+- **AND** the sheet SHALL provide the ticket sale notification button for Tracking (hidden while the status is Paid, as the concert sheet surface states) and the row of the other four statuses
+- **AND** each control in that row SHALL have its label sourced from `concertSheet.journeyStatus.<value>`, and the notification button SHALL take its labels from `concertSheet.notify.*`
 
 #### Scenario: Set ticket journey status from detail view
 
 - **WHEN** the user selects a new status from the journey status controls and the change is saved
-- **THEN** the displayed status SHALL update to reflect the change, on the sheet and on the Dashboard as the story stories/track-ticket-journey describes
+- **THEN** the displayed status SHALL update to reflect the change, on the sheet and on the Timetable as the story stories/track-ticket-journey describes
 
 #### Scenario: Start tracking from detail view
 
@@ -838,13 +838,13 @@ The system SHALL provide a detail view for a selected discovered concert using a
 - **WHEN** the detail sheet is open
 - **AND** the user taps the dimmed area above the sheet or presses Escape
 - **THEN** the sheet SHALL close
-- **AND** the URL SHALL revert to the dashboard URL via `history.replaceState`
+- **AND** the URL SHALL revert to the timetable URL via `history.replaceState`
 
 #### Scenario: Dismiss sheet via swipe down
 
 - **WHEN** the detail sheet is open
 - **AND** the user swipes the sheet down until its body leaves the viewport
-- **THEN** the sheet SHALL call `hidePopover()` and the URL SHALL revert to the dashboard URL
+- **THEN** the sheet SHALL call `hidePopover()` and the URL SHALL revert to the timetable URL
 
 #### Scenario: Dismiss sheet via browser back button
 
@@ -853,36 +853,36 @@ The system SHALL provide a detail view for a selected discovered concert using a
 - **THEN** the sheet SHALL close via `hidePopover()`
 - **AND** the sheet SHALL NOT call `history.replaceState` (the browser has already navigated back)
 
-### Requirement: Dashboard routes event selection and shows its loading states
+### Requirement: Timetable routes event selection and shows its loading states
 
-`dashboard-route` SHALL handle event selection and loading/empty states directly. Selecting a first-party concert SHALL navigate to its Event page (`/events/:id`); selecting a discovered concert SHALL open the `event-detail-sheet` dialog. Returning from the Event page SHALL show the timetable at the date the fan left it on.
+`timetable-route` SHALL handle event selection and loading/empty states directly. Selecting a first-party concert SHALL navigate to its Concert page (`/events/:id`); selecting a discovered concert SHALL open the `concert-sheet` dialog. Returning from the Concert page SHALL show the timetable at the date the fan left it on.
 
-#### Scenario: Event selection handled by dashboard
+#### Scenario: Event selection handled by timetable
 - **WHEN** a user taps a discovered concert's card in the concert list
-- **THEN** `dashboard-route` SHALL handle the `event-selected` custom event and open the `event-detail-sheet` dialog
+- **THEN** `timetable-route` SHALL handle the `event-selected` custom event and open the `concert-sheet` dialog
 
-#### Scenario: First-party concert opens its event page
+#### Scenario: First-party concert opens its concert page
 - **WHEN** a user taps the card of a concert whose Series belongs to an Organizer, in the timetable
 - **THEN** the app SHALL navigate to `/events/<id>` and SHALL NOT open the detail sheet
 
-#### Scenario: Back from the event page
-- **WHEN** the fan opened an Event page from a card dated 2026-11-20 deep in the timetable and goes back
-- **THEN** the dashboard shows the timetable at 2026-11-20
+#### Scenario: Back from the concert page
+- **WHEN** the fan opened a Concert page from a card dated 2026-11-20 deep in the timetable and goes back
+- **THEN** the timetable shows the timetable at 2026-11-20
 
 #### Scenario: Loading and empty states
 - **WHEN** the fan's concerts are still loading
 - **THEN** the timetable SHALL show its loading placeholder in place of the lanes, and no empty state
 - **WHEN** they have loaded and none match
-- **THEN** the dashboard SHALL show the empty state with a link to Discovery
+- **THEN** the timetable SHALL show the empty state with a link to Discovery
 
-### Requirement: Empty timetable offers the All Nearby view
+### Requirement: Empty timetable offers the Concerts view
 
-Whenever the dashboard shows an empty timetable, the empty state SHALL offer, next to its link to Discovery, a second link that opens the All Nearby view on Discovery (`/discovery?view=nearby`). This holds for the guest who follows no artist and for the fan whose followed artists have no concert to show.
+Whenever the timetable shows an empty timetable, the empty state SHALL offer, next to its link to Discovery, a second link that opens the Concerts view on Discovery (`/discovery?view=nearby`). This holds for the guest who follows no artist and for the fan whose followed artists have no concert to show.
 
 #### Scenario: Guest with no follows
-- **WHEN** a guest who follows no artist opens the dashboard
+- **WHEN** a guest who follows no artist opens the timetable
 - **THEN** the empty state shows the link to Discovery and a link 「近くのライブを見る」
-- **AND** tapping 「近くのライブを見る」 opens Discovery on the All Nearby view
+- **AND** tapping 「近くのライブを見る」 opens Discovery on the Concerts view
 
 #### Scenario: Followed artists with nothing to show
 - **WHEN** a fan follows artists but none of them has a concert to show
@@ -890,11 +890,11 @@ Whenever the dashboard shows an empty timetable, the empty state SHALL offer, ne
 
 #### Scenario: Timetable with concerts
 - **WHEN** the timetable shows at least one concert
-- **THEN** no link to the All Nearby view is shown on the dashboard
+- **THEN** no link to the Concerts view is shown on the timetable
 
 ### Requirement: The ticket section shows the four statuses in one row
 
-The concert detail sheet's ticket section SHALL show the ticket sale notification button on its own full-width row and the other four statuses as one row of compact buttons in journey order, 📝 申込済み › 💰 当選・未入金 › 🎟️ 入金済み, followed by 💔 落選 set apart by a separator. The row SHALL keep every status's canonical label, icon and hue, wrap rather than overflow on a narrow screen, and give each button a tap target of at least 48px.
+The concert sheet's ticket section SHALL show the ticket sale notification button on its own full-width row and the other four statuses as one row of compact buttons in journey order, 📝 申込済み › 💰 当選・未入金 › 🎟️ 入金済み, followed by 💔 落選 set apart by a separator. The row SHALL keep every status's canonical label, icon and hue, wrap rather than overflow on a narrow screen, and give each button a tap target of at least 48px.
 
 #### Scenario: One row for four statuses
 
@@ -914,13 +914,13 @@ The concert detail sheet's ticket section SHALL show the ticket sale notificatio
 
 ### Requirement: Month-jump buttons move the timetable between months
 
-The timetable SHALL offer two month-jump buttons, previous month and next month, side by side in one capsule above the FAB. The previous-month button SHALL move the timetable so that the first date of the month before the month at the top of the screen is at the top; the next-month button SHALL do the same for the month after it. A button SHALL be hidden when no loaded date lies in a month in its direction. In a browser that can tell whether a list has been scrolled from its top, both buttons SHALL stay hidden until the fan has scrolled the timetable away from its top; in other browsers the buttons SHALL be shown from the start. In every browser the rule that hides a button with no month in its direction SHALL still apply, and both buttons SHALL be hidden while the FAB's action list is open. Each button SHALL show an icon only, and SHALL be named for assistive technology with the target month (for example "12月へ移動" / "Go to December"). The move SHALL scroll smoothly, and SHALL be instant when the fan has asked the system for reduced motion. A move SHALL NOT add a browser history entry.
+The timetable SHALL offer two month-jump buttons, previous month and next month, side by side in one capsule above the action menu. The previous-month button SHALL move the timetable so that the first date of the month before the month at the top of the screen is at the top; the next-month button SHALL do the same for the month after it. A button SHALL be hidden when no loaded date lies in a month in its direction. In a browser that can tell whether a list has been scrolled from its top, both buttons SHALL stay hidden until the fan has scrolled the timetable away from its top; in other browsers the buttons SHALL be shown from the start. In every browser the rule that hides a button with no month in its direction SHALL still apply, and both buttons SHALL be hidden while the action menu's action list is open. Each button SHALL show an icon only, and SHALL be named for assistive technology with the target month (for example "12月へ移動" / "Go to December"). The move SHALL scroll smoothly, and SHALL be instant when the fan has asked the system for reduced motion. A move SHALL NOT add a browser history entry.
 
 #### Scenario: Next month from the middle of November
 
 - **WHEN** the top of the screen shows a November date, December has loaded dates, and the fan taps the next-month button
 - **THEN** the timetable shows the first loaded December date at the top of the screen
-- **AND** the browser's back action still leaves the dashboard, as before the tap
+- **AND** the browser's back action still leaves the timetable, as before the tap
 
 #### Scenario: Previous month
 
@@ -942,9 +942,9 @@ The timetable SHALL offer two month-jump buttons, previous month and next month,
 - **WHEN** the timetable is first displayed at its first loaded date, in a browser that cannot tell whether a list has been scrolled from its top, and later months have loaded dates
 - **THEN** the next-month button is shown and the previous-month button is hidden
 
-#### Scenario: Hidden while the FAB is open
+#### Scenario: Hidden while the action menu is open
 
-- **WHEN** the fan opens the FAB's action list
+- **WHEN** the fan opens the action menu's action list
 - **THEN** both month-jump buttons are hidden until the list closes
 
 #### Scenario: Named for assistive technology

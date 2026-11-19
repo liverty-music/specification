@@ -18,7 +18,7 @@ tf 07 cmd UserUseCase_NotifyPasskeyChange
 
 ### Requirement: A fan regains the same account from an email link
 
-A fan who cannot sign in SHALL be able to open the passkey recovery screen from the welcome page or the Settings guest hero, request a link for their account's email address, open the emailed link within 1 hour on the device in hand, create a new passkey there, and sign in to the same account with its follows, tickets and settings unchanged. The fan SHALL then receive the email that a passkey was added. A person who does not control the account's verified mailbox SHALL NOT be able to add a passkey this way, and the answers of the recovery screen SHALL NOT tell anyone whether an address has an account.
+A fan who cannot sign in SHALL be able to open the sign-in help screen from the welcome page or the Settings guest hero, request a link for their account's email address, open the emailed link within 1 hour on the device in hand, create a new passkey there, and sign in to the same account with its follows, tickets and settings unchanged. The fan SHALL then receive the email that a passkey was added. A person who does not control the account's verified mailbox SHALL NOT be able to add a passkey this way, and the answers of the sign-in help screen SHALL NOT tell anyone whether an address has an account.
 
 #### Scenario: Lost phone, new phone
 
@@ -33,4 +33,4 @@ A fan who cannot sign in SHALL be able to open the passkey recovery screen from 
 #### Scenario: Link expired
 
 - **WHEN** the fan opens the link after more than 1 hour
-- **THEN** no passkey is created and the fan can request a new link from the passkey recovery screen
+- **THEN** no passkey is created and the fan can request a new link from the sign-in help screen

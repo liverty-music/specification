@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Provides persistent, page-specific help content via a help icon and bottom-sheet on the Discovery, Dashboard, and My Artists pages. Auto-opens on first visit to each page during onboarding to deliver contextual guidance without blocking the user's flow. The help icon remains accessible after onboarding completes so users can revisit guidance at any time.
+Provides persistent, page-specific help content via a help icon and bottom-sheet on the Discovery, Timetable, and My Artists pages. Auto-opens on first visit to each page during onboarding to deliver contextual guidance without blocking the user's flow. The help icon remains accessible after onboarding completes so users can revisit guidance at any time.
 
 ## Requirements
 
 ### Requirement: Persistent Help Icon in Onboarding Pages
 
 The system SHALL make page-specific help reachable at all times on the Discovery,
-Dashboard, and My Artists pages, for all users regardless of onboarding state, via a
-help item in the FAB action launcher (see the `fab-action-launcher` capability). The
+Timetable, and My Artists pages, for all users regardless of onboarding state, via a
+help item in the action menu (see the `fab-action-launcher` capability). The
 page header SHALL NOT host a separate `?` help trigger button; help is contributed as
 a launcher item on these pages. Auto-open on first visit (defined by the
 "Auto-open on First Page Visit" requirement) opens the same help bottom-sheet
@@ -18,16 +18,16 @@ directly and does not depend on the presence of a header trigger.
 
 #### Scenario: Help icon is always visible
 
-- **WHEN** the user is on the Discovery, Dashboard, or My Artists page
-- **THEN** a help item SHALL be present in the FAB action launcher
+- **WHEN** the user is on the Discovery, Timetable, or My Artists page
+- **THEN** a help item SHALL be present in the action menu
 - **AND** the item SHALL render an icon together with a text label ("ヘルプ")
 - **AND** activating it SHALL open that page's help bottom-sheet
 
 #### Scenario: No `?` trigger in the page header
 
-- **WHEN** the Discovery, Dashboard, or My Artists page header is rendered
+- **WHEN** the Discovery, Timetable, or My Artists page header is rendered
 - **THEN** the header SHALL NOT contain a `?` help trigger button
-- **AND** help SHALL be reachable via the FAB action launcher
+- **AND** help SHALL be reachable via the action menu
 
 #### Scenario: Pages without page-specific help contribute no help item
 
@@ -36,7 +36,7 @@ directly and does not depend on the presence of a header trigger.
 
 ### Requirement: Auto-open on First Page Visit
 
-The system SHALL automatically open the help bottom-sheet on the user's first visit to the Discovery page and to the My Artists page while the user is onboarding. The Dashboard help SHALL never open on its own. Each page's help SHALL auto-open at most once until the guest's local data is reset (see "Help seen flags cleared on onboarding reset").
+The system SHALL automatically open the help bottom-sheet on the user's first visit to the Discovery page and to the My Artists page while the user is onboarding. The Timetable help SHALL never open on its own. Each page's help SHALL auto-open at most once until the guest's local data is reset (see "Help seen flags cleared on onboarding reset").
 
 #### Scenario: First visit to Discovery during onboarding
 
@@ -52,17 +52,17 @@ The system SHALL automatically open the help bottom-sheet on the user's first vi
 
 - **WHEN** the user visits a page whose help has already auto-opened
 - **THEN** the help bottom-sheet does not open automatically
-- **AND** the user can open it from the help item of the FAB action launcher
+- **AND** the user can open it from the help item of the action menu
 
 #### Scenario: No auto-open after onboarding
 
 - **WHEN** a user whose onboarding is completed visits Discovery or My Artists for the first time
 - **THEN** the help bottom-sheet does not open automatically
 
-#### Scenario: Dashboard help never auto-opens
+#### Scenario: Timetable help never auto-opens
 
-- **WHEN** the user arrives at the Dashboard for the first time while onboarding
-- **THEN** the Dashboard help bottom-sheet does not open automatically
+- **WHEN** the user arrives at the Timetable for the first time while onboarding
+- **THEN** the Timetable help bottom-sheet does not open automatically
 
 ### Requirement: Page-specific Help Content
 
@@ -76,9 +76,9 @@ The help bottom-sheet SHALL display page-specific guide content when opened. Onl
   - "近くのライブ" / "Near you" — containing the description that the swap tile beside the orb opens the concerts near the chosen area within a chosen period, including artists the fan does not follow yet, and that an artist can be followed from a concert's detail
   - "フォロー解除" / "Unfollowing" — containing the single sentence pointing users to the My Artists page for unfollow operations
 
-#### Scenario: Dashboard help content
+#### Scenario: Timetable help content
 
-- **WHEN** the help bottom-sheet opens on the Dashboard page
+- **WHEN** the help bottom-sheet opens on the Timetable page
 - **THEN** the sheet renders two sub-sections:
   - "ステージレーンの読み方" / "Reading the Stage Lanes" — containing the description that followed artists' concerts are shown by distance, and the explanation list of the three stage lanes: HOME, NEAR, and AWAY
   - "ライブ詳細を見る" / "Viewing Concert Details" — containing the tip that tapping a concert card opens the concert detail
@@ -97,7 +97,7 @@ The help bottom-sheet SHALL display page-specific guide content when opened. Onl
 
 ### Requirement: Multi-section help sheet structure
 
-Each page-help sheet (Discovery, Dashboard, My Artists) SHALL be composed of one or more `<section>` blocks, each prefixed by a section-title row consisting of an info icon and a heading. The bottom-sheet itself SHALL carry the accessible name via its `aria-label`; the sheet SHALL NOT use a single per-sheet top-level `<h2>` heading.
+Each page-help sheet (Discovery, Timetable, My Artists) SHALL be composed of one or more `<section>` blocks, each prefixed by a section-title row consisting of an info icon and a heading. The bottom-sheet itself SHALL carry the accessible name via its `aria-label`; the sheet SHALL NOT use a single per-sheet top-level `<h2>` heading.
 
 #### Scenario: Section title structure
 

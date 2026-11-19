@@ -1,4 +1,4 @@
-# Event Detail Sheet
+# Concert Sheet
 
 ## Purpose
 
@@ -6,8 +6,8 @@ Shows a detail sheet for a selected concert with a hero image, venue and time in
 
 ## Requirements
 
-### Requirement: Event Detail Sheet Hero Image
-The event detail sheet SHALL display the artist's background image as a hero section above the existing artist header when `artist_background` is available. The hero image SHALL NOT be displayed when no background image exists, preserving the current layout.
+### Requirement: Concert Sheet Hero Image
+The concert sheet SHALL display the artist's background image as a hero section above the existing artist header when `artist_background` is available. The hero image SHALL NOT be displayed when no background image exists, preserving the current layout.
 
 #### Scenario: Artist has background image
 - **WHEN** the detail sheet opens for an event whose artist has `artist_background` in their fanart data
@@ -21,8 +21,8 @@ The event detail sheet SHALL display the artist's background image as a hero sec
 - **WHEN** the hero image is displayed
 - **THEN** the bottom edge of the hero section SHALL fade into the sheet background color via a gradient overlay to ensure visual continuity
 
-### Requirement: Event detail sheet computes URLs and handles touch dismiss
-The event detail sheet SHALL compute Google Maps and Calendar URLs and support touch drag-to-dismiss with a 100px threshold.
+### Requirement: Concert sheet computes URLs and handles touch dismiss
+The concert sheet SHALL compute Google Maps and Calendar URLs and support touch drag-to-dismiss with a 100px threshold.
 
 #### Scenario: Google Maps URL construction
 - **WHEN** the sheet is opened with an event that has a venue name
@@ -72,7 +72,7 @@ The Ticket Journey status UI (concert-card badge and detail-sheet status control
 
 - **WHEN** the Tickets bottom-nav tab is hidden (ticket sales feature not yet service-ready)
 - **THEN** the journey status badge SHALL still appear on event cards for users who have a journey status
-- **AND** the journey selection control SHALL still appear in the event detail sheet for authenticated users
+- **AND** the journey selection control SHALL still appear in the concert sheet for authenticated users
 
 #### Scenario: Journey UI does not depend on ticket purchase flow
 
@@ -95,7 +95,7 @@ When saving or removing a journey status fails, the sheet SHALL keep showing the
 
 ### Requirement: Leaving for the source and adding to a calendar are reported
 
-When the fan opens the concert's source link or its add-to-calendar link from the event detail sheet, the fan app SHALL send one usage analytics event naming which link, with the event and the artist.
+When the fan opens the concert's source link or its add-to-calendar link from the concert sheet, the fan app SHALL send one usage analytics event naming which link, with the event and the artist.
 
 #### Scenario: Source link
 - **WHEN** the fan taps the source link of a concert in the detail sheet
@@ -103,17 +103,17 @@ When the fan opens the concert's source link or its add-to-calendar link from th
 
 ### Requirement: Adding to the calendar starts tracking
 
-When a signed-in fan with no journey for the event chooses add to calendar in the event detail sheet, the app SHALL start tracking the event as an inference (TicketJourneyService.InferTracking) at once, and every screen SHALL show Tracking for the event once it is saved. When the fan comes back to the app after the calendar opened, or at once when the app stayed in view, the sheet SHALL show a snack that reads 「🔔 チケット販売の通知を受け取ります」 (EN "🔔 You will get ticket sale notifications."), with the action 「取り消す」 (EN "Undo"). The snack SHALL stay 10 seconds unless the fan presses the action. Pressing it SHALL remove the journey, and no screen SHALL then show a status for the event. A guest's calendar add, a fan who already has a journey for the event, and a save that fails SHALL start nothing and show no snack.
+When a signed-in fan with no journey for the event chooses add to calendar in the concert sheet, the app SHALL start tracking the event as an inference (TicketJourneyService.InferTracking) at once, and every screen SHALL show Tracking for the event once it is saved. When the fan comes back to the app after the calendar opened, or at once when the app stayed in view, the sheet SHALL show a snack that reads 「🔔 チケット販売の通知を受け取ります」 (EN "🔔 You will get ticket sale notifications."), with the action 「取り消す」 (EN "Undo"). The snack SHALL stay 10 seconds unless the fan presses the action. Pressing it SHALL remove the journey, and no screen SHALL then show a status for the event. A guest's calendar add, a fan who already has a journey for the event, and a save that fails SHALL start nothing and show no snack.
 
 #### Scenario: Calendar add from the sheet
 
 - **WHEN** a signed-in fan with no journey for an event chooses add to calendar, the calendar opens, and the fan comes back to the app
-- **THEN** the sheet shows 「🔔 チケット販売の通知を受け取り中 ✓」, the Dashboard shows the 🔔 badge for the event, and the snack 「🔔 チケット販売の通知を受け取ります」 offers 「取り消す」
+- **THEN** the sheet shows 「🔔 チケット販売の通知を受け取り中 ✓」, the Timetable shows the 🔔 badge for the event, and the snack 「🔔 チケット販売の通知を受け取ります」 offers 「取り消す」
 
 #### Scenario: Undo
 
 - **WHEN** the fan presses 「取り消す」 on that snack
-- **THEN** neither the sheet nor the Dashboard shows a status for the event
+- **THEN** neither the sheet nor the Timetable shows a status for the event
 
 #### Scenario: Fan already has a journey
 
@@ -127,12 +127,12 @@ When a signed-in fan with no journey for the event chooses add to calendar in th
 
 ### Requirement: A hype level raised by a journey change is shown with undo
 
-When a signed-in fan's Applied, Unpaid or Paid in the event detail sheet is saved and the app raised the fan's hype level for the concert's artist as a result, the sheet SHALL show a snack that says the new level in the place words and forms of the My Artists hype snack (「{{name}}の{{places}}の新着ライブをプッシュ通知します🔔」, or 「…をプッシュ通知で受け取ろう🔔」 when push is off for this browser), with the action 「取り消す」 (EN "Undo") in place of the push offer, and the Dashboard SHALL highlight the artist's concerts the new level matches. The snack SHALL stay 10 seconds unless the fan presses the action. Pressing it SHALL set the previous level as the fan's own choice; when that save fails, the raised level stays shown and a message says the change failed. When the level was not raised, no snack SHALL appear.
+When a signed-in fan's Applied, Unpaid or Paid in the concert sheet is saved and the app raised the fan's hype level for the concert's artist as a result, the sheet SHALL show a snack that says the new level in the place words and forms of the My Artists hype snack (「{{name}}の{{places}}の新着ライブをプッシュ通知します🔔」, or 「…をプッシュ通知で受け取ろう🔔」 when push is off for this browser), with the action 「取り消す」 (EN "Undo") in place of the push offer, and the Timetable SHALL highlight the artist's concerts the new level matches. The snack SHALL stay 10 seconds unless the fan presses the action. Pressing it SHALL set the previous level as the fan's own choice; when that save fails, the raised level stays shown and a message says the change failed. When the level was not raised, no snack SHALL appear.
 
 #### Scenario: Applied for a distant concert raises the level
 
 - **WHEN** a signed-in fan whose browser receives push and whose hype for ヨルシカ is Nearby set by default saves Applied for ヨルシカ's concert in the away lane
-- **THEN** the snack reads 「ヨルシカの全ての新着ライブをプッシュ通知します🔔」 with 「取り消す」 and the concert's card on the Dashboard is highlighted
+- **THEN** the snack reads 「ヨルシカの全ての新着ライブをプッシュ通知します🔔」 with 「取り消す」 and the concert's card on the Timetable is highlighted
 
 #### Scenario: Undo the raise
 
@@ -150,13 +150,13 @@ The row of the other four statuses SHALL be rendered only when the user is authe
 
 #### Scenario: Authenticated user sees the status controls
 
-- **WHEN** an authenticated user opens the concert detail sheet
+- **WHEN** an authenticated user opens the concert sheet
 - **THEN** the ticket sale notification button and the row of 申込済み, 当選・未入金, 入金済み and 落選 SHALL be visible
 - **AND** the user SHALL be able to select any of the five statuses with one tap, except Tracking while the status is Paid
 
 #### Scenario: Unauthenticated user sees no status row
 
-- **WHEN** an unauthenticated (guest) user opens the concert detail sheet
+- **WHEN** an unauthenticated (guest) user opens the concert sheet
 - **THEN** the row of the four statuses SHALL NOT be rendered
 - **AND** no RPC call to `TicketJourneyService/SetStatus` SHALL be made
 
@@ -177,7 +177,7 @@ The ticket sale notification button and each status in the row SHALL be a button
 
 ### Requirement: The ticket section follows the venue and holds the official site button
 
-The event detail sheet SHALL show, in this order: the hero image when there is one, the artist and the event title, the date and times with the add-to-calendar link, the venue with its map link, the out-of-range notice when it applies, and the ticket section. The ticket section SHALL hold, in this order, the ticket sale notification button, the row of the other four statuses for a signed-in fan, the push line when the status has one, and the button that opens the concert's official page (「公式サイトでチケットを見る」, EN "See tickets on the official site"). The sheet SHALL show no other button that opens the official page.
+The concert sheet SHALL show, in this order: the hero image when there is one, the artist and the event title, the date and times with the add-to-calendar link, the venue with its map link, the out-of-range notice when it applies, and the ticket section. The ticket section SHALL hold, in this order, the ticket sale notification button, the row of the other four statuses for a signed-in fan, the push line when the status has one, and the button that opens the concert's official page (「公式サイトでチケットを見る」, EN "See tickets on the official site"). The sheet SHALL show no other button that opens the official page.
 
 #### Scenario: Order of the sheet
 
@@ -296,5 +296,5 @@ After the level is saved, the notice SHALL read 「**{{places}}**の新着ライ
 
 #### Scenario: Artist not followed
 
-- **WHEN** a fan opens, from the All Nearby view, a concert of an artist the fan does not follow
+- **WHEN** a fan opens, from the Concerts view, a concert of an artist the fan does not follow
 - **THEN** no notice is shown

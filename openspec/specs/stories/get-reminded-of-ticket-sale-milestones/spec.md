@@ -10,7 +10,7 @@ tf 01 pcr Schedule_ReminderScan
 tf 02 cmd TicketSaleReminderUseCase_ScanDueReminders
 tf 03 cmd TicketSaleReminderDeliveryUseCase_DeliverReminder
 tf 04 cmd NotificationUseCase_Deliver
-tf 05 ui Fan_EventDetailSheet
+tf 05 ui Fan_ConcertSheet
 ```
 
 ## Requirements

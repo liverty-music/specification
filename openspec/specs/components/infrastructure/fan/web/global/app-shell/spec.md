@@ -189,13 +189,13 @@ The synchronous setup a menu-tab route performs before fetching — toggling `is
 All overlay custom elements (`pwa-install-prompt`, `toast-notification`, `error-banner`) SHALL be removed from normal document flow so they do not create implicit CSS Grid rows in the `app-shell` shell layout. The bottom navigation bar and page header SHALL stay pinned even under a standalone PWA pull-to-refresh / overscroll gesture, because the document root is a non-scrolling frame and scrolling is confined to the single inner container.
 
 #### Scenario: Bottom nav stays at viewport bottom
-- **WHEN** the dashboard page has enough events to require scrolling (20+ concerts across multiple dates)
+- **WHEN** the timetable page has enough events to require scrolling (20+ concerts across multiple dates)
 - **THEN** `bottom-nav-bar` SHALL remain visible and pinned at the bottom of the viewport at all times
-- **AND** the `dashboard-route` CE SHALL constrain all descendants to viewport height via a 2-layer height chain: `dashboard-route` (grid, `block-size: 100%`) → `<main>` (scroll container, `overflow-block: auto`)
+- **AND** the `timetable-route` CE SHALL constrain all descendants to viewport height via a 2-layer height chain: `timetable-route` (grid, `block-size: 100%`) → `<main>` (scroll container, `overflow-block: auto`)
 - **AND** no intermediate element between `au-viewport` and the scroll container SHALL have a rendered height exceeding the `au-viewport` height
 
 #### Scenario: Bottom nav and header stay pinned after a pull-to-refresh gesture
-- **WHEN** the app is running as an installed standalone PWA on the dashboard
+- **WHEN** the app is running as an installed standalone PWA on the timetable
 - **AND** the user performs a pull-to-refresh / downward overscroll gesture
 - **THEN** the bottom navigation bar SHALL remain visible and pinned at the bottom of the viewport
 - **AND** the page header (the "Timetable" title row) SHALL remain visible and pinned at the top of the viewport
@@ -204,8 +204,8 @@ All overlay custom elements (`pwa-install-prompt`, `toast-notification`, `error-
 #### Scenario: Stage header stays fixed above scrollable content
 - **WHEN** the user scrolls the concert list downward
 - **THEN** the stage header (HOME STAGE / NEAR STAGE / AWAY STAGE) SHALL remain fixed above the scrollable content
-- **AND** the stage header SHALL be a `<header>` element that is a direct child of `dashboard-route`, outside the `<main>` scroll container
-- **AND** `dashboard-route` SHALL use CSS Grid with named areas via the `grid-template` shorthand: `"stage-home stage-near stage-away" auto` / `"lane-home lane-near lane-away" minmax(0, 1fr)` / `1fr 1fr 1fr`
+- **AND** the stage header SHALL be a `<header>` element that is a direct child of `timetable-route`, outside the `<main>` scroll container
+- **AND** `timetable-route` SHALL use CSS Grid with named areas via the `grid-template` shorthand: `"stage-home stage-near stage-away" auto` / `"lane-home lane-near lane-away" minmax(0, 1fr)` / `1fr 1fr 1fr`
 - **AND** the stage header SHALL use `grid-template-columns: subgrid` with `grid-column: stage-home / stage-away` (named area implicit lines)
 - **AND** the scroll container and all intermediate elements (`.concert-scroll`, `.date-group-list`, `li`, `.lane-grid`) SHALL use `grid-template-columns: subgrid` to propagate the 3-column layout from the root grid
 
@@ -321,10 +321,10 @@ While a persistent bottom banner (the signup prompt or the install banner) is vi
 - **THEN** the Sign out row SHALL lie entirely above the banner's top edge
 - **AND** a tap at the row's centre SHALL reach the row, not the banner
 
-#### Scenario: Empty state clears the banner and the FAB
+#### Scenario: Empty state clears the banner and the action menu
 - **WHEN** a guest with no followed artists opens My Artists while the signup prompt is visible
 - **THEN** the empty state's button SHALL lie entirely above the banner's top edge
-- **AND** a tap at the button's centre SHALL reach the button, not the banner or the FAB
+- **AND** a tap at the button's centre SHALL reach the button, not the banner or the action menu
 
 #### Scenario: No banner, no reserved space
 - **WHEN** no bottom banner is visible
@@ -347,5 +347,5 @@ Switching between the routes of the bottom navigation bar's tabs SHALL animate, 
 
 #### Scenario: Route change from inside a page
 
-- **WHEN** the fan opens a concert's event page from the timetable
-- **THEN** the event page is shown without a page transition
+- **WHEN** the fan opens a concert's concert page from the timetable
+- **THEN** the concert page is shown without a page transition

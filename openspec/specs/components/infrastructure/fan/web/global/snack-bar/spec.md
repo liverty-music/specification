@@ -153,7 +153,7 @@ When the update snack is displayed, its action button (labelled with `pwa.update
 
 ### Requirement: Snack text meets WCAG AA contrast
 
-Every snack bar's message and its action label SHALL keep a contrast ratio of at least 4.5:1 against the container colour behind them at every point of the container's gradient, for every severity. This applies to the action's own fill as well: the on-container action's translucent white fill over the gradient. The minimum SHALL be met by the container colours and SHALL NOT depend on the text being large. The brand colours used by other surfaces (the FAB, the navigation bar, the filled button) SHALL NOT change for this.
+Every snack bar's message and its action label SHALL keep a contrast ratio of at least 4.5:1 against the container colour behind them at every point of the container's gradient, for every severity. This applies to the action's own fill as well: the on-container action's translucent white fill over the gradient. The minimum SHALL be met by the container colours and SHALL NOT depend on the text being large. The brand colours used by other surfaces (the action menu, the navigation bar, the filled button) SHALL NOT change for this.
 
 #### Scenario: Message contrast on every severity
 - **WHEN** an info, a warning and an error snack bar are each shown
@@ -165,7 +165,7 @@ Every snack bar's message and its action label SHALL keep a contrast ratio of at
 
 ### Requirement: Snack bars sit above the bottom navigation and any banner
 
-Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. While a screen shows a control floating over its bottom edge (the Discovery swap tile, or the Done bar of My Artists' edit mode), the snack bar SHALL sit one `space-3xs` step above that control instead, and the control SHALL NOT move; such a control always sits above any visible banner, so this placement takes precedence over the banner placement. The FAB stays sunk in the navigation bar in all cases (see FAB Menu).
+Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. While a screen shows a control floating over its bottom edge (the Discovery swap tile, or the Done bar of My Artists' edit mode), the snack bar SHALL sit one `space-3xs` step above that control instead, and the control SHALL NOT move; such a control always sits above any visible banner, so this placement takes precedence over the banner placement. The action menu stays sunk in the navigation bar in all cases (see action menu Menu).
 
 #### Scenario: No banner is visible
 - **WHEN** a snack bar opens and no persistent bottom banner is visible
@@ -181,10 +181,10 @@ Every snack bar, whatever its severity or sender, SHALL be placed at the bottom 
 - **THEN** the snack bar's bottom edge SHALL sit one `space-s` step above the banner's top edge
 - **AND** the snack bar SHALL NOT cover any part of the banner
 
-#### Scenario: The FAB stays sunk under a banner and a snack bar
-- **WHEN** a snack bar opens while a bottom banner is visible on a route that shows the FAB
-- **THEN** the FAB SHALL stay sunk in the navigation bar
-- **AND** the snack bar SHALL cover neither the FAB nor the banner
+#### Scenario: The action menu stays sunk under a banner and a snack bar
+- **WHEN** a snack bar opens while a bottom banner is visible on a route that shows the action menu
+- **THEN** the action menu SHALL stay sunk in the navigation bar
+- **AND** the snack bar SHALL cover neither the action menu nor the banner
 
 #### Scenario: Same placement for every severity
 - **WHEN** an info, warning and error snack bar are each shown in turn under the same conditions

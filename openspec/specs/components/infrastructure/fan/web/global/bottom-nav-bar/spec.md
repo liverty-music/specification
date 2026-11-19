@@ -25,27 +25,27 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 - **AND** the system SHALL NOT display the shell-hosted page header
 - **AND** the `1fr` viewport row SHALL expand to fill the full `100dvh` height
 
-#### Scenario: Navigation shown during onboarding (discover, dashboard, my-artists)
-- **WHEN** the user is on the Artist Discovery, Dashboard, or My Artists route during onboarding
+#### Scenario: Navigation shown during onboarding (discover, timetable, my-artists)
+- **WHEN** the user is on the Artist Discovery, Timetable, or My Artists route during onboarding
 - **THEN** the system SHALL display the bottom navigation bar
 - **AND** navigation SHALL be restricted by the existing route guards (`AuthHook.canLoad()`)
 - **AND** the system SHALL NOT apply additional click prevention on the navigation bar
 
 #### Scenario: Navigation shown on post-onboarding routes
-- **WHEN** the user is on the Dashboard or post-onboarding routes
+- **WHEN** the user is on the Timetable or post-onboarding routes
 - **THEN** the system SHALL display the bottom navigation bar in the `nav` grid area
-- **AND** the navigation bar SHALL include tab icons and labels for Home, Discover, My Artists and Tickets, in that order, two on each side of an empty centre slot reserved for the FAB
+- **AND** the navigation bar SHALL include tab icons and labels for Home, Discover, My Artists and Tickets, in that order, two on each side of an empty centre slot reserved for the action menu
 - **AND** the navigation bar SHALL NOT include a Settings tab
 
 #### Scenario: Navigation remains visible beneath area setup dialog
-- **WHEN** the first-visit area setup dialog is displayed on the Dashboard
+- **WHEN** the first-visit area setup dialog is displayed on the Timetable
 - **THEN** the area setup dialog SHALL render in the browser's Top Layer (a `<dialog>` shown with `showPopover()`, the bottom-sheet convention)
 - **AND** the bottom navigation bar SHALL remain in its normal grid position beneath the Top Layer
 - **AND** the `::backdrop` pseudo-element SHALL visually dim the entire page including the navigation bar
 
-#### Scenario: Dashboard icon data attribute for coach mark targeting
+#### Scenario: Timetable icon data attribute for coach mark targeting
 - **WHEN** the bottom navigation bar renders
-- **THEN** the Dashboard (Home) tab link SHALL carry `data-nav="home"`, which identifies the tab for tests and analytics (no coach mark targets the navigation bar)
+- **THEN** the Timetable (Home) tab link SHALL carry `data-nav="home"`, which identifies the tab for tests and analytics (no coach mark targets the navigation bar)
 - **AND** the My Artists tab link SHALL carry `data-nav="my-artists"`
 
 #### Scenario: Pages do not compensate for navigation bar height
@@ -135,12 +135,12 @@ SHALL highlight that tab.
 #### Scenario: Concert deep-link highlights Home
 
 - **WHEN** the displayed route is a concert deep-link (`/concerts/:id`)
-- **THEN** the Home tab SHALL be highlighted
+- **THEN** the Timetable tab SHALL be highlighted
 
-#### Scenario: Event page highlights Home
+#### Scenario: Concert page highlights Home
 
-- **WHEN** the displayed route is an Event page (`/events/:id`)
-- **THEN** the Home tab SHALL be highlighted
+- **WHEN** the displayed route is a Concert page (`/events/:id`)
+- **THEN** the Timetable tab SHALL be highlighted
 
 #### Scenario: Route outside every tab
 
@@ -172,31 +172,31 @@ Every bottom-nav menu-tab route SHALL NOT block the router view swap on its data
 - **THEN** that route SHALL satisfy this requirement from the moment it appears in the nav
 - **AND** no enumeration of route names SHALL be required to bring it into scope
 
-### Requirement: Centre slot and notch around the FAB
+### Requirement: Centre slot and notch around the action menu
 
-The navigation bar SHALL keep a centre slot between its second and third tabs on every route where it is shown, so that the four tabs stay at the same positions on every route. While the FAB is shown, the bar SHALL cut a notch around the FAB in its top edge at the centre slot, including while the FAB is sunk under a snack bar or a bottom banner (see FAB Menu), so that the sunk FAB reads as resting in its socket. While the FAB is not shown, the bar SHALL show no notch and the centre slot SHALL stay empty.
+The navigation bar SHALL keep a centre slot between its second and third tabs on every route where it is shown, so that the four tabs stay at the same positions on every route. While the action menu is shown, the bar SHALL cut a notch around the action menu in its top edge at the centre slot, including while the action menu is sunk under a snack bar or a bottom banner (see action menu Menu), so that the sunk action menu reads as resting in its socket. While the action menu is not shown, the bar SHALL show no notch and the centre slot SHALL stay empty.
 
-#### Scenario: Route with FAB actions
-- **WHEN** the dashboard is displayed and the FAB is shown
-- **THEN** the bar's top edge SHALL have a notch around the FAB at the centre slot
+#### Scenario: Route with action menu actions
+- **WHEN** the timetable is displayed and the action menu is shown
+- **THEN** the bar's top edge SHALL have a notch around the action menu at the centre slot
 
-#### Scenario: Tickets shows the FAB
+#### Scenario: Tickets shows the action menu
 - **WHEN** the Tickets route is displayed
-- **THEN** the FAB is shown with the Settings item (see FAB Menu)
+- **THEN** the action menu is shown with the Settings item (see action menu Menu)
 - **AND** the bar's top edge SHALL have a notch around it
 
-#### Scenario: Route without FAB actions
+#### Scenario: Route without action menu actions
 - **WHEN** the Settings route is displayed and the launcher has no item
 - **THEN** the bar's top edge SHALL be straight, with no notch
 - **AND** the centre slot SHALL be empty
 
-#### Scenario: FAB sunk under a banner
-- **WHEN** the dashboard is displayed with the FAB shown while the install banner is visible
-- **THEN** the FAB SHALL rest sunk in the centre slot
+#### Scenario: action menu sunk under a banner
+- **WHEN** the timetable is displayed with the action menu shown while the install banner is visible
+- **THEN** the action menu SHALL rest sunk in the centre slot
 - **AND** the bar's top edge SHALL keep the notch around it
 
 #### Scenario: Tabs do not move between routes
-- **WHEN** the user moves from the dashboard (FAB shown) to Settings (FAB hidden)
+- **WHEN** the user moves from the timetable (action menu shown) to Settings (action menu hidden)
 - **THEN** each of the four tabs SHALL stay at the same horizontal position
 
 ### Requirement: Navigation bar size

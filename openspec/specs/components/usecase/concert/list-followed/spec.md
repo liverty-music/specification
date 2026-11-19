@@ -2,7 +2,7 @@
 
 ## Purpose
 
-ListFollowed gives a User the Concerts of every Artist they follow, on or after a given date, grouped by date and sorted into HOME, NEARBY and AWAY relative to their home area, for their dashboard.
+ListFollowed gives a User the Concerts of every Artist they follow, on or after a given date, grouped by date and sorted into HOME, NEARBY and AWAY relative to their home area, for their timetable.
 
 ## Requirements
 

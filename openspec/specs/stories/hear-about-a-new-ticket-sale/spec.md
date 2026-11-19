@@ -11,7 +11,7 @@ tf 02 cmd TicketSaleDiscoveryUseCase_DiscoverForArtist
 tf 03 evt TicketSale_Discovered
 tf 04 cmd TicketSaleAnnouncementUseCase_AnnounceDiscoveredSale
 tf 05 cmd NotificationUseCase_Deliver
-tf 06 ui Fan_EventDetailSheet
+tf 06 ui Fan_ConcertSheet
 rf 07 rmo NotificationUseCase_List ->> 05
 tf 08 ui Fan_Notifications
 ```

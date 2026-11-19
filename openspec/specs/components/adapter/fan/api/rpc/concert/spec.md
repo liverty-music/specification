@@ -20,14 +20,14 @@ Get, ListBySeries, ListByArtist, ListByArtists and ListByLocation SHALL be calla
 - **WHEN** a caller who is not signed in calls ListFollowed
 - **THEN** the call fails with Unauthenticated and no usecase runs
 
-#### Scenario: Guest opens an event page
+#### Scenario: Guest opens a concert page
 
-- **WHEN** a caller who is not signed in calls Get with the id of an Event whose Series has an event page
+- **WHEN** a caller who is not signed in calls Get with the id of an Event whose Series has a concert page
 - **THEN** ConcertUseCase.Get runs and the Concert is returned
 
 #### Scenario: Guest lists the dates of a series
 
-- **WHEN** a caller who is not signed in calls ListBySeries with the id of a Series that has an event page
+- **WHEN** a caller who is not signed in calls ListBySeries with the id of a Series that has a concert page
 - **THEN** ConcertUseCase.ListBySeries runs and the Series' Concerts are returned
 
 ### Requirement: ListFollowed acts for the signed-in fan with their stored home
@@ -102,7 +102,7 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 - **WHEN** ListByLocation is called with from 2026-10-02 and to 2026-10-01
 - **THEN** it fails with InvalidArgument
 
-#### Scenario: Event page without an id
+#### Scenario: Concert page without an id
 
 - **WHEN** Get is called without an event id
 - **THEN** it fails with InvalidArgument and no usecase runs

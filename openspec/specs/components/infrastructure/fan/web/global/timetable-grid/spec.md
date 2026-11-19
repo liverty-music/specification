@@ -1,4 +1,4 @@
-# Live Highway
+# Timetable Grid
 
 ## Purpose
 
@@ -17,8 +17,8 @@ The frontend service layer SHALL extract fanart image URLs from the `Artist.fana
 - **WHEN** the `FollowService.List` RPC returns an artist without fanart data
 - **THEN** the view model image URL fields SHALL be undefined or empty, triggering fallback display in UI components
 
-#### Scenario: Dashboard events enriched with fanart
-- **WHEN** the dashboard constructs `LiveEvent` objects from concert data
+#### Scenario: Timetable events enriched with fanart
+- **WHEN** the timetable constructs `LiveEvent` objects from concert data
 - **THEN** the system SHALL look up fanart URLs by artist ID from the `FollowService.List` response and attach them to the `LiveEvent`
 
 ### Requirement: Artist name larger than the location label
@@ -28,15 +28,15 @@ The artist name on an event card SHALL be visually prominent and clearly disting
 - **WHEN** an event card displays an artist name with a location label below
 - **THEN** the artist name font size SHALL be noticeably larger than the location label font size
 
-### Requirement: Concert Highway Custom Element
+### Requirement: Timetable Grid Custom Element
 
-The system SHALL provide a reusable `<concert-highway>` custom element that renders a 3-column concert lane grid (home/nearby/away) with stage headers, date separators, event cards, and laser beam effects.
+The system SHALL provide a reusable `<timetable-grid>` custom element that renders a 3-column concert lane grid (home/nearby/away) with stage headers, date separators, event cards, and laser beam effects.
 
 #### Scenario: Render date groups with 3-column layout
 
-- **WHEN** `<concert-highway>` receives a `dateGroups` binding containing `DateGroup[]`
+- **WHEN** `<timetable-grid>` receives a `dateGroups` binding containing `DateGroup[]`
 - **THEN** the element SHALL render a 3-column grid with stage headers labeled HOME, NEAR, and AWAY
-- **AND** each date group SHALL display a sticky date separator followed by three lane columns containing `<event-card>` components
+- **AND** each date group SHALL display a sticky date separator followed by three lane columns containing `<concert-card>` components
 
 #### Scenario: Laser beam effects for matched events
 
@@ -48,7 +48,7 @@ The system SHALL provide a reusable `<concert-highway>` custom element that rend
 #### Scenario: Readonly mode suppresses card interaction
 
 - **WHEN** `readonly` is set to true
-- **THEN** all `<event-card>` components SHALL be rendered with `readonly="true"`
+- **THEN** all `<concert-card>` components SHALL be rendered with `readonly="true"`
 - **AND** tapping a card SHALL NOT dispatch the `event-selected` event
 
 #### Scenario: Interactive mode dispatches event selection
@@ -63,17 +63,17 @@ The system SHALL provide a reusable `<concert-highway>` custom element that rend
 - **THEN** the lane SHALL display a placeholder dash ("—")
 
 ### Requirement: Matched event card glow opacity
-The dashboard matched event card (`[data-matched]`) SHALL render a diffuse laser-beam glow effect around its border using `--_spot-glow` at alpha 50% or lower so that the glow does not visually overwhelm surrounding content.
+The timetable matched event card (`[data-matched]`) SHALL render a diffuse laser-beam glow effect around its border using `--_spot-glow` at alpha 50% or lower so that the glow does not visually overwhelm surrounding content.
 
 #### Scenario: Matched card glow is visually subdued
 - **WHEN** a concert card has the `data-matched` attribute
 - **THEN** the surrounding box-shadow glow SHALL use an alpha value of 50% or lower for the diffuse layers
 
 ### Requirement: Event card computes display properties
-The `EventCard` component SHALL compute background color from artist name and format dates in Japanese locale.
+The `ConcertCard` component SHALL compute background color from artist name and format dates in Japanese locale.
 
 #### Scenario: Background color from artist name
-- **WHEN** an `EventCard` is rendered with an event
+- **WHEN** an `ConcertCard` is rendered with an event
 - **THEN** `backgroundColor` SHALL return the HSL color from `artistColor(event.artistName)`
 
 #### Scenario: Click dispatches event-selected
@@ -89,37 +89,37 @@ The `LiveHighway` component SHALL render date groups and delegate event selectio
 
 #### Scenario: Event selection delegation
 - **WHEN** `onEventSelected` is called with a custom event containing a `LiveEvent`
-- **THEN** it SHALL open the event detail sheet with that event
+- **THEN** it SHALL open the concert sheet with that event
 
-### Requirement: Three-Lane Live Highway Layout
-The system SHALL display live events in a three-column equal-width timeline layout organized by geographical proximity and date, with festival-style sticky STAGE headers using per-stage identity colors and a vibrant dark-themed aesthetic. The dashboard SHALL handle data loading errors gracefully and distinguish between empty data and error states.
+### Requirement: Three-Lane Timetable Grid Layout
+The system SHALL display live events in a three-column equal-width timeline layout organized by geographical proximity and date, with festival-style sticky STAGE headers using per-stage identity colors and a vibrant dark-themed aesthetic. The timetable SHALL handle data loading errors gracefully and distinguish between empty data and error states.
 
-#### Scenario: Dashboard shows loading skeletons and a retryable error
-- **WHEN** the dashboard loads event data
+#### Scenario: Timetable shows loading skeletons and a retryable error
+- **WHEN** the timetable loads event data
 - **THEN** the pending state SHALL display loading skeletons matching the three-lane card layout, until the first load has settled
 - **AND** a failed first load SHALL display an error message with a "Retry" button in place of the skeletons and the lanes
 
-#### Scenario: Dashboard displays empty state
-- **WHEN** the dashboard data loads successfully but no events are found
+#### Scenario: Timetable displays empty state
+- **WHEN** the timetable data loads successfully but no events are found
 - **THEN** the system SHALL display an empty state message (distinct from the error state)
 - **AND** the empty state SHALL NOT be confused with a loading failure
 
-#### Scenario: Dashboard silently displays cached data on refresh failure
-- **WHEN** the dashboard has previously loaded data successfully
+#### Scenario: Timetable silently displays cached data on refresh failure
+- **WHEN** the timetable has previously loaded data successfully
 - **AND** a subsequent data refresh fails
 - **THEN** the system SHALL continue displaying the previously loaded data silently
 - **AND** the system SHALL NOT display any warning banner or stale data indicator
 - **AND** the error SHALL be logged for observability but not surfaced to the user
 
 #### Scenario: Equal-width three-lane grid
-- **WHEN** the dashboard renders the event grid
+- **WHEN** the timetable renders the event grid
 - **THEN** the system SHALL use `grid-template-columns: 1fr 1fr 1fr` for equal lane widths
 - **AND** each lane SHALL occupy exactly one-third of the viewport width
 
 #### Scenario: Festival-style color-coded STAGE headers
-- **WHEN** the dashboard renders
+- **WHEN** the timetable renders
 - **THEN** the system SHALL display a sticky header row at the top of the timetable
-- **AND** each stage header span SHALL use its stage identity color as background via `data-stage` attribute selectors (CUBE CSS exception pattern) within the dashboard block's `@scope`:
+- **AND** each stage header span SHALL use its stage identity color as background via `data-stage` attribute selectors (CUBE CSS exception pattern) within the timetable block's `@scope`:
   - `[data-stage="home"]`: `--color-stage-home` (orange)
   - `[data-stage="near"]`: `--color-stage-near` (cyan)
   - `[data-stage="away"]`: `--color-stage-away` (magenta)
@@ -223,9 +223,9 @@ preference SHALL behave identically.
   the page
 - **AND** no date group or concert card SHALL be rebuilt
 
-### Requirement: Dashboard cards show whether the hype level matches the concert
+### Requirement: Timetable cards show whether the hype level matches the concert
 
-The system SHALL visually distinguish dashboard event cards based on whether the artist's hype level matches the concert by its lane, rather than on hype level alone. A card is "matched" when the artist's hype level matches the concert's lane, and "unmatched" otherwise. A matched card SHALL look lit like a festival stage; an unmatched card SHALL show the artist's color without light effects.
+The system SHALL visually distinguish timetable event cards based on whether the artist's hype level matches the concert by its lane, rather than on hype level alone. A card is "matched" when the artist's hype level matches the concert's lane, and "unmatched" otherwise. A matched card SHALL look lit like a festival stage; an unmatched card SHALL show the artist's color without light effects.
 
 The match truth table:
 - **watch**: never matched (any lane)
@@ -235,7 +235,7 @@ The match truth table:
 
 #### Scenario: Match computation is application-code responsibility
 
-- **WHEN** the system builds the data used to render a dashboard event card
+- **WHEN** the system builds the data used to render a timetable event card
 - **THEN** the match result SHALL be computed as a pure function comparing hype level and lane
 - **AND** the result SHALL be exposed as a matched/unmatched state on the card's data
 - **AND** the card's template SHALL bind a `data-matched` attribute from this state
@@ -299,7 +299,7 @@ The match truth table:
 
 ### Requirement: Artist name shown on every card
 
-Every dashboard event card SHALL show the artist's name as text, horizontally centered on the card, in white at full opacity on matched and unmatched cards alike. A card SHALL NOT show the artist's logo image.
+Every timetable event card SHALL show the artist's name as text, horizontally centered on the card, in white at full opacity on matched and unmatched cards alike. A card SHALL NOT show the artist's logo image.
 
 #### Scenario: Artist name centered on the card
 

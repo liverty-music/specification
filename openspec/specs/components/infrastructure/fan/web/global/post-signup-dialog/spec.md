@@ -9,8 +9,8 @@ Consolidates notification permission and PWA install prompts into a single dialo
 ### Requirement: Dialog reliably opens when active is true at creation time
 The post-signup dialog SHALL reliably open when `active` is bound to `true` at component creation time, not only when `active` transitions from `false` to `true` after the component is attached.
 
-#### Scenario: Dashboard sets showPostSignupDialog in loading() before attach
-- **WHEN** `DashboardRoute.loading()` sets `showPostSignupDialog = true`
+#### Scenario: Timetable sets showPostSignupDialog in loading() before attach
+- **WHEN** `TimetableRoute.loading()` sets `showPostSignupDialog = true`
 - **AND** the post-signup dialog receives `active = true` during its `binding` phase
 - **THEN** `activeChanged()` SHALL set `isOpen = true`
 - **AND** the inner `<bottom-sheet>` SHALL open successfully (via its attached-lifecycle fallback)
@@ -40,11 +40,11 @@ All user-visible strings in the post-signup dialog SHALL come from the translati
 
 ### Requirement: Celebration Precedes Post-Signup Dialog
 
-On the post-signup Dashboard redirect, the full (confetti) celebration overlay SHALL be shown before the post-signup dialog. When the celebration overlay is dismissed, the post-signup dialog SHALL open if it has at least one step to show, sequencing the emotional payoff ahead of the setup actions; when it has no step to show, nothing opens after the celebration.
+On the post-signup Timetable redirect, the full (confetti) celebration overlay SHALL be shown before the post-signup dialog. When the celebration overlay is dismissed, the post-signup dialog SHALL open if it has at least one step to show, sequencing the emotional payoff ahead of the setup actions; when it has no step to show, nothing opens after the celebration.
 
 #### Scenario: Dialog opens after celebration dismissal
 
-- **WHEN** a newly signed-up user is redirected to the dashboard
+- **WHEN** a newly signed-up user is redirected to the timetable
 - **AND** the full celebration overlay (per the celebration overlay "Two-Tier Celebration Overlay") is shown
 - **AND** the post-signup dialog has at least one step to show
 - **THEN** the system SHALL NOT display the post-signup dialog while the celebration overlay is visible
@@ -52,24 +52,24 @@ On the post-signup Dashboard redirect, the full (confetti) celebration overlay S
 
 #### Scenario: Region selection still precedes both
 
-- **WHEN** a newly signed-up user is redirected to the dashboard
+- **WHEN** a newly signed-up user is redirected to the timetable
 - **AND** the user has no home area yet
 - **THEN** the system SHALL resolve the home-area selection first
 - **AND** only then evaluate the celebration overlay, followed by the post-signup dialog on dismissal
 
-### Requirement: Sign-up from an event page skips the celebration and the dialog
+### Requirement: Sign-up from a concert page skips the celebration and the dialog
 
-A sign-up that the fan started on an Event page SHALL NOT show the celebration overlay or the post-signup dialog, neither on the Event page the fan returns to nor later on the Dashboard. A sign-up started anywhere else SHALL keep showing them as the other requirements of this surface state.
+A sign-up that the fan started on a Concert page SHALL NOT show the celebration overlay or the post-signup dialog, neither on the Concert page the fan returns to nor later on the Timetable. A sign-up started anywhere else SHALL keep showing them as the other requirements of this surface state.
 
 #### Scenario: Guest signs up while buying
 
-- **WHEN** a guest starts sign-up on an Event page, completes it and later opens the Dashboard
+- **WHEN** a guest starts sign-up on a Concert page, completes it and later opens the Timetable
 - **THEN** neither the celebration overlay nor the post-signup dialog is shown
 
 #### Scenario: Sign-up from the landing page
 
 - **WHEN** a guest starts sign-up from the Welcome page and completes it
-- **THEN** the celebration overlay and then the post-signup dialog are shown on the Dashboard
+- **THEN** the celebration overlay and then the post-signup dialog are shown on the Timetable
 
 ### Requirement: Post-signup dialog asks one thing per step
 
@@ -83,7 +83,7 @@ Whether an authenticated callback is treated as a first sign-up SHALL be determi
 - **AND** the post-signup dialog has never been scheduled on this device
 - **THEN** the system SHALL schedule the post-signup celebration and dialog
 - **AND** the system SHALL navigate to `/dashboard`
-- **AND** the Dashboard SHALL show the celebration and then the dialog
+- **AND** the Timetable SHALL show the celebration and then the dialog
 
 #### Scenario: Dialog not shown on subsequent logins
 

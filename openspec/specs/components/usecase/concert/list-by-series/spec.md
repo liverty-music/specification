@@ -1,13 +1,13 @@
 # components/usecase/concert/list-by-series Specification
 
 ## Purpose
-ConcertUseCase.ListBySeries returns every Concert of one Series that has an event page, so an Event page can offer the Series' other dates and a link preview can count them.
+ConcertUseCase.ListBySeries returns every Concert of one Series that has a concert page, so a Concert page can offer the Series' other dates and a link preview can count them.
 
 ## Requirements
 
-### Requirement: Concerts of a series with an event page
+### Requirement: Concerts of a series with a concert page
 
-ListBySeries SHALL take a Series id, read the Series with Series.Get, and when the Series has an event page (see Series), return its Concerts: the Events listed by Concert.ListEventsBySeries, in that operation's order, each read with Concert.ListByIDs with its Venue, performers and Series. ListBySeries needs no signed-in caller.
+ListBySeries SHALL take a Series id, read the Series with Series.Get, and when the Series has a concert page (see Series), return its Concerts: the Events listed by Concert.ListEventsBySeries, in that operation's order, each read with Concert.ListByIDs with its Venue, performers and Series. ListBySeries needs no signed-in caller.
 
 #### Scenario: Two-day run
 
@@ -19,9 +19,9 @@ ListBySeries SHALL take a Series id, read the Series with Series.Get, and when t
 - **WHEN** the Series has Events on 2026-11-20 at 13:00 and at 18:00
 - **THEN** the 13:00 Concert is returned before the 18:00 Concert
 
-### Requirement: No event page is reported as not found
+### Requirement: No concert page is reported as not found
 
-ListBySeries SHALL fail with NotFound, without saying why, when no Series has the id or when the Series has no event page, the same for an unknown id, a discovered Series, a DRAFT Series and an UNLISTED Series.
+ListBySeries SHALL fail with NotFound, without saying why, when no Series has the id or when the Series has no concert page, the same for an unknown id, a discovered Series, a DRAFT Series and an UNLISTED Series.
 
 #### Scenario: Unlisted series
 

@@ -462,7 +462,7 @@ The settings screen SHALL show the fan's saved full name and phone number as one
 
 ### Requirement: Guest hero offers sign-in help
 
-The guest call-to-action hero at the top of the Settings page SHALL show a "can't sign in" text link below its sign-in and sign-up actions that opens the passkey recovery screen.
+The guest call-to-action hero at the top of the Settings page SHALL show a "can't sign in" text link below its sign-in and sign-up actions that opens the sign-in help screen.
 
 #### Scenario: Guest opens sign-in help from Settings
 

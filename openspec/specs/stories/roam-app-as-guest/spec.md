@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Lets an unauthenticated guest navigate the app freely once past the dashboard, reach Settings and Welcome during onboarding, and see account-only features hidden rather than navigation-blocked, guarded by a single auth check.
+Lets an unauthenticated guest navigate the app freely once past the timetable, reach Settings and Welcome during onboarding, and see account-only features hidden rather than navigation-blocked, guarded by a single auth check.
 
 ## Requirements
 
 ### Requirement: Global Auth Hook
 
-The system SHALL provide a global authentication lifecycle hook (`AuthHook`) that gates SPA route loads based on authentication state only. The hook SHALL NOT enforce onboarding step ordering — there is no step machine and no ordinal `tutorialStep` comparison. For guests (unauthenticated users) the hook SHALL permit free roam across application routes (soft gate); account-only features SHALL be hidden at point of use per `guest-mode-access` rather than blocked by navigation. The dashboard SHALL be reachable at any onboarding state; a guest with no follows SHALL be guided by an in-page empty-state call-to-action toward discovery, not by a guard redirect.
+The system SHALL provide a global authentication lifecycle hook (`AuthHook`) that gates SPA route loads based on authentication state only. The hook SHALL NOT enforce onboarding step ordering — there is no step machine and no ordinal `tutorialStep` comparison. For guests (unauthenticated users) the hook SHALL permit free roam across application routes (soft gate); account-only features SHALL be hidden at point of use per `guest-mode-access` rather than blocked by navigation. The timetable SHALL be reachable at any onboarding state; a guest with no follows SHALL be guided by an in-page empty-state call-to-action toward discovery, not by a guard redirect.
 
 #### Scenario: Authenticated user navigates to any route
 
@@ -24,18 +24,18 @@ The system SHALL provide a global authentication lifecycle hook (`AuthHook`) tha
 #### Scenario: Guest navigates to an application route
 
 - **WHEN** a user has `isAuthenticated = false`
-- **AND** the target route is an application route (e.g. dashboard, discovery, my-artists, tickets, settings)
+- **AND** the target route is an application route (e.g. timetable, discovery, my-artists, tickets, settings)
 - **THEN** the system SHALL allow the route to load (guest free roam / soft gate)
 - **AND** the system SHALL NOT redirect based on any onboarding step
 - **AND** account-only features on the destination SHALL be hidden at point of use per `guest-mode-access`
 
-#### Scenario: Guest with no follows lands on the dashboard
+#### Scenario: Guest with no follows lands on the timetable
 
 - **WHEN** a user has `isAuthenticated = false`
 - **AND** the user navigates to `/dashboard` with zero followed artists
-- **THEN** the system SHALL allow the dashboard to load
-- **AND** the dashboard SHALL present an empty-state call-to-action pointing to discovery
-- **AND** the system SHALL NOT redirect the user away from the dashboard
+- **THEN** the system SHALL allow the timetable to load
+- **AND** the timetable SHALL present an empty-state call-to-action pointing to discovery
+- **AND** the system SHALL NOT redirect the user away from the timetable
 
 ### Requirement: Settings Reachable During Onboarding
 
@@ -62,21 +62,21 @@ The system SHALL allow an unauthenticated user in onboarding to navigate back to
 - **AND** merely viewing Welcome SHALL NOT change onboarding state
 - **AND** onboarding state SHALL change only via the completion latch (`finish()`), never by viewing Welcome
 
-### Requirement: Guest Free Navigation After Dashboard
+### Requirement: Guest Free Navigation After Timetable
 
-The system SHALL allow an unauthenticated (guest) user who has reached the dashboard to navigate to any application route, including routes that surface account-bound features (e.g. Settings, Tickets). Navigation SHALL NOT be hard-blocked on the basis of guest status alone.
+The system SHALL allow an unauthenticated (guest) user who has reached the timetable to navigate to any application route, including routes that surface account-bound features (e.g. Settings, Tickets). Navigation SHALL NOT be hard-blocked on the basis of guest status alone.
 
-#### Scenario: Guest navigates to Tickets after dashboard
+#### Scenario: Guest navigates to Tickets after timetable
 
-- **WHEN** a guest user has `onboardingStep` of `'dashboard'`, `'my-artists'`, or `'completed'`
+- **WHEN** a guest user has `onboardingStep` of `'timetable'`, `'my-artists'`, or `'completed'`
 - **AND** the user taps the Tickets nav tab
 - **THEN** the system SHALL allow the Tickets route to load
 - **AND** the system SHALL render the Tickets screen's existing empty / unauthenticated state rather than redirecting away
 
-#### Scenario: Guest navigates to Settings after dashboard
+#### Scenario: Guest navigates to Settings after timetable
 
-- **WHEN** a guest user has reached at least the `'dashboard'` step
-- **AND** the user chooses Settings in the FAB launcher
+- **WHEN** a guest user has reached at least the `'timetable'` step
+- **AND** the user chooses Settings in the action menu launcher
 - **THEN** the system SHALL allow the Settings route to load
 
 ### Requirement: Account-Only Features Hidden, Not Blocked

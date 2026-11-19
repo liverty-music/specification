@@ -2,21 +2,21 @@
 
 ## Purpose
 
-Offers push notifications to a signed-in fan where the fan has just asked for something only push delivers (a hype change on My Artists, the ticket section of the event detail sheet) and once after sign-up, and opens the browser's permission prompt only when the fan presses the offer.
+Offers push notifications to a signed-in fan where the fan has just asked for something only push delivers (a hype change on My Artists, the ticket section of the concert sheet) and once after sign-up, and opens the browser's permission prompt only when the fan presses the offer.
 
 ## Requirements
 
 ### Requirement: The permission answer is reported
 
-After the fan answers the browser's push-permission request, the fan app SHALL send one usage analytics event with the answer (granted, denied, or dismissed without an answer) and where the request started: the hype snack on My Artists (the notification prompt), the event detail sheet, the post-signup sheet, Settings, or checkout.
+After the fan answers the browser's push-permission request, the fan app SHALL send one usage analytics event with the answer (granted, denied, or dismissed without an answer) and where the request started: the hype snack on My Artists (the notification prompt), the concert sheet, the post-signup sheet, Settings, or checkout.
 
 #### Scenario: Fan denies
 - **WHEN** the fan presses 「オンにする」 on the push offer and then blocks notifications in the browser's request
 - **THEN** one event is sent with the answer denied and the notification prompt as its start
 
-#### Scenario: Fan allows from the event detail sheet
+#### Scenario: Fan allows from the concert sheet
 - **WHEN** the fan presses the push offer next to the push line of the ticket section and allows notifications in the browser's request
-- **THEN** one event is sent with the answer granted and the event detail sheet as its start
+- **THEN** one event is sent with the answer granted and the concert sheet as its start
 
 ### Requirement: Push offer comes before the browser permission prompt
 
@@ -34,7 +34,7 @@ The notification prompt SHALL be the app's own offer to turn on push notificatio
 
 ### Requirement: Where the push offer appears
 
-The push offer SHALL appear only in these places: the first step of the post-signup sheet (stated by the post-signup dialog surface), the hype snack on My Artists (stated by the My Artists screen), and next to the push line of the ticket section and of the out-of-range notice in the event detail sheet (stated by the event detail sheet surface). No other screen or surface SHALL show a push offer; the push toggle in Settings stays available at all times.
+The push offer SHALL appear only in these places: the first step of the post-signup sheet (stated by the post-signup dialog surface), the hype snack on My Artists (stated by the My Artists screen), and next to the push line of the ticket section and of the out-of-range notice in the concert sheet (stated by the concert sheet surface). No other screen or surface SHALL show a push offer; the push toggle in Settings stays available at all times.
 
 #### Scenario: Offer after sign-up
 
@@ -48,12 +48,12 @@ The push offer SHALL appear only in these places: the first step of the post-sig
 
 #### Scenario: Offer in the ticket section
 
-- **WHEN** an eligible signed-in fan opens the event detail sheet of an event they track
+- **WHEN** an eligible signed-in fan opens the concert sheet of an event they track
 - **THEN** the push line of the ticket section offers push notifications
 
 #### Scenario: No offer on other screens
 
-- **WHEN** an eligible fan uses Discovery, the Dashboard outside the event detail sheet, Tickets or an Event page
+- **WHEN** an eligible fan uses Discovery, the Timetable outside the concert sheet, Tickets or a Concert page
 - **THEN** no push offer appears
 
 ### Requirement: Push offer eligibility
@@ -108,7 +108,7 @@ After the fan answers the browser's permission prompt opened from a push offer, 
 
 ### Requirement: Only the post-signup offer is limited
 
-The post-signup sheet SHALL show its offer once per sign-up. The offers in the hype snack and in the event detail sheet SHALL have no limit of their own: each appears whenever its surface shows it and the fan is eligible, because the fan has just asked for something only push delivers.
+The post-signup sheet SHALL show its offer once per sign-up. The offers in the hype snack and in the concert sheet SHALL have no limit of their own: each appears whenever its surface shows it and the fan is eligible, because the fan has just asked for something only push delivers.
 
 #### Scenario: Every hype change with push off
 
@@ -117,5 +117,5 @@ The post-signup sheet SHALL show its offer once per sign-up. The offers in the h
 
 #### Scenario: After several unanswered offers
 
-- **WHEN** an eligible fan has let the offer go unanswered 5 times and opens the event detail sheet of an event they track
+- **WHEN** an eligible fan has let the offer go unanswered 5 times and opens the concert sheet of an event they track
 - **THEN** the push line of the ticket section still offers push notifications

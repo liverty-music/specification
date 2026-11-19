@@ -1,22 +1,22 @@
-# components/infrastructure/fan/web/route/event Specification
+# components/infrastructure/fan/web/route/concert Specification
 
 ## Purpose
-The Event page (`/events/:id`) is the public, shareable page of one first-party Event: what a fan sees when they open a link posted by an artist or a notification, whether or not they are signed in, and where ticket sales and following start.
+The Concert page (`/events/:id`) is the public, shareable page of one first-party Event: what a fan sees when they open a link posted by an artist or a notification, whether or not they are signed in, and where ticket sales and following start.
 
 ## Requirements
 
-### Requirement: Anyone can open the event page
+### Requirement: Anyone can open the concert page
 
-The Event page SHALL be shown to guests and signed-in fans alike, without asking anyone to sign in and without waiting for the sign-in state to be known before it starts loading the event. It SHALL load the event with ConcertService.Get and the Series' dates with ConcertService.ListBySeries.
+The Concert page SHALL be shown to guests and signed-in fans alike, without asking anyone to sign in and without waiting for the sign-in state to be known before it starts loading the event. It SHALL load the event with ConcertService.Get and the Series' dates with ConcertService.ListBySeries.
 
 #### Scenario: Guest opens a shared link
 
 - **WHEN** a guest who has never used the app opens `/events/<id>` of a published public event
-- **THEN** the Event page shows the event and no sign-in is requested
+- **THEN** the Concert page shows the event and no sign-in is requested
 
-### Requirement: What the event page shows
+### Requirement: What the concert page shows
 
-For an event with an event page, the Event page SHALL show:
+For an event with a concert page, the Concert page SHALL show:
 - the Series' cover image, or a brand placeholder when there is none;
 - the Series' title;
 - each performing Artist's name with a follow control;
@@ -43,18 +43,18 @@ Text the Organizer entered (title, description, venue as listed) SHALL be shown 
 - **WHEN** the display language is English and the Organizer wrote the title in Japanese
 - **THEN** the title is shown in Japanese and the date and labels in English
 
-### Requirement: Following from the event page
+### Requirement: Following from the concert page
 
 The follow control of each performer SHALL follow or unfollow that Artist the same way the app's other follow controls do, for guests and signed-in fans alike, and SHALL show whether the fan already follows the Artist. A guest's follows SHALL be kept and carried into the account when the guest signs up.
 
 #### Scenario: Guest follows the artist
 
-- **WHEN** a guest taps the follow control of a performer on the Event page
+- **WHEN** a guest taps the follow control of a performer on the Concert page
 - **THEN** the control shows the Artist as followed, and the follow is carried into the guest's account when they sign up
 
 ### Requirement: Date tabs for a series with several dates
 
-When the Series has 2 to 4 Events, the Event page SHALL show one tab per Event, labelled with its date and weekday, in date order, with the displayed Event's tab selected. When the Series has more than 4 Events, the page SHALL instead list the other Events under the main content. Each tab and list entry SHALL be a link to that Event's own `/events/:id`, so each date can be shared and the back control returns to the previous date. A Series with one Event SHALL show neither.
+When the Series has 2 to 4 Events, the Concert page SHALL show one tab per Event, labelled with its date and weekday, in date order, with the displayed Event's tab selected. When the Series has more than 4 Events, the page SHALL instead list the other Events under the main content. Each tab and list entry SHALL be a link to that Event's own `/events/:id`, so each date can be shared and the back control returns to the previous date. A Series with one Event SHALL show neither.
 
 #### Scenario: Two-day run
 
@@ -80,9 +80,9 @@ The ticket section SHALL show, for a signed-in fan holding at least one Issued T
 - **WHEN** a signed-in fan's only Ticket for the Event is Voided
 - **THEN** no purchased-tickets line is shown
 
-### Requirement: Sign-up started on the event page returns to it
+### Requirement: Sign-up started on the concert page returns to it
 
-When a guest starts sign-up from the Event page, after the sign-up completes the app SHALL show the same Event page, mark onboarding complete, and carry the guest's follows into the new account. The app SHALL NOT take the fan to the Dashboard first.
+When a guest starts sign-up from the Concert page, after the sign-up completes the app SHALL show the same Concert page, mark onboarding complete, and carry the guest's follows into the new account. The app SHALL NOT take the fan to the Timetable first.
 
 #### Scenario: Guest signs up to buy
 
@@ -91,7 +91,7 @@ When a guest starts sign-up from the Event page, after the sign-up completes the
 
 ### Requirement: Cancelled event
 
-When the Event is CANCELLED, the Event page SHALL show a banner stating that the concert is 中止 (cancelled), that tickets are no longer sold and that purchased tickets are refunded, together with a link to the performing Artist's other concerts; it SHALL show no sale in the ticket section. The other dates of the same Series SHALL keep their own state: a PUBLISHED date shows no banner.
+When the Event is CANCELLED, the Concert page SHALL show a banner stating that the concert is 中止 (cancelled), that tickets are no longer sold and that purchased tickets are refunded, together with a link to the performing Artist's other concerts; it SHALL show no sale in the ticket section. The other dates of the same Series SHALL keep their own state: a PUBLISHED date shows no banner.
 
 #### Scenario: Shared link after cancellation
 
@@ -105,7 +105,7 @@ When the Event is CANCELLED, the Event page SHALL show a banner stating that the
 
 ### Requirement: Ended event
 
-When the Event's local date is before the current date at its Venue (entity/venue "Current date at a venue"), the Event page SHALL show that the event has ended and SHALL show no ticket section.
+When the Event's local date is before the current date at its Venue (entity/venue "Current date at a venue"), the Concert page SHALL show that the event has ended and SHALL show no ticket section.
 
 #### Scenario: Day after the show
 
@@ -114,7 +114,7 @@ When the Event's local date is before the current date at its Venue (entity/venu
 
 ### Requirement: Event without a page
 
-When ConcertService.Get fails with NotFound, the Event page SHALL show one "event not found" view with a link to the Dashboard, the same for every reason. When the event cannot be loaded for any other reason, the page SHALL show a retry control instead.
+When ConcertService.Get fails with NotFound, the Concert page SHALL show one "event not found" view with a link to the Timetable, the same for every reason. When the event cannot be loaded for any other reason, the page SHALL show a retry control instead.
 
 #### Scenario: Unlisted event
 
@@ -128,7 +128,7 @@ When ConcertService.Get fails with NotFound, the Event page SHALL show one "even
 
 ### Requirement: A referral link's code is kept on the device
 
-When the Event page is opened with a `ref` query parameter whose value, lowercased, is a valid ReferralCode (1 to 32 lowercase ASCII letters, digits or hyphens) and the event loads, the page SHALL keep that lowercased code on the device together with the event's Series and an expiry 7 days after the page was opened, replacing any code kept before (the last link wins). This SHALL happen for guests and signed-in fans alike and SHALL NOT change what the page shows. A `ref` value that is not a valid ReferralCode, a page opened without `ref`, and a page whose event does not load SHALL leave the kept code as it is.
+When the Concert page is opened with a `ref` query parameter whose value, lowercased, is a valid ReferralCode (1 to 32 lowercase ASCII letters, digits or hyphens) and the event loads, the page SHALL keep that lowercased code on the device together with the event's Series and an expiry 7 days after the page was opened, replacing any code kept before (the last link wins). This SHALL happen for guests and signed-in fans alike and SHALL NOT change what the page shows. A `ref` value that is not a valid ReferralCode, a page opened without `ref`, and a page whose event does not load SHALL leave the kept code as it is.
 
 A kept code SHALL stay on the device across sign-up and sign-in, across other tabs and windows of the same browser, and across sign-out, until it expires or a newer valid link replaces it; after its expiry it SHALL be treated as absent. The page SHALL NOT add the code to the sign-up return path, to the links to the checkout and the lottery entry screen, to its share control or to its link preview: the checkout and the entry screen read the kept code from the device.
 
@@ -158,10 +158,10 @@ A kept code SHALL stay on the device across sign-up and sign-in, across other ta
 
 ### Requirement: Sharing and adding to a calendar are reported
 
-When the fan uses the share control or the add-to-calendar control of the Event page, the page SHALL send one usage analytics event naming the control, with the Event; for share, it SHALL also state whether the share completed or was cancelled where the device reports it.
+When the fan uses the share control or the add-to-calendar control of the Concert page, the page SHALL send one usage analytics event naming the control, with the Event; for share, it SHALL also state whether the share completed or was cancelled where the device reports it.
 
 #### Scenario: Share
-- **WHEN** a fan shares the Event page and completes the share
+- **WHEN** a fan shares the Concert page and completes the share
 - **THEN** one share event is sent with the Event and the share completed
 
 ### Requirement: Ticket section shows the sale and its seat types
@@ -179,7 +179,7 @@ For each TicketStock whose resale is open, whichever sale is shown, the section 
 
 When the signed-in fan already holds or has applied for tickets of a seat type for the Event, the section SHALL offer actions only for that seat type and SHALL say that one account holds tickets of one seat type per date, naming it. When the Event has no sale, the section SHALL show no sale.
 
-The action to buy or to enter SHALL open the checkout or the entry screen for a signed-in fan. For a guest, it SHALL start sign-up and return to the Event page. The fan's purchased tickets are shown as before.
+The action to buy or to enter SHALL open the checkout or the entry screen for a signed-in fan. For a guest, it SHALL start sign-up and return to the Concert page. The fan's purchased tickets are shown as before.
 
 #### Scenario: On sale with few left
 
@@ -194,7 +194,7 @@ The action to buy or to enter SHALL open the checkout or the entry screen for a 
 #### Scenario: Guest buys
 
 - **WHEN** a guest taps the action to buy
-- **THEN** sign-up starts and, once it completes, the guest is back on the Event page
+- **THEN** sign-up starts and, once it completes, the guest is back on the Concert page
 
 #### Scenario: Not yet on sale
 

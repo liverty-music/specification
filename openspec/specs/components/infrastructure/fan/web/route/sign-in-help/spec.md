@@ -1,4 +1,4 @@
-# components/infrastructure/fan/web/route/passkey-recovery Specification
+# components/infrastructure/fan/web/route/sign-in-help Specification
 
 ## Purpose
 Provides the "can't sign in" screen, where a person who cannot use any of their passkeys asks for an email link that registers a new passkey on the device in hand.
@@ -7,7 +7,7 @@ Provides the "can't sign in" screen, where a person who cannot use any of their 
 
 ### Requirement: The fan asks for a registration link by email
 
-The passkey recovery screen SHALL be reachable at `/passkey-recovery` by guests and signed-in fans alike. It SHALL explain that a link to create a new passkey will be emailed to the account's address, that the link works for 1 hour, and that it should be opened on the device that will hold the new passkey. It SHALL offer one email field and a send button. On send, it SHALL call UserService.RequestPasskeyRecovery and, on success, SHALL replace the form with the same message for every address: that if an account uses this address, an email with a link has been sent. The message SHALL NOT say whether an account exists.
+The sign-in help screen SHALL be reachable at `/passkey-recovery` by guests and signed-in fans alike. It SHALL explain that a link to create a new passkey will be emailed to the account's address, that the link works for 1 hour, and that it should be opened on the device that will hold the new passkey. It SHALL offer one email field and a send button. On send, it SHALL call UserService.RequestPasskeyRecovery and, on success, SHALL replace the form with the same message for every address: that if an account uses this address, an email with a link has been sent. The message SHALL NOT say whether an account exists.
 
 #### Scenario: Fan sends their address
 

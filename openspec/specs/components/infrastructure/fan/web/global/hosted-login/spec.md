@@ -208,16 +208,16 @@ The hosted login screen SHALL choose its language with one rule: the language th
 
 ### Requirement: Fans have a recovery path for lost passkeys
 
-A fan account SHALL never depend on a single passkey with no way back in. A fan SHALL be able to register more than one passkey, and a fan who can use none of them SHALL be able to register a new one through an emailed link sent to the account's verified address (see the passkey recovery screen). Synced passkeys survive the loss of one device, so a second hardware authenticator is NOT required.
+A fan account SHALL never depend on a single passkey with no way back in. A fan SHALL be able to register more than one passkey, and a fan who can use none of them SHALL be able to register a new one through an emailed link sent to the account's verified address (see the sign-in help screen). Synced passkeys survive the loss of one device, so a second hardware authenticator is NOT required.
 
 #### Scenario: Fan lost every passkey
 
 - **WHEN** a fan with a verified address can use none of their passkeys
-- **THEN** they can request a link from the passkey recovery screen, register a new passkey with it and sign in to the same account
+- **THEN** they can request a link from the sign-in help screen, register a new passkey with it and sign in to the same account
 
 ### Requirement: The hosted login registers a passkey from a registration link
 
-When a person opens a passkey registration link within its 1-hour validity, the hosted login SHALL let them create a passkey for the identity the link was sent for without signing in first, and SHALL then send them to the fan app, where they sign in with the new passkey. A link that is expired or was already used SHALL register nothing, and the person SHALL be able to request a new link from the passkey recovery screen.
+When a person opens a passkey registration link within its 1-hour validity, the hosted login SHALL let them create a passkey for the identity the link was sent for without signing in first, and SHALL then send them to the fan app, where they sign in with the new passkey. A link that is expired or was already used SHALL register nothing, and the person SHALL be able to request a new link from the sign-in help screen.
 
 #### Scenario: Valid link
 

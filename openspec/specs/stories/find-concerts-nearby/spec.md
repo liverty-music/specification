@@ -10,7 +10,7 @@ tf 02 ui Fan_Discovery
 tf 03 cmd FollowUseCase_Follow
 tf 04 evt Follow_Created
 tf 05 rmo ConcertUseCase_ListFollowed
-tf 06 ui Fan_Dashboard
+tf 06 ui Fan_Timetable
 ```
 
 ## Requirements
@@ -25,16 +25,16 @@ From Discovery the fan SHALL reach, in one tap on the swap tile, the concerts th
 - **AND** a concert in Tokyo the same weekend is not listed
 
 #### Scenario: No home area yet
-- **WHEN** a guest without a home area opens the All Nearby view
+- **WHEN** a guest without a home area opens the Concerts view
 - **THEN** the guest is asked to choose an area before any concert is listed
 
 ### Requirement: Following from a nearby concert adds the artist to the timetable
 
-When a signed-in fan follows the artist of a concert from the All Nearby view, FollowUseCase.Follow SHALL store the follow, and the artist's concerts SHALL appear on the fan's dashboard timetable. A guest who taps the follow action SHALL be offered sign-up instead, and no follow is stored.
+When a signed-in fan follows the artist of a concert from the Concerts view, FollowUseCase.Follow SHALL store the follow, and the artist's concerts SHALL appear on the fan's timetable. A guest who taps the follow action SHALL be offered sign-up instead, and no follow is stored.
 
 #### Scenario: Signed-in fan follows from a nearby concert
 - **WHEN** a signed-in fan opens a nearby concert of an artist they do not follow and taps 「このアーティストをフォロー」
-- **THEN** the artist appears in My Artists at hype level Nearby and its concerts appear on the dashboard timetable
+- **THEN** the artist appears in My Artists at hype level Nearby and its concerts appear on the timetable
 
 #### Scenario: Guest taps follow
 - **WHEN** a guest taps 「このアーティストをフォロー」 on a nearby concert

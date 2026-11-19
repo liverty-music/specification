@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provide a persistent fixed banner on My Artists and Dashboard pages prompting unauthenticated users to create an account, dismissed automatically on signup completion.
+Provide a persistent fixed banner on My Artists and Timetable pages prompting unauthenticated users to create an account, dismissed automatically on signup completion.
 
 ## Requirements
 

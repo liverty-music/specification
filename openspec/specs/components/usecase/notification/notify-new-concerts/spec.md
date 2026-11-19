@@ -146,7 +146,7 @@ For each matched follower, the requested notification's subject SHALL be the art
 - **WHEN** concerts are added in JP-40 on 2026-09-01 and in JP-13 on 2026-09-05, and a follower's hype level is Home with home area JP-13
 - **THEN** that follower's link points to the JP-13 concert
 
-#### Scenario: First-party concert links to its event page
+#### Scenario: First-party concert links to its concert page
 
 - **WHEN** the earliest matched concert belongs to a Series published by an Organizer
 - **THEN** the link is `/events/<id of that concert>`

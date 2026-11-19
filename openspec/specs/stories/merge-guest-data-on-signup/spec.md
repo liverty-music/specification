@@ -108,7 +108,7 @@ The system SHALL store guest session data in LocalStorage under namespaced keys 
 
 #### Scenario: Home area selection stored locally
 
-- **WHEN** a guest user selects a home area during Step 3 (Dashboard)
+- **WHEN** a guest user selects a home area during Step 3 (Timetable)
 - **THEN** the system SHALL store the selected value in LocalStorage under `guest.home`, so the existing per-store cleanup covers it
 
 ### Requirement: Data Merge on Authentication

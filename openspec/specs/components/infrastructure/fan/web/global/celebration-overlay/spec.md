@@ -2,29 +2,29 @@
 
 ## Purpose
 
-Provides an emotional payoff on the Dashboard, gated on the timetable being real (region set, data loaded). Fired from a single `maybeCelebrate()` decision point in two tiers: a light (no-confetti) acknowledgement on a guest's first dashboard arrival during onboarding, and a full confetti celebration on the post-signup redirect that hands off to the PostSignupDialog.
+Provides an emotional payoff on the Timetable, gated on the timetable being real (region set, data loaded). Fired from a single `maybeCelebrate()` decision point in two tiers: a light (no-confetti) acknowledgement on a guest's first timetable arrival during onboarding, and a full confetti celebration on the post-signup redirect that hands off to the PostSignupDialog.
 
 ## Requirements
 
 ### Requirement: Two-Tier Celebration Overlay
 
-The system SHALL present a celebration overlay at two distinct moments on the Dashboard, gated on the timetable being real (home area set and data loaded). Each tier SHALL be shown at most once on the device.
+The system SHALL present a celebration overlay at two distinct moments on the Timetable, gated on the timetable being real (home area set and data loaded). Each tier SHALL be shown at most once on the device.
 
-- **Light tier** (a fan in onboarding arriving at the Dashboard): shown only when the fan follows at least 1 artist AND the timetable holds at least 1 concert. It renders without confetti and shows three lines: 「タイムテーブル完成！」, 「{{artists}}組のアーティストの{{concerts}}公演が見つかりました」 (the number of followed artists and the number of concerts on the timetable) and 「タップして見てみよう」.
-- **Post-signup tier** (the Dashboard right after a sign-up): renders with confetti, headline 「ようこそ！もうライブは見逃さない」 and body 「新着ライブは、Liverty Music が追いかけます！」, and on dismissal opens the post-signup dialog.
+- **Light tier** (a fan in onboarding arriving at the Timetable): shown only when the fan follows at least 1 artist AND the timetable holds at least 1 concert. It renders without confetti and shows three lines: 「タイムテーブル完成！」, 「{{artists}}組のアーティストの{{concerts}}公演が見つかりました」 (the number of followed artists and the number of concerts on the timetable) and 「タップして見てみよう」.
+- **Post-signup tier** (the Timetable right after a sign-up): renders with confetti, headline 「ようこそ！もうライブは見逃さない」 and body 「新着ライブは、Liverty Music が追いかけます！」, and on dismissal opens the post-signup dialog.
 
 The English locale SHALL show equivalent texts.
 
 #### Scenario: Celebration gated on timetable readiness
 
-- **WHEN** the Dashboard is reached during onboarding or just after sign-up
+- **WHEN** the Timetable is reached during onboarding or just after sign-up
 - **AND** the home area has not yet been chosen (the home-area sheet is open and the timetable is blurred)
 - **THEN** the system SHALL NOT show the celebration overlay
 - **AND** the system SHALL decide whether to celebrate once the home area is chosen and the timetable data has loaded
 
-#### Scenario: Guest light celebration on first dashboard
+#### Scenario: Guest light celebration on first timetable
 
-- **WHEN** a fan in onboarding who follows 5 artists reaches the Dashboard for the first time
+- **WHEN** a fan in onboarding who follows 5 artists reaches the Timetable for the first time
 - **AND** the home area is set and the timetable holds 12 concerts
 - **AND** the light celebration has not been shown on this device
 - **THEN** the overlay SHALL show 「タイムテーブル完成！」, 「5組のアーティストの12公演が見つかりました」 and 「タップして見てみよう」 without confetti
@@ -33,31 +33,31 @@ The English locale SHALL show equivalent texts.
 
 #### Scenario: Follows but no concert yet
 
-- **WHEN** a fan in onboarding who follows at least 1 artist reaches the Dashboard
+- **WHEN** a fan in onboarding who follows at least 1 artist reaches the Timetable
 - **AND** the timetable holds no concert
 - **THEN** the system SHALL NOT display the light celebration
-- **AND** the Dashboard empty state 「新しいライブが見つかり次第、ここに並びます」 SHALL guide the fan instead
+- **AND** the Timetable empty state 「新しいライブが見つかり次第、ここに並びます」 SHALL guide the fan instead
 
 #### Scenario: No follows
 
-- **WHEN** a fan in onboarding with no followed artist reaches the Dashboard
+- **WHEN** a fan in onboarding with no followed artist reaches the Timetable
 - **THEN** the system SHALL NOT display the light celebration
 
-#### Scenario: No light celebration for a completed guest revisiting the dashboard
+#### Scenario: No light celebration for a completed guest revisiting the timetable
 
-- **WHEN** a fan whose onboarding is already completed navigates to the Dashboard
+- **WHEN** a fan whose onboarding is already completed navigates to the Timetable
 - **THEN** the system SHALL NOT display the light celebration overlay
 
 #### Scenario: Post-signup full celebration then dialog
 
-- **WHEN** a newly signed-up user is redirected to the Dashboard with a pending post-signup celebration
+- **WHEN** a newly signed-up user is redirected to the Timetable with a pending post-signup celebration
 - **AND** the home area is set and the timetable data has loaded
 - **THEN** the system SHALL display the overlay with confetti, 「ようこそ！もうライブは見逃さない」 and 「新着ライブは、Liverty Music が追いかけます！」
 - **AND** on dismissal the system SHALL open the post-signup dialog (per `post-signup-dialog`)
 
 #### Scenario: Celebration does not replay
 
-- **WHEN** a user who has already seen a given celebration tier returns to the Dashboard
+- **WHEN** a user who has already seen a given celebration tier returns to the Timetable
 - **THEN** the system SHALL NOT display that celebration tier again
 
 #### Scenario: Reduced motion preference
@@ -67,7 +67,7 @@ The English locale SHALL show equivalent texts.
 
 ### Requirement: Celebration Reveals the Timetable Behind the Text
 
-The celebration overlay SHALL make its own text the only text the fan can read. Behind the overlay, the timetable or the Dashboard empty state SHALL be dimmed and blurred so that none of its text can be read through the overlay, while the shapes and colors of the timetable stay faintly visible. The headline SHALL enter by scaling up past its full size and settling back to it.
+The celebration overlay SHALL make its own text the only text the fan can read. Behind the overlay, the timetable or the Timetable empty state SHALL be dimmed and blurred so that none of its text can be read through the overlay, while the shapes and colors of the timetable stay faintly visible. The headline SHALL enter by scaling up past its full size and settling back to it.
 
 On the post-signup tier the overlay SHALL also:
 
@@ -81,7 +81,7 @@ With a reduced-motion preference the overlay SHALL show no confetti, no scaling 
 
 #### Scenario: Empty-state text behind the post-signup celebration cannot be read
 
-- **WHEN** the post-signup celebration is shown over the Dashboard empty state
+- **WHEN** the post-signup celebration is shown over the Timetable empty state
 - **THEN** the empty-state text SHALL NOT be readable through the overlay
 - **AND** the headline and body of the celebration SHALL be fully legible
 

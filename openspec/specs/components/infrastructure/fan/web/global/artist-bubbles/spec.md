@@ -1,18 +1,18 @@
-# Dna Orb
+# Artist Bubbles
 
 ## Purpose
 
-Provides the central visual orb that grows and accumulates each followed artist's color as the user follows more artists during discovery, animating absorption, follow celebrations, and escalating festival-style effects while respecting reduced-motion preferences.
+The canvas of Discovery's Artists view: the artist bubbles a fan taps to follow, and the central discovery orb that absorbs them. This spec covers the discovery orb, which grows and accumulates each followed artist's color as the user follows more artists during discovery, animating absorption, follow celebrations, and escalating festival-style effects while respecting reduced-motion preferences.
 
 ## Requirements
 
 ### Requirement: Bubble Absorption Animation
-The system SHALL provide satisfying visual feedback when users select artists by first bursting the tapped bubble in place and then animating its color into the DNA Orb, with accumulating visual intensity and comet trail effects.
+The system SHALL provide satisfying visual feedback when users select artists by first bursting the tapped bubble in place and then animating its color into the Discovery Orb, with accumulating visual intensity and comet trail effects.
 
 #### Scenario: Artist selection bursts then absorbs
 - **WHEN** a user taps an artist bubble
 - **THEN** the bubble SHALL first play a burst effect at the tap point (see "Bubble Burst On Tap") before the absorption animation begins
-- **AND** after the burst, the bubble SHALL shrink and trace a path toward the DNA Orb at the bottom
+- **AND** after the burst, the bubble SHALL shrink and trace a path toward the Discovery Orb at the bottom
 - **AND** the bubble SHALL be absorbed into the orb with a dissolve effect
 - **AND** if comet trail is enabled by the current stage level, the bubble SHALL leave a colored trail along its path
 - **AND** on absorption completion, the orb SHALL trigger a shockwave ring (if enabled by stage level)
@@ -66,7 +66,7 @@ The system SHALL expose a combined action that spawns a temporary bubble and imm
 
 ### Requirement: Orb Activation Separates Gesture Celebration From Follow-Count State
 
-The DNA orb's activation SHALL be gesture-driven: the orb SHALL enter Discovery dormant (its unobtrusive baseline) and SHALL advance its stage level and fire its celebration ONLY in response to a genuine follow gesture's bubble absorption completing on this screen. The orb's stage level SHALL be a function of the follow gestures completed during the current Discovery session — NOT of the user's total/historical follow count — so the orb never reads as "activated" before a genuine follow, regardless of how many artists the user already follows. Non-gesture follow-count changes (guest-follow hydration, guest→account migration, unfollow, optimistic-update rollback) SHALL NOT move the orb or fire the celebration. A stage-level update SHALL NOT reset in-flight transient effects.
+The discovery orb's activation SHALL be gesture-driven: the orb SHALL enter Discovery dormant (its unobtrusive baseline) and SHALL advance its stage level and fire its celebration ONLY in response to a genuine follow gesture's bubble absorption completing on this screen. The orb's stage level SHALL be a function of the follow gestures completed during the current Discovery session — NOT of the user's total/historical follow count — so the orb never reads as "activated" before a genuine follow, regardless of how many artists the user already follows. Non-gesture follow-count changes (guest-follow hydration, guest→account migration, unfollow, optimistic-update rollback) SHALL NOT move the orb or fire the celebration. A stage-level update SHALL NOT reset in-flight transient effects.
 
 The mapping from stage level to visual parameters is itself unchanged by this requirement; this requirement governs WHEN and HOW that mapping is applied and WHEN the celebration fires, not the mapping's values.
 
@@ -110,7 +110,7 @@ The mapping from stage level to visual parameters is itself unchanged by this re
 
 ### Requirement: Bubble Hue Injection into Orb Particles
 
-When an artist bubble is absorbed into the DNA orb, the orb's particle system SHALL incorporate the bubble's hue, visually reflecting the followed artist's color identity.
+When an artist bubble is absorbed into the discovery orb, the orb's particle system SHALL incorporate the bubble's hue, visually reflecting the followed artist's color identity.
 
 #### Scenario: Follow triggers color injection
 
@@ -511,7 +511,7 @@ Orbital particles SHALL display trailing arc segments to create a comet-like app
 ---
 
 ### Requirement: Orb pulse on follow
-The central Music DNA orb SHALL pulse each time an artist is followed, providing visual feedback that the selection was registered.
+The central Music discovery orb SHALL pulse each time an artist is followed, providing visual feedback that the selection was registered.
 
 #### Scenario: Bubble tap triggers orb pulse
 - **WHEN** a bubble is tapped and the follow operation succeeds

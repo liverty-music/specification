@@ -70,5 +70,5 @@ The journey-status facet SHALL be rendered only when the user is authenticated. 
 - **AND** the artist facet SHALL still be available
 
 #### Scenario: Sign-in mid-session reveals the facet
-- **WHEN** a guest signs in while on the dashboard
+- **WHEN** a guest signs in while on the timetable
 - **THEN** the journey-status facet SHALL become available without a full page reload
