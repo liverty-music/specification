@@ -22,7 +22,7 @@ service ResaleListingService {
   // the LISTED listing. The Ticket must be Issued and not admitted, bought
   // first come or won in a lottery, of a TicketStock that has sold out, for a
   // published concert, and resale must still be open: before the listing's
-  // deadline, the event's last resale draw (12:00 Japan time on the event's
+  // close time, the event's last resale draw (12:00 Japan time on the event's
   // day, or 3 hours before the start time if that is earlier). A Ticket has at most one
   // LISTED listing; one whose earlier listing was withdrawn can be listed
   // again.
@@ -41,7 +41,7 @@ service ResaleListingService {
 
   // Withdraw takes back the caller's listing so its Ticket is no longer for
   // sale, and returns it WITHDRAWN. A listing can be withdrawn while it is
-  // free for a draw: LISTED, before its deadline, and allocated to no
+  // free for a draw: LISTED, before its close time, and allocated to no
   // ResaleEntry or to one that is LOST. Withdrawing a WITHDRAWN listing again
   // changes nothing.
   //
@@ -56,7 +56,7 @@ service ResaleListingService {
   rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
 
   // List returns all of the caller's listings, each with its fee, refund
-  // amount and deadline. A LISTED listing read at or after its deadline is
+  // amount and close time. A LISTED listing read at or after its close time is
   // returned EXPIRED. A caller who never listed gets an empty list.
   //
   // Possible errors:
@@ -73,7 +73,7 @@ message CreateRequest {
 
 // CreateResponse returns the new listing.
 message CreateResponse {
-  // The LISTED listing, with its price, fee, refund amount and deadline.
+  // The LISTED listing, with its price, fee, refund amount and close time.
   entity.v1.ResaleListing resale_listing = 1 [(buf.validate.field).required = true];
 }
 

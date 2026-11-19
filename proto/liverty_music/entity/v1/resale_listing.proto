@@ -32,7 +32,7 @@ enum ResaleListingStatus {
   // a concrete status.
   RESALE_LISTING_STATUS_UNSPECIFIED = 0;
 
-  // Offered for resale and open: before its deadline and not yet sold. A daily
+  // Offered for resale and open: before its close time and not yet sold. A daily
   // resale draw may allocate it to a ResaleEntry. The fan may withdraw it while
   // no draw has allocated it, or the entry it was allocated to is LOST.
   RESALE_LISTING_STATUS_LISTED = 1;
@@ -49,10 +49,10 @@ enum ResaleListingStatus {
   // concert. The fan is refunded through that Order.
   RESALE_LISTING_STATUS_CANCELLED = 4;
 
-  // Still listed at its deadline, the event's last draw, so it can no longer be
+  // Still listed at its close time, the event's last draw, so it can no longer be
   // bought or withdrawn.
   // The Ticket stays the fan's and works at the door. Returned by the server
-  // for a LISTED listing read at or after its deadline; never stored.
+  // for a LISTED listing read at or after its close time; never stored.
   RESALE_LISTING_STATUS_EXPIRED = 5;
 }
 
@@ -122,12 +122,13 @@ message ResaleListing {
     (buf.validate.field).required = true
   ];
 
-  // When the listing can no longer be bought or withdrawn: its event's last
-  // resale draw, 12:00 Japan time on the event's day, or 3 hours before the
-  // event's start time, when admission opens, if that is earlier. The start
-  // time is required for a sale and fixed once a TicketSale names the event.
+  // The close time: when the listing can no longer be bought or withdrawn,
+  // its event's last resale draw, 12:00 Japan time on the event's day, or 3
+  // hours before the event's start time, when admission opens, if that is
+  // earlier. The start time is required for a sale and fixed once a
+  // TicketSale names the event.
   // Server-owned.
-  google.protobuf.Timestamp deadline_time = 8 [
+  google.protobuf.Timestamp close_time = 8 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
@@ -135,7 +136,7 @@ message ResaleListing {
   // When the Order of the ResaleEntry it was allocated to bought the listing.
   // Absent unless SOLD.
   // Server-owned.
-  google.protobuf.Timestamp sold_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp sell_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // When the fan was refunded the refund amount. Absent until refunded, which
   // happens shortly after the listing is SOLD; set once.
@@ -160,7 +161,7 @@ message ResaleListing {
     (buf.validate.field).required = true
   ];
 
-  // The event the Ticket admits to, whose start time sets the deadline.
+  // The event the Ticket admits to, whose start time sets the close time.
   EventId event_id = 14 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true

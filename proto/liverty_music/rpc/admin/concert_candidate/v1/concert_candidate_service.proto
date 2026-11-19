@@ -125,9 +125,9 @@ message ConcertCandidate {
   // The source URL where the concert was found.
   entity.v1.Url source_url = 8;
 
-  // The time at which the discovery pipeline first held this candidate for
+  // The find time: when the discovery pipeline first held this candidate for
   // review.
-  google.protobuf.Timestamp discovered_time = 9 [(buf.validate.field).required = true];
+  google.protobuf.Timestamp find_time = 9 [(buf.validate.field).required = true];
 
   // The scheduled door-open time. Optional; omitted when the source did not
   // state one.

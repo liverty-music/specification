@@ -20,7 +20,7 @@ message DeletionBlocker {
     // Japan time.
     KIND_UPCOMING_TICKET = 1;
 
-    // An open ResaleListing: Listed and before its deadline.
+    // An open ResaleListing: Listed and before its close time.
     KIND_LISTED_RESALE = 2;
 
     // A LotteryEntry in state Entered, awaiting its draw.
