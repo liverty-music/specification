@@ -10,8 +10,8 @@ The routine after an idea is agreed is always the same: write the change, get it
 to approve the change before it leaves the machine, and not at all when they already agreed to its content.
 
 ```
-propose (store checkout) -> plan worktree -> commit -> pre-push-review -> [approval unless agreed] -> push
-  -> PR -> CI / review loop -> merge -> sync store -> worktrees -> workset -> VS Code
+propose (store checkout) -> plan worktree -> commit -> [approval unless agreed] -> push -> PR
+  -> gemini-review + CI / review loop -> merge -> sync store -> worktrees -> workset -> VS Code
 ```
 
 The procedures behind each step are in `README.md` ("Lifecycle of a change", "Branch work in this repository",
@@ -58,34 +58,30 @@ checkout on `main`. This repository's plan commits read `docs(openspec): plan <c
 From now on, **edit only in the plan worktree**. The store copy is retired at step 5, so a fix made there
 would be lost, and a fix made only in the worktree is exactly what lands on `main`.
 
-## 4. Review, then stop only for content not yet agreed
+## 4. Stop only for content not yet agreed
 
-1. Run the `pre-push-review` skill on the plan worktree's range. Fix each accepted finding in the worktree and
-   commit it; review the fix range again as that skill says.
-2. **Decide whether to stop.** Everything after this step is outward-facing (a PR on a public repository, a
-   merge to `main`, an auto-run of downstream jobs), so the change must leave the machine with content the
-   user agreed to. Agreement given earlier in the conversation counts; asking again for the same content only
-   adds a round trip.
-   - **Go on to step 5 without stopping** when the user agreed to the change's content earlier in the
-     conversation (an html-plan response, an explicit OK on the proposal or on its decisions) and every
-     commit since then only makes the artifacts consistent with what was agreed: review fixes that resolve a
-     contradiction, a stale Purpose, a missing case of an agreed rule. Points you raised that the user left
-     unanswered do not block; list them in the step 7 report so they can be changed during implementation.
-   - **Stop** when the user agreed to nothing yet (the skill started from an idea alone), or when a fix
-     changes behaviour the user agreed to (a different screen, rule, wording or scope). Show:
-     - the change name and one paragraph of what it does and why (from proposal.md);
-     - the capabilities it adds, modifies and removes;
-     - `tasks.md` section by section, with the repositories each section touches;
-     - the pre-push-review table (findings, decisions, fixes);
-     - for MODIFIED / REMOVED / RENAMED requirements, the relevant part of `openspec show <change> --diff`;
-     - the worktrees step 6 will create, and which one opens first.
+**Decide whether to stop.** Everything after this step is outward-facing (a PR on a public repository, a
+merge to `main`, an auto-run of downstream jobs), so the change must leave the machine with content the
+user agreed to. Agreement given earlier in the conversation counts; asking again for the same content only
+adds a round trip.
+- **Go on to step 5 without stopping** when the user agreed to the change's content earlier in the
+  conversation (an html-plan response, an explicit OK on the proposal or on its decisions) and every
+  commit since then only makes the artifacts consistent with what was agreed: review fixes that resolve a
+  contradiction, a stale Purpose, a missing case of an agreed rule. Points you raised that the user left
+  unanswered do not block; list them in the step 7 report so they can be changed during implementation.
+- **Stop** when the user agreed to nothing yet (the skill started from an idea alone), or when a fix
+  changes behaviour the user agreed to (a different screen, rule, wording or scope). Show:
+  - the change name and one paragraph of what it does and why (from proposal.md);
+  - the capabilities it adds, modifies and removes;
+  - `tasks.md` section by section, with the repositories each section touches;
+  - for MODIFIED / REMOVED / RENAMED requirements, the relevant part of `openspec show <change> --diff`;
+  - the worktrees step 6 will create, and which one opens first.
 
-     Ask a direct yes/no question and wait. If the user asks for edits, make them in the worktree, commit,
-     rerun pre-push-review on the new commits, and show the change again. Silence or an answer to some other
-     question is not approval.
+  Ask a direct yes/no question and wait. If the user asks for edits, make them in the worktree, commit,
+  and show the change again. Silence or an answer to some other question is not approval.
 
-If pre-push-review cannot run, stop even when the content is agreed: say why and let the user decide whether
-to push without it.
+The Gemini review runs after the push (step 5). When an accepted finding there changes behaviour the user
+agreed to, the same rule applies: stop and show the change again before merging.
 
 ## 5. Push, PR, merge, sync
 
@@ -100,8 +96,12 @@ After approval:
    "Specifications Changed (diffs)" onward in a collapsed `<details>` block (`openspec/AGENTS.md`).
    Proto files in a plan PR are unusual; if the change carries them, they go in a separate proto PR (README
    step 3), not here.
+   Right after the push, start the `gemini-review` skill in the background on the range
+   `origin/main...HEAD` (a first push has no upstream to record). It runs in parallel with CI; fix accepted
+   findings in the plan worktree, and push them together with the fixes for CI review comments.
 2. Run the pull-request skill's readiness loop: CI, conflicts, review comments (bot reviews included,
-   through react-review). Merge with a merge commit once every gate holds; merging liverty-music PRs on green
+   through react-review), and the gemini-review gate (every run finished, no accepted Critical left). If
+   the review cannot run, stop and ask the user before merging. Merge with a merge commit once every gate holds; merging liverty-music PRs on green
    CI is allowed. Quote the merged state from `gh pr view <n> --json state,mergedAt,mergeCommit`.
 3. Sync the store. The store copy has no progress yet (nothing has been applied), and the merged copy is the
    reviewed one, so retire the store copy instead of restoring it on top:
@@ -181,7 +181,7 @@ user would create.
 Tell the user, in their language:
 
 - the merged plan PR as a Markdown link, with the quoted merged state;
-- the pre-push-review table (findings, decisions, fixes) and the sync `diff` result;
+- the gemini-review table (findings, decisions, fixes) and the sync `diff` result;
 - when step 4 did not stop: the points raised earlier that the user left unanswered;
 - the workset table (member, path, branch, which tasks it serves) and the line that confirmed the window;
 - the first command to run in the new window: `/opsx:apply <change>` in the first member, and, when the
