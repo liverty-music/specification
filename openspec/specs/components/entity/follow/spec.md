@@ -11,7 +11,7 @@ A Follow records that a fan wants to be kept informed about one artist, together
 | hype | the fan's hype level for this artist | required; one of Watch, Home, Nearby, Away (least to most enthusiastic); a new Follow starts at Nearby |
 | hype set by | who set the hype level: the starting level (default), the fan (fan), or the app from the fan's own actions (inference) | required; one of default, fan, inference; a new Follow starts at default |
 
-Hype levels: **Watch** (the artist's concerts appear on the fan's dashboard, no push), **Home** (push for concerts in the fan's home area), **Nearby** (push for concerts in the home area or near it), **Away** (push for every concert). Any hype level may be changed to any other by the fan. The app may only raise a hype level the fan did not set.
+Hype levels: **Watch** (the artist's concerts appear on the fan's timetable, no push), **Home** (push for concerts in the fan's home area), **Nearby** (push for concerts in the home area or near it), **Away** (push for every concert). Any hype level may be changed to any other by the fan. The app may only raise a hype level the fan did not set.
 
 Events announced about it:
 

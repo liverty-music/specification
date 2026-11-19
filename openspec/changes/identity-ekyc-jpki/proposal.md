@@ -84,7 +84,7 @@ not a 特定事業者) — lightweight JPKI binding, not 取引時確認; and **
 - `components/entity/identity-verification`: Verified-person dedupe via the provider user ID; Per-person limit signal and mixed populations; Privacy — data minimization and deletion
 - `components/usecase/ticket-sale/set-verification-requirement`: Only マイナンバーカード verification satisfies a requirement
 - `components/usecase/lottery-entry/authorize-card`: Verification adds no verified name (moved from `lottery-entry/start`, which enter-lottery-at-confirm removes)
-- `components/infrastructure/fan/web/route/lottery-entry`: An unverified fan is asked to verify before entering
+- `components/infrastructure/fan/web/route/new-lottery-entry`: An unverified fan is asked to verify before entering
 - `components/infrastructure/fan/web/route/settings`: the identity verification result (success, or the reason for a failure) is shown on Settings
 
 ## Impact

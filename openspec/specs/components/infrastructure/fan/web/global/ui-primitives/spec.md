@@ -143,11 +143,11 @@ A confirmation dialog SHALL fade in when it opens and fade out when it closes, o
 
 ### Requirement: One list item
 
-Every row of a list in the fan app that shows an icon, a label, an optional value and an optional caret, such as the rows of Settings and of the All Nearby filter sheet, SHALL be the same list item, in the Material 3 layout: at least 56 px tall, 16 px of space at both ends, a 24 px leading icon, the label in the body-large style, and the value in the label-small style. A row that does something on tap SHALL be a button or a link, with a state layer.
+Every row of a list in the fan app that shows an icon, a label, an optional value and an optional caret, such as the rows of Settings and of the Concerts view's filter sheet, SHALL be the same list item, in the Material 3 layout: at least 56 px tall, 16 px of space at both ends, a 24 px leading icon, the label in the body-large style, and the value in the label-small style. A row that does something on tap SHALL be a button or a link, with a state layer.
 
 #### Scenario: Settings row and filter row match
 
-- **WHEN** a Settings row with an icon, a value and a caret is compared with an All Nearby filter row
+- **WHEN** a Settings row with an icon, a value and a caret is compared with an Concerts view's filter row
 - **THEN** both have the same height, the same space at both ends and the same text styles
 
 #### Scenario: Long value

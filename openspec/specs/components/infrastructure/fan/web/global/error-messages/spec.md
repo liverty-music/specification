@@ -11,7 +11,7 @@ When a call or an action on any fan app screen fails, the screen SHALL show copy
 
 #### Scenario: Timetable fails to load
 
-- **WHEN** loading the dashboard's timetable fails with Unavailable and the message `upstream connect error or disconnect/reset before headers`
+- **WHEN** loading the timetable's timetable fails with Unavailable and the message `upstream connect error or disconnect/reset before headers`
 - **THEN** the inline error says ライブの読み込みに失敗しました with a retry button, and the server's message appears nowhere on the screen
 
 #### Scenario: Card declined at checkout

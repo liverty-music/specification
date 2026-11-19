@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan follows an artist and the follow takes effect at once; when the platform has never looked for that artist's concerts, a first concert search starts in the background, so the artist's upcoming concerts reach the catalog and the fan's Dashboard without the fan waiting for it.
+A fan follows an artist and the follow takes effect at once; when the platform has never looked for that artist's concerts, a first concert search starts in the background, so the artist's upcoming concerts reach the catalog and the fan's Timetable without the fan waiting for it.
 
 ```mermaid
 eventmodeling
@@ -14,7 +14,7 @@ tf 05 cmd ConcertUseCase_SearchNewConcerts
 tf 06 cmd ConcertCreationUseCase_CreateFromDiscovered
 tf 07 evt Concert_Created
 tf 08 rmo ConcertUseCase_ListFollowed
-tf 09 ui Fan_Dashboard
+tf 09 ui Fan_Timetable
 ```
 
 ## Requirements
@@ -40,12 +40,12 @@ When a fan newly follows an artist, the follow SHALL be announced together with 
 #### Scenario: Never-searched artist with announced concerts
 
 - **WHEN** a fan follows an artist that has never been searched, and the search finds two newly announced concerts at known venues
-- **THEN** once the search completes, both concerts are in the catalog and appear on the fan's Dashboard
+- **THEN** once the search completes, both concerts are in the catalog and appear on the fan's Timetable
 
 #### Scenario: Artist searched before
 
 - **WHEN** a fan follows an artist that another fan followed yesterday
-- **THEN** no concert search starts and the fan's Dashboard shows the artist's concerts already in the catalog
+- **THEN** no concert search starts and the fan's Timetable shows the artist's concerts already in the catalog
 
 #### Scenario: Several fans follow a new artist at once
 

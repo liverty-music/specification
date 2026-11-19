@@ -9,7 +9,7 @@ The fan-facing ticket sale service boundary: anyone, signed in or not, may read 
 
 ListByEvent SHALL accept a call with or without a sign-in, fail with InvalidArgument when the event is missing or malformed, and return TicketSaleUseCase.ListByEvent for the event.
 
-#### Scenario: Guest opens the event page
+#### Scenario: Guest opens the concert page
 
 - **WHEN** a caller who is not signed in calls ListByEvent for an event on sale
 - **THEN** the event's sales are returned with the event's TicketStocks, each with its seat type and state

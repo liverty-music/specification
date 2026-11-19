@@ -11,19 +11,19 @@ tf 03 evt Concert_Created
 tf 04 cmd NotificationUseCase_NotifyNewConcerts
 rf 05 rmo ConcertUseCase_Get ->> 03
 rf 06 rmo ConcertUseCase_ListBySeries ->> 03
-rf 07 ui Fan_Event ->> 04 ->> 05 ->> 06
+rf 07 ui Fan_Concert ->> 04 ->> 05 ->> 06
 rf 08 ui Member_Concert
 tf 09 cmd SeriesUseCase_Cancel
 tf 10 evt Event_Cancelled
 tf 11 rmo ConcertUseCase_Get
-tf 12 ui Fan_Event
+tf 12 ui Fan_Concert
 ```
 
 ## Requirements
 
 ### Requirement: A shared link shows the event to anyone
 
-After an Organizer publishes a PUBLIC Series with SeriesUseCase.Publish, the link `/events/<id>` of each of its Events SHALL show that event's Event page, with the Concert ConcertUseCase.Get returns and the Series' dates ConcertUseCase.ListBySeries returns, to a guest who has never used the app and to a signed-in fan who does not follow the performers; the link's preview card SHALL show the event's title, date, venue and cover image.
+After an Organizer publishes a PUBLIC Series with SeriesUseCase.Publish, the link `/events/<id>` of each of its Events SHALL show that event's Concert page, with the Concert ConcertUseCase.Get returns and the Series' dates ConcertUseCase.ListBySeries returns, to a guest who has never used the app and to a signed-in fan who does not follow the performers; the link's preview card SHALL show the event's title, date, venue and cover image.
 
 #### Scenario: Guest from a social post
 
@@ -37,16 +37,16 @@ After an Organizer publishes a PUBLIC Series with SeriesUseCase.Publish, the lin
 
 ### Requirement: Following from a shared link
 
-A guest SHALL be able to follow a performer on the Event page, and after signing up from that page SHALL find the performer followed on their account and be back on the same Event page.
+A guest SHALL be able to follow a performer on the Concert page, and after signing up from that page SHALL find the performer followed on their account and be back on the same Concert page.
 
 #### Scenario: Guest follows, then signs up
 
 - **WHEN** a guest follows the performer on `/events/<id>`, starts sign-up there and completes it
 - **THEN** the app shows `/events/<id>` signed in, the performer is among the fan's followed Artists, and no post-signup dialog is shown
 
-### Requirement: Notification leads to the event page
+### Requirement: Notification leads to the concert page
 
-A follower notified of a first-party concert by NotificationUseCase.NotifyNewConcerts SHALL reach that concert's Event page by tapping the notification.
+A follower notified of a first-party concert by NotificationUseCase.NotifyNewConcerts SHALL reach that concert's Concert page by tapping the notification.
 
 #### Scenario: Follower taps the notification
 
@@ -55,7 +55,7 @@ A follower notified of a first-party concert by NotificationUseCase.NotifyNewCon
 
 ### Requirement: Cancelled event stays explained
 
-After an Organizer cancels a published PUBLIC Series with SeriesUseCase.Cancel, the links of its Events SHALL still open their Event pages, showing that the concert is 中止 (cancelled) and selling nothing.
+After an Organizer cancels a published PUBLIC Series with SeriesUseCase.Cancel, the links of its Events SHALL still open their Concert pages, showing that the concert is 中止 (cancelled) and selling nothing.
 
 #### Scenario: Link opened after cancellation
 

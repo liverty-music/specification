@@ -50,7 +50,7 @@ The system SHALL provide a reusable coach mark surface that highlights one targe
 
 - **WHEN** the Welcome demo coach mark highlights a concert card
 - **AND** the visitor taps the highlighted card
-- **THEN** the concert detail sheet for that card opens, as a direct tap on the card opens it
+- **THEN** the concert sheet for that card opens, as a direct tap on the card opens it
 - **AND** the coach mark closes
 
 #### Scenario: Off-target tap light-dismisses without blocking the page
@@ -146,7 +146,7 @@ The coach mark SHALL be a single, transient, non-blocking hint. At most one coac
 
 #### Scenario: Only the Welcome demo shows a coach mark
 
-- **WHEN** a fan uses Discovery, the Dashboard or My Artists
+- **WHEN** a fan uses Discovery, the Timetable or My Artists
 - **THEN** no coach mark is shown on those screens
 - **WHEN** a visitor reaches the interactive timetable of the Welcome demo
 - **THEN** the Welcome screen may show its coach mark, and at most one coach mark is shown

@@ -31,17 +31,17 @@ The install-prompt event listener for `beforeinstallprompt` SHALL be registered 
 #### Scenario: Install row shows native button when prompt captured during auth-callback
 
 - **WHEN** Chrome fires `beforeinstallprompt` during the `/auth/callback` page load
-- **AND** the user completes sign-up and the post-signup dialog opens on the dashboard
+- **AND** the user completes sign-up and the post-signup dialog opens on the timetable
 - **THEN** the captured install prompt SHALL be available to show
 - **AND** the post-signup dialog SHALL display the native install button in the install row
 
 ### Requirement: PWA Install Prompt Blocked During Onboarding
 
-The system SHALL NOT display the `pwa-install-banner` while the user is in active onboarding steps (DISCOVERY, DASHBOARD, MY_ARTISTS).
+The system SHALL NOT display the `pwa-install-banner` while the user is in active onboarding steps (DISCOVERY, TIMETABLE, MY_ARTISTS).
 
-#### Scenario: User is mid-tutorial on the dashboard
+#### Scenario: User is mid-tutorial on the timetable
 
-- **WHEN** the user is at onboarding step DASHBOARD
+- **WHEN** the user is at onboarding step TIMETABLE
 - **AND** the browser fires the `beforeinstallprompt` event
 - **THEN** the system SHALL capture the event
 - **AND** the system SHALL NOT display the `pwa-install-banner`
@@ -102,7 +102,7 @@ The system SHALL display the `pwa-install-banner` to authenticated users who hav
 
 #### Scenario: Banner not shown during onboarding
 
-- **WHEN** the user is in active onboarding steps (DISCOVERY, DASHBOARD, MY_ARTISTS)
+- **WHEN** the user is in active onboarding steps (DISCOVERY, TIMETABLE, MY_ARTISTS)
 - **THEN** the system SHALL NOT display the `pwa-install-banner`
 
 ### Requirement: Banner CTA Install Flow by Platform

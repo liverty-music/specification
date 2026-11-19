@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan tells the app how far they will travel for an artist by choosing a hype level on My Artists; the choice shows at once, is kept across sessions, and decides which of the artist's concerts are highlighted on the Dashboard and which new concerts reach the fan by push.
+A fan tells the app how far they will travel for an artist by choosing a hype level on My Artists; the choice shows at once, is kept across sessions, and decides which of the artist's concerts are highlighted on the Timetable and which new concerts reach the fan by push.
 
 ```mermaid
 eventmodeling
@@ -10,7 +10,7 @@ tf 01 ui Fan_MyArtists
 tf 02 cmd FollowUseCase_SetHype
 tf 03 evt Follow_HypeChanged
 tf 04 rmo ConcertUseCase_ListFollowed
-tf 05 ui Fan_Dashboard
+tf 05 ui Fan_Timetable
 ```
 
 ## Requirements
@@ -40,17 +40,17 @@ When a guest picks a hype level, it SHALL be kept on the device only, nothing SH
 
 ### Requirement: The hype level decides highlights and pushes
 
-A concert of the artist SHALL be highlighted on the Dashboard exactly when the fan's hype level matches the concert (Home matches home-area concerts, Nearby matches home-area and nearby ones, Away matches all, Watch matches none), and a newly added concert SHALL reach the fan by push under the same matching, as the story stories/get-notified-of-new-concerts describes.
+A concert of the artist SHALL be highlighted on the Timetable exactly when the fan's hype level matches the concert (Home matches home-area concerts, Nearby matches home-area and nearby ones, Away matches all, Watch matches none), and a newly added concert SHALL reach the fan by push under the same matching, as the story stories/get-notified-of-new-concerts describes.
 
 #### Scenario: Raising the level to Away
 
 - **WHEN** a signed-in fan with home JP-13 raises an artist from Home to Away and the artist has a concert in JP-40
-- **THEN** the JP-40 concert is highlighted on the Dashboard, and a concert added later in JP-40 reaches the fan by push
+- **THEN** the JP-40 concert is highlighted on the Timetable, and a concert added later in JP-40 reaches the fan by push
 
 #### Scenario: Watch
 
 - **WHEN** a fan sets an artist to Watch
-- **THEN** the artist's concerts still appear on the Dashboard, none is highlighted, and no push is sent for new ones
+- **THEN** the artist's concerts still appear on the Timetable, none is highlighted, and no push is sent for new ones
 
 ### Requirement: The app never changes a hype level the fan set
 

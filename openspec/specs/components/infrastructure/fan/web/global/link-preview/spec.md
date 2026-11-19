@@ -1,13 +1,13 @@
 # components/infrastructure/fan/web/global/link-preview Specification
 
 ## Purpose
-Link preview is the card that social networks and messengers (X, Facebook, LINE, Slack, Discord) show when a fan web link is shared: the Open Graph and X card tags carried in the HTML the fan web serves, built from the event for an Event page and site-wide otherwise.
+Link preview is the card that social networks and messengers (X, Facebook, LINE, Slack, Discord) show when a fan web link is shared: the Open Graph and X card tags carried in the HTML the fan web serves, built from the event for a Concert page and site-wide otherwise.
 
 ## Requirements
 
-### Requirement: Event page links carry the event's preview
+### Requirement: Concert page links carry the event's preview
 
-The HTML served for `/events/:id` of an event with an event page SHALL carry, without running the app's scripts:
+The HTML served for `/events/:id` of an event with a concert page SHALL carry, without running the app's scripts:
 - `og:title`: the Series' title followed by " | " and the performing Artists' names, prefixed with "【公演中止】" when the event is CANCELLED;
 - `og:description`: the date with weekday, the doors-open and start times when announced and the venue name with its prefecture, all in Japanese with times in Japan time, followed by "全N公演" and the dates when the Series has more than one Event, then the start of the Series' description, at most 100 characters in total;
 - `og:image`: the Series' cover image, or the brand default image when there is none, as an absolute URL;
@@ -32,7 +32,7 @@ The HTML served for `/events/:id` of an event with an event page SHALL carry, wi
 
 ### Requirement: Site-wide preview otherwise
 
-Every other fan web page, an `/events/:id` whose event has no event page, and an `/events/:id` whose event could not be read SHALL carry the site-wide preview: the product name, the site description and the brand default image. A failure to build an event's preview SHALL NOT prevent the page from loading for a fan.
+Every other fan web page, an `/events/:id` whose event has no concert page, and an `/events/:id` whose event could not be read SHALL carry the site-wide preview: the product name, the site description and the brand default image. A failure to build an event's preview SHALL NOT prevent the page from loading for a fan.
 
 #### Scenario: Unlisted event link
 
@@ -42,7 +42,7 @@ Every other fan web page, an `/events/:id` whose event has no event page, and an
 #### Scenario: Event read fails
 
 - **WHEN** the event cannot be read while the HTML for `/events/<id>` is served
-- **THEN** the HTML carries the site-wide preview and the Event page still loads for the fan
+- **THEN** the HTML carries the site-wide preview and the Concert page still loads for the fan
 
 ### Requirement: Edits reach new previews within a minute
 

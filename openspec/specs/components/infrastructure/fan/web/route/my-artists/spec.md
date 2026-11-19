@@ -269,7 +269,7 @@ The Grid view SHALL display followed artists as poster-style tiles in a responsi
 
 ### Requirement: My Artists page help content documents all available gestures
 
-The My Artists page help content SHALL explain how to unfollow an artist via edit mode. The help text SHALL say that choosing "編集" / "Edit" in the action menu at the bottom centre (the FAB in the bottom navigation bar) reveals a per-row remove control that unfollows immediately (with Undo). The help content SHALL NOT reference a long-press-to-unfollow gesture or an Edit control in the page header. The exact help copy is stated by the page help surface ("Page-specific Help Content").
+The My Artists page help content SHALL explain how to unfollow an artist via edit mode. The help text SHALL say that choosing "編集" / "Edit" in the action menu at the bottom centre (the action menu in the bottom navigation bar) reveals a per-row remove control that unfollows immediately (with Undo). The help content SHALL NOT reference a long-press-to-unfollow gesture or an Edit control in the page header. The exact help copy is stated by the page help surface ("Page-specific Help Content").
 
 #### Scenario: Help text visible to touch device users
 
@@ -350,14 +350,14 @@ Each artist in the My Artists list SHALL be shown in a color derived from the ar
 
 ### Requirement: Edit in the action launcher reveals per-row remove controls
 
-The My Artists page SHALL offer an "編集" / "Edit" action in its FAB action launcher whenever at least one followed artist is listed. Choosing it SHALL put the list into edit mode and close the launcher; in edit mode each artist row SHALL display a remove (−) control as a single-tap, single-pointer affordance available on all pointer types (touch and mouse), in place of the row's hype controls, and a "完了" / "Done" bar SHALL be shown in the list. Pressing Done SHALL leave edit mode and hide the remove controls. While in edit mode the FAB action launcher SHALL NOT be shown, so neither Edit nor the Settings item of the tab pages is offered; it SHALL be shown again when edit mode ends. Edit mode SHALL NOT depend on any path-based or timed gesture (no swipe, no long-press), satisfying single-pointer operability (WCAG 2.5.1).
+The My Artists page SHALL offer an "編集" / "Edit" action in its action menu whenever at least one followed artist is listed. Choosing it SHALL put the list into edit mode and close the launcher; in edit mode each artist row SHALL display a remove (−) control as a single-tap, single-pointer affordance available on all pointer types (touch and mouse), in place of the row's hype controls, and a "完了" / "Done" bar SHALL be shown in the list. Pressing Done SHALL leave edit mode and hide the remove controls. While in edit mode the action menu SHALL NOT be shown, so neither Edit nor the Settings item of the tab pages is offered; it SHALL be shown again when edit mode ends. Edit mode SHALL NOT depend on any path-based or timed gesture (no swipe, no long-press), satisfying single-pointer operability (WCAG 2.5.1).
 
 #### Scenario: Entering edit mode reveals remove controls
 
-- **WHEN** the user chooses Edit in the FAB action launcher on the My Artists page
+- **WHEN** the user chooses Edit in the action menu on the My Artists page
 - **THEN** every artist row displays a remove (−) control in place of its hype controls
 - **AND** the Done bar is shown and the launcher closes
-- **AND** the FAB is not shown until the user presses Done
+- **AND** the action menu is not shown until the user presses Done
 
 #### Scenario: Leaving edit mode hides remove controls
 
@@ -381,7 +381,7 @@ The My Artists page SHALL offer an "編集" / "Edit" action in its FAB action la
 #### Scenario: Edit offered in the action launcher
 
 - **WHEN** the My Artists page renders with at least one followed artist
-- **THEN** the FAB action launcher offers Edit, then Help, then Settings
+- **THEN** the action menu offers Edit, then Help, then Settings
 - **AND** the page header holds no Edit control
 
 #### Scenario: Edit hidden when there is nothing to edit

@@ -55,34 +55,34 @@ A share token SHALL exist only on a published first-party Series whose visibilit
 - **WHEN** a first-party Series is PUBLISHED with visibility PUBLIC
 - **THEN** it has no share token
 
-### Requirement: Which series' events have an event page
+### Requirement: Which series' events have a concert page
 
-An Event of a Series SHALL have an event page exactly when the Series is first-party, its visibility is PUBLIC, and the Event is PUBLISHED or CANCELLED. A Series SHALL have an event page when at least one of its Events has one. An Event of a discovered Series, a DRAFT Event and an Event of an UNLISTED Series SHALL have no event page. Unlike public visibility, a CANCELLED Event keeps its event page, so a shared link still explains that the concert is 中止 (cancelled).
+An Event of a Series SHALL have a concert page exactly when the Series is first-party, its visibility is PUBLIC, and the Event is PUBLISHED or CANCELLED. A Series SHALL have a concert page when at least one of its Events has one. An Event of a discovered Series, a DRAFT Event and an Event of an UNLISTED Series SHALL have no concert page. Unlike public visibility, a CANCELLED Event keeps its concert page, so a shared link still explains that the concert is 中止 (cancelled).
 
 #### Scenario: Published public series
 
 - **WHEN** an Event of a first-party Series with visibility PUBLIC is PUBLISHED
-- **THEN** the Event has an event page
+- **THEN** the Event has a concert page
 
 #### Scenario: Cancelled public series
 
 - **WHEN** an Event of a first-party Series with visibility PUBLIC is CANCELLED
-- **THEN** the Event has an event page, while it is not publicly visible
+- **THEN** the Event has a concert page, while it is not publicly visible
 
 #### Scenario: Unlisted series
 
 - **WHEN** an Event of a first-party Series with visibility UNLISTED is PUBLISHED
-- **THEN** the Event has no event page
+- **THEN** the Event has no concert page
 
 #### Scenario: Draft series
 
 - **WHEN** an Event of a first-party Series is DRAFT, even while another Event of the Series is PUBLISHED
-- **THEN** the DRAFT Event has no event page
+- **THEN** the DRAFT Event has no concert page
 
 #### Scenario: Discovered series
 
 - **WHEN** a Series has no Organizer
-- **THEN** its Events have no event page
+- **THEN** its Events have no concert page
 
 ### Requirement: Publish state is derived from the events
 

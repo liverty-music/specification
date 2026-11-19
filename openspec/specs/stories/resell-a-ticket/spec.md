@@ -44,7 +44,7 @@ No ticket SHALL be listed, applied for or allocated through official resale afte
 
 #### Scenario: Unsold at the deadline
 - **WHEN** a fan's listing has not sold when the admission window opens
-- **THEN** the event page offers no resale and the fan's Ticket is admitted at the venue
+- **THEN** the concert page offers no resale and the fan's Ticket is admitted at the venue
 
 ### Requirement: A ticket of a sold-out seat type is listed
 

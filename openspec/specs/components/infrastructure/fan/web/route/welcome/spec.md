@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Presents the guest-facing landing page that introduces the product, offers passkey sign-in, lets a visitor switch language, and previews a live interactive dashboard demo before redirecting already-authenticated users onward.
+Presents the guest-facing landing page that introduces the product, offers passkey sign-in, lets a visitor switch language, and previews a live interactive timetable demo before redirecting already-authenticated users onward.
 
 ## Requirements
 
 ### Requirement: Passkey Authentication CTA
 
-The system SHALL provide both a primary `[Get Started]` CTA and a secondary `[Log In]` CTA to unauthenticated users on the landing page. When the dashboard preview is available (Screen 2 is rendered), both CTAs SHALL be rendered only within Screen 2 adjacent to the preview, and SHALL NOT appear on the hero screen (Screen 1). When the dashboard preview is unavailable and Screen 2 is not rendered, both CTAs SHALL fall back to inline placement within Screen 1 so that unauthenticated users always have a way to start onboarding or sign in. Both CTAs SHALL always be reachable on the page regardless of `onboardingStep` value. Both CTAs SHALL be rendered as `<button>` elements for accessibility.
+The system SHALL provide both a primary `[Get Started]` CTA and a secondary `[Log In]` CTA to unauthenticated users on the landing page. When the timetable preview is available (Screen 2 is rendered), both CTAs SHALL be rendered only within Screen 2 adjacent to the preview, and SHALL NOT appear on the hero screen (Screen 1). When the timetable preview is unavailable and Screen 2 is not rendered, both CTAs SHALL fall back to inline placement within Screen 1 so that unauthenticated users always have a way to start onboarding or sign in. Both CTAs SHALL always be reachable on the page regardless of `onboardingStep` value. Both CTAs SHALL be rendered as `<button>` elements for accessibility.
 
 #### Scenario: With preview data — both CTAs appear on Screen 2 only
 
@@ -96,12 +96,12 @@ The Welcome page SHALL communicate that no account is required to try the produc
 
 ### Requirement: Authenticated User Redirect
 
-The system SHALL redirect already-authenticated users away from the landing page to the Dashboard, regardless of `onboardingStep` value.
+The system SHALL redirect already-authenticated users away from the landing page to the Timetable, regardless of `onboardingStep` value.
 
 #### Scenario: Authenticated user visits landing page
 
 - **WHEN** an authenticated user navigates to `/`
-- **THEN** the system SHALL redirect to the Dashboard with full unrestricted access
+- **THEN** the system SHALL redirect to the Timetable with full unrestricted access
 - **AND** the system SHALL NOT check `onboardingStep`
 
 #### Scenario: Redirect target check fails
@@ -240,15 +240,15 @@ The landing page SHALL communicate only the product capabilities that currently 
 - **AND** the system SHALL NOT present any capability that is not currently offered
 - **AND** the system SHALL NOT present usage statistics, social-proof material, or a promotional name marquee as value signals
 
-### Requirement: Live Dashboard Preview on Welcome Page
+### Requirement: Live Timetable Preview on Welcome Page
 
-The system SHALL display an interactive, read-only dashboard preview on the Welcome page using live concert data from a curated popular-artist fallback list.
+The system SHALL display an interactive, read-only timetable preview on the Welcome page using live concert data from a curated popular-artist fallback list.
 
 #### Scenario: Preview loads with live data via ListWithProximity RPC
 
 - **WHEN** the Welcome page renders
 - **THEN** the system SHALL call the `ListWithProximity` RPC with the curated artist UUIDs and a fixed home location of Tokyo (JP, JP-13)
-- **AND** the system SHALL render the response using the `<concert-highway>` custom element in readonly mode
+- **AND** the system SHALL render the response using the `<timetable-grid>` custom element in readonly mode
 - **AND** concerts SHALL be correctly classified into home/nearby/away lanes by the backend's proximity calculation
 
 #### Scenario: Fallback when artist has no concerts
@@ -268,7 +268,7 @@ The system SHALL display an interactive, read-only dashboard preview on the Welc
 - **WHEN** the Welcome page renders with preview data
 - **THEN** the page SHALL use a two-screen scroll-snap layout composed of:
   - **Screen 1 (hero)**: brand, headline, subtitle, language selector, and a single `[See how it works ↓]` scroll-affordance button — with no `[Get Started]` or `[Log In]` buttons present
-  - **Screen 2 (preview + CTA)**: a contextual label, the `<concert-highway>` preview (capped at approximately 30 concerts), a fade-out gradient mask at the bottom, and the `[Get Started]` + `[Log In]` CTAs
+  - **Screen 2 (preview + CTA)**: a contextual label, the `<timetable-grid>` preview (capped at approximately 30 concerts), a fade-out gradient mask at the bottom, and the `[Get Started]` + `[Log In]` CTAs
 - **AND** Screen 1 SHALL be sized so that the top edge of Screen 2 is faintly visible above the fold of the initial viewport (Screen 1 occupying approximately 95% of the small viewport height, revealing approximately 5% of Screen 2 as a peek)
 - **AND** the scroll container SHALL use `scroll-snap-type: y proximity` so the viewport snaps only when the user's scroll position is near a snap point, allowing mid-scroll reading of the peek
 - **AND** the user SHALL be able to scroll between screens via natural scroll gestures, with the proximity-snap providing soft alignment at the two snap points
@@ -288,14 +288,14 @@ The system SHALL display an interactive, read-only dashboard preview on the Welc
 
 ### Requirement: Sign-in help link next to Log In
 
-Wherever the welcome page shows the `[Log In]` CTA, it SHALL show a "can't sign in" text link directly below it that opens the passkey recovery screen. The link SHALL be a native link with a minimum tap target of 48px height.
+Wherever the welcome page shows the `[Log In]` CTA, it SHALL show a "can't sign in" text link directly below it that opens the sign-in help screen. The link SHALL be a native link with a minimum tap target of 48px height.
 
 #### Scenario: Link below Log In
 
 - **WHEN** an unauthenticated user sees the `[Log In]` CTA on Screen 2 or in the Screen 1 fallback
 - **THEN** a "can't sign in" link is shown directly below it
 
-#### Scenario: Link opens the recovery screen
+#### Scenario: Link opens the sign-in help screen
 
 - **WHEN** the user taps the "can't sign in" link
 - **THEN** the app navigates to `/passkey-recovery`

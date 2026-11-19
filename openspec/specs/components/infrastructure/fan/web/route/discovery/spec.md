@@ -2,17 +2,17 @@
 
 ## Purpose
 
-Lets a user discover and follow new artists through an interactive physics-based bubble interface and text search, available throughout onboarding and afterward, with sound and animation feedback on each follow. A swap tile beside the orb switches to the All Nearby view, which lists the concerts near the fan's area within a chosen period, including concerts of artists the fan does not follow yet.
+Lets a user discover and follow new artists through an interactive physics-based bubble interface and text search, available throughout onboarding and afterward, with sound and animation feedback on each follow. A swap tile beside the orb switches to the Concerts view, which lists the concerts near the fan's area within a chosen period, including concerts of artists the fan does not follow yet.
 
 ## Requirements
 
 ### Requirement: DNA Extraction UI Concept
 The system SHALL provide a gamified artist discovery interface using a "DNA Extraction" metaphor with an interactive orb (glass sphere) UI that collects user preferences, with visual differentiation per artist and onboarding guidance.
 
-#### Scenario: Initial bubble display with DNA Orb
+#### Scenario: Initial bubble display with Discovery Orb
 - **WHEN** a guest or a signed-in fan opens the Discovery screen
 - **THEN** the system SHALL display up to 50 artist bubbles in the center area using physics-based animation, or up to 30 when the canvas is narrower than 390 px
-- **AND** the system SHALL display a "Music DNA Orb" (glass sphere UI) at the bottom of the screen
+- **AND** the system SHALL display a "Music Discovery Orb" (glass sphere UI) at the bottom of the screen
 - **AND** the orb SHALL serve as a visual inventory for collected artists
 
 #### Scenario: Per-artist bubble color differentiation
@@ -131,7 +131,7 @@ The system SHALL implement smooth, natural bubble movement using physics simulat
 - **THEN** the remaining bubbles move again under gravity, and none stays floating where the removed bubble held it up
 
 ### Requirement: Small-screen bubble and orb density adaptation
-On narrow canvases (width < 390px), the system SHALL limit the number of simultaneously rendered artist bubbles and constrain the DNA Orb radius to prevent visual crowding and maintain readability of bubble labels.
+On narrow canvases (width < 390px), the system SHALL limit the number of simultaneously rendered artist bubbles and constrain the Discovery Orb radius to prevent visual crowding and maintain readability of bubble labels.
 
 #### Scenario: Bubble count is capped on narrow screens
 - **WHEN** the Discovery canvas width is less than 390px
@@ -143,21 +143,21 @@ On narrow canvases (width < 390px), the system SHALL limit the number of simulta
 - **WHEN** the Discovery canvas width is 390px or greater
 - **THEN** the number of artist bubbles simultaneously rendered SHALL follow the existing pool capacity (up to 50)
 
-#### Scenario: DNA Orb radius is constrained on narrow screens
+#### Scenario: Discovery Orb radius is constrained on narrow screens
 - **WHEN** the Discovery canvas width is less than 390px
-- **THEN** the DNA Orb rendered radius SHALL NOT exceed 70px
+- **THEN** the Discovery Orb rendered radius SHALL NOT exceed 70px
 
-#### Scenario: DNA Orb radius follows follow-count on wider screens
+#### Scenario: Discovery Orb radius follows follow-count on wider screens
 - **WHEN** the Discovery canvas width is 390px or greater
-- **THEN** the DNA Orb radius SHALL follow the existing follow-count-driven stage escalation (up to 90px)
+- **THEN** the Discovery Orb radius SHALL follow the existing follow-count-driven stage escalation (up to 90px)
 
 #### Scenario: Bubble area top edge fades gracefully
 - **WHEN** artist bubbles are rendered near the top boundary of the Discovery canvas
 - **THEN** the bubble area SHALL apply a fade-out at its top edge so that bubbles dissolve toward the genre-chip bar rather than being hard-clipped at the boundary
 
-#### Scenario: DNA Orb grows from a fixed bottom baseline on narrow screens
+#### Scenario: Discovery Orb grows from a fixed bottom baseline on narrow screens
 - **WHEN** the Discovery canvas width is less than 390px
-- **THEN** the DNA Orb SHALL be anchored to a fixed baseline near the bottom of the canvas so its bottom stays at a constant offset from the canvas floor regardless of follow count
+- **THEN** the Discovery Orb SHALL be anchored to a fixed baseline near the bottom of the canvas so its bottom stays at a constant offset from the canvas floor regardless of follow count
 - **AND** as the user follows more artists the orb SHALL grow upward from that baseline rather than expanding around a fixed center
 - **AND** the orb SHALL start from a small seed radius and remain unobtrusive at zero follows
 
@@ -407,18 +407,18 @@ The invariants — exclude followed artists, deduplicate by name/id/mbid, and en
 - **THEN** the 50-bubble capacity SHALL be enforced by the field owner
 - **AND** the physics layer SHALL receive a field already within capacity and SHALL NOT re-cap it
 
-### Requirement: Bubble UI re-experience on Discover tab
-The system SHALL provide the onboarding Bubble UI as a reusable discovery experience on the Discover tab, with a simplified 3-row grid layout. After following an artist, the Discovery page SHALL call `ConcertService.ListByArtist` to check for existing concerts and update the onboarding progress row. The page SHALL NOT call `SearchNewConcerts` directly.
+### Requirement: Artists view re-experience on Discovery tab
+The system SHALL provide the onboarding Artists view as a reusable discovery experience on the Discovery tab, with a simplified 3-row grid layout. After following an artist, the Discovery page SHALL call `ConcertService.ListByArtist` to check for existing concerts and update the onboarding progress row. The page SHALL NOT call `SearchNewConcerts` directly.
 
-#### Scenario: Default Bubble UI display
-- **WHEN** the Discover tab is opened
-- **THEN** the system SHALL display the physics-based artist Bubble UI (same as onboarding)
-- **AND** the DNA Orb SHALL be displayed at the bottom
+#### Scenario: Default Artists view display
+- **WHEN** the Discovery tab is opened
+- **THEN** the system SHALL display the physics-based artist Artists view (same as onboarding)
+- **AND** the Discovery Orb SHALL be displayed at the bottom
 - **AND** tapping a bubble SHALL trigger the absorption animation and follow the artist (kept on the device for a guest, sent to the server for a signed-in fan)
 - **AND** the page SHALL be laid out as the search bar, the genre chips (with the onboarding progress row under them while onboarding), and the bubble area filling the rest
 
 #### Scenario: Genre filtering
-- **WHEN** the Bubble UI is displayed
+- **WHEN** the Artists view is displayed
 - **THEN** genre/tag chips SHALL be displayed above the bubble area (e.g., Rock, Pop, Anime, Jazz, Electronic, Hip-Hop)
 - **AND** tapping a genre chip SHALL regenerate bubbles with artists from that genre via `ArtistService.ListTop` with the selected tag
 - **AND** genre results SHALL be global (not country-filtered), because the top-artist listing does not accept a genre and a country together
@@ -447,28 +447,28 @@ The system SHALL provide the onboarding Bubble UI as a reusable discovery experi
 - **AND** SHALL NOT call `SearchNewConcerts`
 - **AND** each artist that has stored concerts SHALL count as having a found concert for the onboarding progress row
 
-### Requirement: Manual search on Discover tab
+### Requirement: Manual search on Discovery tab
 The system SHALL provide a text search for targeted artist discovery.
 
 #### Scenario: Search bar display
-- **WHEN** the Discover tab is opened
+- **WHEN** the Discovery tab is opened
 - **THEN** a search bar SHALL be displayed at the top of the screen
 
 #### Scenario: Entering search mode
 - **WHEN** a user taps the search bar and begins typing
-- **THEN** the Bubble UI SHALL be hidden
+- **THEN** the Artists view SHALL be hidden
 - **AND** search results SHALL appear as a vertical list below the search bar
 
 #### Scenario: Search results
 - **WHEN** search results are displayed
 - **THEN** each result SHALL be a row tappable across its full area, as "Search result item is fully tappable" states
-- **AND** tapping an unfollowed row SHALL follow the artist and trigger the DNA Orb absorption effect
+- **AND** tapping an unfollowed row SHALL follow the artist and trigger the Discovery Orb absorption effect
 - **AND** already-followed artists SHALL show a ✓ and SHALL NOT respond to a tap
 
 #### Scenario: Exiting search mode
 - **WHEN** a user clears the search text or taps the clear button
 - **THEN** the search results SHALL be hidden
-- **AND** the Bubble UI SHALL be restored
+- **AND** the Artists view SHALL be restored
 
 ### Requirement: Search bar icon explicit sizing
 The search bar SVG icons SHALL have explicit intrinsic dimensions to prevent layout overflow.
@@ -487,15 +487,15 @@ The search bar SVG icons SHALL have explicit intrinsic dimensions to prevent lay
 
 ---
 
-### Requirement: Bubble physics pauses when Discover tab is inactive
-The system SHALL manage Bubble UI resources efficiently while the bubble field is not visible.
+### Requirement: Bubble physics pauses when Discovery tab is inactive
+The system SHALL manage Artists view resources efficiently while the bubble field is not visible.
 
 #### Scenario: Search mode pauses the simulation
 - **WHEN** the user enters search mode
 - **THEN** the physics simulation SHALL be paused, and it SHALL resume when search mode ends
 
-#### Scenario: All Nearby view pauses the simulation
-- **WHEN** the fan switches Discovery to the All Nearby view
+#### Scenario: Concerts view pauses the simulation
+- **WHEN** the fan switches Discovery to the Concerts view
 - **THEN** the physics simulation SHALL be paused
 - **AND** it SHALL resume when the fan switches back to the artist bubbles, unless search mode is on or the document is hidden
 
@@ -504,15 +504,15 @@ The system SHALL manage Bubble UI resources efficiently while the bubble field i
 - **THEN** the physics simulation SHALL be paused, and it SHALL resume when the document is visible again
 
 #### Scenario: Tab deactivation
-- **WHEN** the user navigates away from the Discover tab
+- **WHEN** the user navigates away from the Discovery tab
 - **THEN** the physics simulation SHALL be stopped and its resources released
 
 #### Scenario: Tab reactivation
-- **WHEN** the user returns to the Discover tab
+- **WHEN** the user returns to the Discovery tab
 - **THEN** the bubble field SHALL be drawn again from the cached field, as "Discovery bubble pool caching on re-entry" states
 
 ### Requirement: Reset to Top 50 control
-The Discover tab SHALL provide a Reset control that returns the bubble field to the global Top 50 artists, independent of the user's followed artists. The control SHALL be an icon-only (refresh/reset) button placed at the leading edge of the genre row as a fixed sibling beside the horizontally-scrollable genre chips, so it remains visible while the chips scroll. The control SHALL expose an accessible label.
+The Discovery tab SHALL provide a Reset control that returns the bubble field to the global Top 50 artists, independent of the user's followed artists. The control SHALL be an icon-only (refresh/reset) button placed at the leading edge of the genre row as a fixed sibling beside the horizontally-scrollable genre chips, so it remains visible while the chips scroll. The control SHALL expose an accessible label.
 
 #### Scenario: Reset restores global Top 50
 - **WHEN** the user activates the Reset control
@@ -657,7 +657,7 @@ The tap and landing sounds SHALL honor the user's existing mute and volume prefe
 - **WHEN** audio has not yet been unlocked by a user gesture
 - **THEN** no AudioContext SHALL be forcibly started outside a gesture, consistent with the existing lazy-unlock behavior
 
-### Requirement: Discover page debounces search with stale response guard
+### Requirement: Discovery page debounces search with stale response guard
 The Discovery screen SHALL debounce artist search input by 300ms and discard stale responses.
 
 #### Scenario: Search is debounced
@@ -672,7 +672,7 @@ The Discovery screen SHALL debounce artist search input by 300ms and discard sta
 - **WHEN** a genre chip is selected and then selected again
 - **THEN** the first selection SHALL load the top artists of that genre and the second SHALL load the regional top artists with no genre
 
-#### Scenario: Clear search restores bubble view
+#### Scenario: Clear search restores Artists view
 - **WHEN** the fan clears the search
 - **THEN** the search query SHALL be emptied and the bubble canvas SHALL resume
 
@@ -702,8 +702,8 @@ The search bar and genre filter chips SHALL be visible and functional during onb
 - **THEN** search results SHALL appear and the user SHALL be able to follow artists from the results
 - **AND** the follow SHALL be kept the same way as a bubble-tap follow (on the device for a guest, on the server for a signed-in fan)
 
-### Requirement: Search result follow triggers bubble view transition and absorption animation
-When a user follows an artist from the search results, the system SHALL transition back to the bubble view, wait for the canvas to be visible, and play the orb absorption animation, providing the same visual feedback as a direct bubble tap.
+### Requirement: Search result follow triggers Artists view transition and absorption animation
+When a user follows an artist from the search results, the system SHALL transition back to the Artists view, wait for the canvas to be visible, and play the orb absorption animation, providing the same visual feedback as a direct bubble tap.
 
 #### Scenario: Follow from search triggers absorption
 - **WHEN** a user taps a search result item for an unfollowed artist
@@ -765,7 +765,7 @@ When a bubble appears (a ghost switching to a real artist, or a new artist added
 - **AND** the name looks the same before and after that work finishes
 
 ### Requirement: Cold-load reveal timings are reported
-On a cold visit to Discovery (the first time Discovery is shown in the page, including when the start-up load already built the field), the fan app SHALL send exactly one usage analytics event once all bubbles show artist names, carrying the time from the moment Discovery was opened to: the first bubble drawn (a ghost placeholder, or an artist when the artists arrive before any ghost is drawn), the first artist name drawn, and every bubble showing an artist name, in milliseconds. A name counts as drawn in the frame in which it is on screen. The moment Discovery was opened is the start of the page load when Discovery is the first page of the visit, and the start of the in-app navigation otherwise; the event SHALL state which of the two applies. It SHALL also state which initial-load path ran (top artists or similar seeds) and the number of seeds. Re-entries that paint a cached field SHALL NOT send this event. A visit whose bubble field is paused (search mode, the All Nearby view, a hidden page) at any time before every bubble shows an artist name SHALL NOT send this event: the field draws no frame while it is paused, so the paused time would be counted as time to reveal. The event SHALL obey the analytics consent setting and the query-string rule of the analytics surface.
+On a cold visit to Discovery (the first time Discovery is shown in the page, including when the start-up load already built the field), the fan app SHALL send exactly one usage analytics event once all bubbles show artist names, carrying the time from the moment Discovery was opened to: the first bubble drawn (a ghost placeholder, or an artist when the artists arrive before any ghost is drawn), the first artist name drawn, and every bubble showing an artist name, in milliseconds. A name counts as drawn in the frame in which it is on screen. The moment Discovery was opened is the start of the page load when Discovery is the first page of the visit, and the start of the in-app navigation otherwise; the event SHALL state which of the two applies. It SHALL also state which initial-load path ran (top artists or similar seeds) and the number of seeds. Re-entries that paint a cached field SHALL NOT send this event. A visit whose bubble field is paused (search mode, the Concerts view, a hidden page) at any time before every bubble shows an artist name SHALL NOT send this event: the field draws no frame while it is paused, so the paused time would be counted as time to reveal. The event SHALL obey the analytics consent setting and the query-string rule of the analytics surface.
 
 #### Scenario: Cold visit with followed artists
 - **WHEN** a fan who follows artists opens Discovery with no cached field and analytics on
@@ -792,7 +792,7 @@ On a cold visit to Discovery (the first time Discovery is shown in the page, inc
 - **THEN** no reveal-timing event is sent for that visit
 
 #### Scenario: Field paused before the reveal completes
-- **WHEN** a fan opens Discovery with no cached field and analytics on, and before every bubble shows an artist name the field is paused (the page is hidden because the fan switched to another app or opened Discovery in a background tab, Discovery opens on or switches to the All Nearby view, or the fan enters search mode), and the fan later returns to the bubbles and every bubble shows an artist name
+- **WHEN** a fan opens Discovery with no cached field and analytics on, and before every bubble shows an artist name the field is paused (the page is hidden because the fan switched to another app or opened Discovery in a background tab, Discovery opens on or switches to the Concerts view, or the fan enters search mode), and the fan later returns to the bubbles and every bubble shows an artist name
 - **THEN** no reveal-timing event is sent for that visit
 
 ### Requirement: Ghost placeholder bubbles ignore taps
@@ -821,7 +821,7 @@ On the reference setup, a cold load of Discovery SHALL draw the first artist nam
 
 ### Requirement: A guest's follows and the ready timetable are reported
 
-While the fan is a guest, each follow that takes effect SHALL send one usage analytics event with the artist and the number of artists the guest now follows; a signed-in fan's follow is reported by the server. When the onboarding progress row is shown as the link to the Dashboard (the row is hidden while search results are shown), the page SHALL send one usage analytics event with the number of followed artists and of artists with concerts at that moment, at most once per visit to Discovery.
+While the fan is a guest, each follow that takes effect SHALL send one usage analytics event with the artist and the number of artists the guest now follows; a signed-in fan's follow is reported by the server. When the onboarding progress row is shown as the link to the Timetable (the row is hidden while search results are shown), the page SHALL send one usage analytics event with the number of followed artists and of artists with concerts at that moment, at most once per visit to Discovery.
 
 #### Scenario: Guest follows a fifth artist
 - **WHEN** a guest who follows 4 artists follows another
@@ -836,7 +836,7 @@ While the fan is a guest, each follow that takes effect SHALL send one usage ana
 - **THEN** no timetable-ready event is sent until the search is closed and the row is shown
 
 ### Requirement: Onboarding progress row
-While the fan is onboarding, the Discovery screen SHALL show a progress row directly under the genre chips that tells how close the fan's timetable is to ready. The row SHALL sit outside the bubble field, so it never overlaps a bubble or the orb. Its value SHALL be (followed artists without a found concert) / 5 + (followed artists with a found concert) / 3, capped at 1, where a concert is found for an artist when the catalog lookup after its follow returns at least one concert. Below 1 the row SHALL show the label 「タイムテーブル完成まで」, a bar filled to the value and the value in percent; the bar SHALL move to a new value with a short animation (none with a reduced-motion preference). At 1 the row SHALL become a button labelled 「完成しました！」 that opens the Dashboard, with an icon of the finished timetable that invites the tap in place of an arrow; its accessible name also says where it leads (「タイムテーブルを見る」). The row SHALL expose its value to assistive technology as a progress value from 0 to 100 percent. The row SHALL be hidden in search mode, like the genre chips, and SHALL NOT be shown once onboarding is complete.
+While the fan is onboarding, the Discovery screen SHALL show a progress row directly under the genre chips that tells how close the fan's timetable is to ready. The row SHALL sit outside the bubble field, so it never overlaps a bubble or the orb. Its value SHALL be (followed artists without a found concert) / 5 + (followed artists with a found concert) / 3, capped at 1, where a concert is found for an artist when the catalog lookup after its follow returns at least one concert. Below 1 the row SHALL show the label 「タイムテーブル完成まで」, a bar filled to the value and the value in percent; the bar SHALL move to a new value with a short animation (none with a reduced-motion preference). At 1 the row SHALL become a button labelled 「完成しました！」 that opens the Timetable, with an icon of the finished timetable that invites the tap in place of an arrow; its accessible name also says where it leads (「タイムテーブルを見る」). The row SHALL expose its value to assistive technology as a progress value from 0 to 100 percent. The row SHALL be hidden in search mode, like the genre chips, and SHALL NOT be shown once onboarding is complete.
 
 #### Scenario: Follow without a found concert
 - **WHEN** an onboarding fan with no follows follows an artist whose catalog lookup returns no concert
@@ -858,9 +858,9 @@ While the fan is onboarding, the Discovery screen SHALL show a progress row dire
 - **WHEN** an onboarding fan follows 3 artists and each lookup finds at least one concert
 - **THEN** the progress row becomes the 「完成しました！」 button
 
-#### Scenario: Button opens the Dashboard
+#### Scenario: Button opens the Timetable
 - **WHEN** the fan taps the 「完成しました！」 button
-- **THEN** the Dashboard opens
+- **THEN** the Timetable opens
 
 #### Scenario: Already ready when Discovery opens
 - **WHEN** an onboarding guest whose stored follows already reach a value of 1 opens Discovery
@@ -884,7 +884,7 @@ While the fan is onboarding, the Discovery screen SHALL show a progress row dire
 
 ### Requirement: Following artists on Discovery
 
-The system SHALL provide an engaging, gamified interface for users to discover and follow artists from the catalog's artist listings. A guest's follows are kept on the device and not sent to the server; a signed-in fan's follows are sent to the server. After each follow the system SHALL look up the artist's concerts already in the catalog and count the followed artists that have upcoming concerts; it SHALL NOT start a concert search itself (a first follow starts one on the server, as the story stories/follow-an-artist describes). A follow SHALL show at once; following an artist that is already followed SHALL change nothing; when a signed-in fan's follow fails, it SHALL be undone, the artist's bubble returns and an error snack is shown. While the fan is onboarding, the onboarding progress row SHALL show how close the timetable is to ready and SHALL turn into a button to the Dashboard when ready. Navigation to the Dashboard is never forced — the Dashboard is always reachable from the Home tab of the bottom navigation at the fan's own pace.
+The system SHALL provide an engaging, gamified interface for users to discover and follow artists from the catalog's artist listings. A guest's follows are kept on the device and not sent to the server; a signed-in fan's follows are sent to the server. After each follow the system SHALL look up the artist's concerts already in the catalog and count the followed artists that have upcoming concerts; it SHALL NOT start a concert search itself (a first follow starts one on the server, as the story stories/follow-an-artist describes). A follow SHALL show at once; following an artist that is already followed SHALL change nothing; when a signed-in fan's follow fails, it SHALL be undone, the artist's bubble returns and an error snack is shown. While the fan is onboarding, the onboarding progress row SHALL show how close the timetable is to ready and SHALL turn into a button to the Timetable when ready. Navigation to the Timetable is never forced — the Timetable is always reachable from the Timetable tab of the bottom navigation at the fan's own pace.
 
 #### Scenario: Guest user follows artist via bubble tap
 
@@ -904,7 +904,7 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 - **WHEN** an onboarding fan's follows reach the ready value of the onboarding progress row
 - **THEN** the row becomes the 「完成しました！」 button
 - **AND** no spotlight or coach mark is shown on the bottom navigation
-- **AND** the fan MAY open the Dashboard from the Home tab at any time, ready or not
+- **AND** the fan MAY open the Timetable from the Timetable tab at any time, ready or not
 
 #### Scenario: Pre-seeded follows on page reload
 
@@ -928,11 +928,11 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 - **THEN** the artist is no longer shown as followed and its bubble returns to the field
 - **AND** an error snack tells the fan that the follow failed
 
-### Requirement: Swap tile switches between the artist bubbles and the All Nearby view
+### Requirement: Swap tile switches between the Artists view and the Concerts view
 
-Discovery SHALL show a swap tile beside the orb, inside the band below the floor that bubbles never cross, so that no bubble and no part of the orb is ever drawn under the tile and the bubble field keeps the same size it has without the tile. The tile SHALL sit on the dominant-hand side of the orb, just outside the largest size the orb can grow to: on a 375 px wide screen, right-handed, its centre is between 260 px and 300 px from the left edge. In left-handed mode (the FAB menu's handedness setting) it SHALL be mirrored to the left of the orb.
+Discovery SHALL show a swap tile beside the orb, inside the band below the floor that bubbles never cross, so that no bubble and no part of the orb is ever drawn under the tile and the bubble field keeps the same size it has without the tile. The tile SHALL sit on the dominant-hand side of the orb, just outside the largest size the orb can grow to: on a 375 px wide screen, right-handed, its centre is between 260 px and 300 px from the left edge. In left-handed mode (the action menu's handedness setting) it SHALL be mirrored to the left of the orb.
 
-The tile's icon SHALL draw two arrows in a loop, one magenta and one cyan. The glyph of the view on screen SHALL be drawn large over the arrows, and the glyph of the other view SHALL be drawn as a small badge in the tile's bottom corner: the artist bubbles are three bubbles (purple, teal and gold) with small sparkles, and the All Nearby view is a ticket marked LIVE with a white location pin. The tile SHALL show no text label. Its accessible name SHALL name the view a tap leads to: 「近くのライブ」 on the artist bubbles and 「アーティスト」 on the All Nearby view (English: "Near you" and "Artists").
+The tile's icon SHALL draw two arrows in a loop, one magenta and one cyan. The glyph of the view on screen SHALL be drawn large over the arrows, and the glyph of the other view SHALL be drawn as a small badge in the tile's bottom corner: the artist bubbles are three bubbles (purple, teal and gold) with small sparkles, and the Concerts view is a ticket marked LIVE with a white location pin. The tile SHALL show no text label. Its accessible name SHALL name the view a tap leads to: 「近くのライブ」 on the artist bubbles and 「アーティスト」 on the Concerts view (English: "Near you" and "Artists").
 
 A tap SHALL switch the view. The arrows SHALL make a half turn, always in the same direction, while the two glyphs trade places and sizes with a spring motion, and the new view SHALL appear as a circle growing out of the tile; the whole motion SHALL end within 700 ms. With a reduced-motion preference the view and the icon SHALL change at once, without motion.
 
@@ -941,13 +941,13 @@ A tap SHALL switch the view. The arrows SHALL make a half turn, always in the sa
 - **THEN** no bubble and no part of the orb is drawn under the swap tile
 - **AND** the bubble field has the same height as it would without the tile
 
-#### Scenario: Switching to the All Nearby view
+#### Scenario: Switching to the Concerts view
 - **WHEN** the fan taps the swap tile on the artist bubbles
-- **THEN** Discovery shows the All Nearby view: the stage header directly under the page header, and the concert list
+- **THEN** Discovery shows the Concerts view: the stage header directly under the page header, and the concert list
 - **AND** the tile shows the ticket glyph large and the bubbles as the corner badge, and its accessible name is 「アーティスト」
 
 #### Scenario: Switching back to the artist bubbles
-- **WHEN** the fan taps the swap tile on the All Nearby view
+- **WHEN** the fan taps the swap tile on the Concerts view
 - **THEN** Discovery shows the artist bubbles, the search bar and the genre chips again
 - **AND** the tile shows the bubbles large and the ticket as the corner badge, and its accessible name is 「近くのライブ」
 
@@ -968,60 +968,60 @@ A tap SHALL switch the view. The arrows SHALL make a half turn, always in the sa
 - **WHEN** the fan types in the search bar
 - **THEN** the swap tile is hidden together with the genre chips, and returns when search mode ends
 
-#### Scenario: The FAB menu is open
-- **WHEN** the FAB action arc is open on Discovery
+#### Scenario: The action menu is open
+- **WHEN** the action menu action arc is open on Discovery
 - **THEN** a tap on the swap tile only closes the arc, as for any page content under the arc's scrim
 
 ### Requirement: Discovery's view is addressable and remembered
 
-Discovery SHALL open on the All Nearby view when its address carries `view=nearby`, at any onboarding state. Switching views SHALL rewrite the address (`/discovery?view=nearby` or `/discovery`) without adding a history entry. Without `view=nearby` in the address, Discovery SHALL open on the view the fan used last on the same device, except while the fan is onboarding, when it SHALL open on the artist bubbles. When the device cannot keep that choice, Discovery SHALL open on the artist bubbles.
+Discovery SHALL open on the Concerts view when its address carries `view=nearby`, at any onboarding state. Switching views SHALL rewrite the address (`/discovery?view=nearby` or `/discovery`) without adding a history entry. Without `view=nearby` in the address, Discovery SHALL open on the view the fan used last on the same device, except while the fan is onboarding, when it SHALL open on the artist bubbles. When the device cannot keep that choice, Discovery SHALL open on the artist bubbles.
 
-#### Scenario: Link to the All Nearby view
+#### Scenario: Link to the Concerts view
 - **WHEN** the fan opens `/discovery?view=nearby`
-- **THEN** Discovery shows the All Nearby view
+- **THEN** Discovery shows the Concerts view
 
 #### Scenario: Switching rewrites the address
-- **WHEN** the fan switches from the artist bubbles to the All Nearby view
+- **WHEN** the fan switches from the artist bubbles to the Concerts view
 - **THEN** the address becomes `/discovery?view=nearby`
 - **AND** going back leaves Discovery as it would have without the switch
 
 #### Scenario: The last view is remembered
-- **WHEN** a fan whose onboarding is complete leaves Discovery on the All Nearby view and later opens Discovery from the bottom navigation
-- **THEN** Discovery shows the All Nearby view
+- **WHEN** a fan whose onboarding is complete leaves Discovery on the Concerts view and later opens Discovery from the bottom navigation
+- **THEN** Discovery shows the Concerts view
 
 #### Scenario: Onboarding opens on the artist bubbles
-- **WHEN** an onboarding guest who last used the All Nearby view opens Discovery from the bottom navigation
+- **WHEN** an onboarding guest who last used the Concerts view opens Discovery from the bottom navigation
 - **THEN** Discovery shows the artist bubbles
 
 #### Scenario: The device keeps nothing
 - **WHEN** the device's storage is unavailable and the fan opens `/discovery`
 - **THEN** Discovery shows the artist bubbles
 
-### Requirement: All Nearby view uses ListByLocation
+### Requirement: Concerts view uses ListByLocation
 
-The All Nearby view on Discovery SHALL call `ConcertService.ListByLocation` and keep its result for the visit, so switching away from it and back does not fetch it again.
+The Concerts view on Discovery SHALL call `ConcertService.ListByLocation` and keep its result for the visit, so switching away from it and back does not fetch it again.
 
-#### Scenario: All Nearby result cached independently
+#### Scenario: Concerts view result cached independently
 
-- **WHEN** the user switches to the All Nearby view and `ListByLocation` returns a result
+- **WHEN** the user switches to the Concerts view and `ListByLocation` returns a result
 - **THEN** the result SHALL be kept for the visit
-- **AND** switching to the artist bubbles and back to the All Nearby view SHALL reuse the kept result when the area and date range have not changed
+- **AND** switching to the artist bubbles and back to the Concerts view SHALL reuse the kept result when the area and date range have not changed
 
 #### Scenario: Cache invalidated on filter change
 
-- **WHEN** the user changes the area or date preset in the All Nearby view
-- **THEN** the All Nearby cache SHALL be invalidated
+- **WHEN** the user changes the area or date preset in the Concerts view
+- **THEN** the Concerts view cache SHALL be invalidated
 - **AND** `ListByLocation` SHALL be called again with the new parameters
 
-#### Scenario: The bubble field is kept while the All Nearby view is shown
+#### Scenario: The bubble field is kept while the Concerts view is shown
 
-- **WHEN** the fan switches from the artist bubbles to the All Nearby view and back
+- **WHEN** the fan switches from the artist bubbles to the Concerts view and back
 - **THEN** the bubble field SHALL show the same artists it showed before the switch
 - **AND** no follow made before the switch SHALL be lost
 
-### Requirement: All Nearby Concert List
+### Requirement: Concerts view list
 
-The All Nearby view SHALL display concerts returned by `ConcertService.ListByLocation` using the same concert timetable as the dashboard, with HOME and NEARBY lanes only. The list SHALL build only a window of dates around where the fan is looking and keep every group aligned with the stage header, as the dashboard requirement "The timetable renders a window of dates around the fan" states for the timetable. Tapping a card SHALL open the concert the same way as on the dashboard: a first-party concert opens its Event page, a discovered concert opens the event detail sheet. A card SHALL show the matched or unmatched treatment and the journey badge by the same rules as the dashboard timetable: an artist the fan follows is matched by its hype level and the concert's lane, an artist the fan does not follow is never matched, and a concert the fan has a journey for shows its journey badge. A change of the fan's journey or hype level SHALL show on the cards without reloading the view.
+The Concerts view SHALL display concerts returned by `ConcertService.ListByLocation` using the same concert timetable as the timetable, with HOME and NEARBY lanes only. The list SHALL build only a window of dates around where the fan is looking and keep every group aligned with the stage header, as the timetable requirement "The timetable renders a window of dates around the fan" states for the timetable. Tapping a card SHALL open the concert the same way as on the timetable: a first-party concert opens its Concert page, a discovered concert opens the concert sheet. A card SHALL show the matched or unmatched treatment and the journey badge by the same rules as the timetable: an artist the fan follows is matched by its hype level and the concert's lane, an artist the fan does not follow is never matched, and a concert the fan has a journey for shows its journey badge. A change of the fan's journey or hype level SHALL show on the cards without reloading the view.
 
 #### Scenario: HOME and NEARBY lanes rendered
 
@@ -1031,9 +1031,9 @@ The All Nearby view SHALL display concerts returned by `ConcertService.ListByLoc
 
 #### Scenario: Venue name shown for all lanes
 
-- **WHEN** a concert card is rendered in the All Nearby list
+- **WHEN** a concert card is rendered in the Concerts view's list
 - **THEN** the venue name (listed or resolved) SHALL be shown regardless of the lane (HOME or NEARBY)
-- **AND** this differs from the dashboard timetable, whose HOME-lane cards leave the venue out
+- **AND** this differs from the timetable, whose HOME-lane cards leave the venue out
 
 #### Scenario: Empty state
 
@@ -1041,20 +1041,20 @@ The All Nearby view SHALL display concerts returned by `ConcertService.ListByLoc
 - **THEN** Discovery SHALL display an empty-state message explaining that no concerts were found for the selected area and date range
 - **AND** the empty state SHALL suggest a longer period or another area, while the filter stays one tap away in the launcher
 
-#### Scenario: First-party concert opens its event page
+#### Scenario: First-party concert opens its concert page
 
-- **WHEN** the fan taps the card of a concert whose Series belongs to an Organizer in the All Nearby list
+- **WHEN** the fan taps the card of a concert whose Series belongs to an Organizer in the Concerts view's list
 - **THEN** the app SHALL navigate to `/events/<id>` and SHALL NOT open the detail sheet
 
 #### Scenario: Closing the detail sheet returns to the list
 
-- **WHEN** the fan opens a discovered concert from the All Nearby list and closes the detail sheet
-- **THEN** Discovery SHALL still show the All Nearby view with the same area, date range and scroll position
+- **WHEN** the fan opens a discovered concert from the Concerts view's list and closes the detail sheet
+- **THEN** Discovery SHALL still show the Concerts view with the same area, date range and scroll position
 
 #### Scenario: Followed artist matched by hype and lane
 
 - **GIVEN** the fan follows an artist at hype level Home
-- **WHEN** that artist's concerts appear in the HOME lane and the NEARBY lane of the All Nearby view
+- **WHEN** that artist's concerts appear in the HOME lane and the NEARBY lane of the Concerts view
 - **THEN** the HOME lane card SHALL render as matched
 - **AND** the NEARBY lane card SHALL render as unmatched
 
@@ -1065,35 +1065,35 @@ The All Nearby view SHALL display concerts returned by `ConcertService.ListByLoc
 
 #### Scenario: Guest with no follows
 
-- **WHEN** a guest who follows no artist opens the All Nearby view
+- **WHEN** a guest who follows no artist opens the Concerts view
 - **THEN** every card SHALL render as unmatched
 
 #### Scenario: Journey badge shown
 
 - **GIVEN** the fan has a journey of status Tracking for a concert
-- **WHEN** that concert appears in the All Nearby view, including on a first visit straight to `/discovery?view=nearby`
-- **THEN** its card SHALL show the same journey badge as on the dashboard
+- **WHEN** that concert appears in the Concerts view, including on a first visit straight to `/discovery?view=nearby`
+- **THEN** its card SHALL show the same journey badge as on the timetable
 
 #### Scenario: Journey or hype changed in the detail sheet
 
-- **WHEN** the fan opens a discovered concert from the All Nearby view, sets a journey in the detail sheet and closes it
+- **WHEN** the fan opens a discovered concert from the Concerts view, sets a journey in the detail sheet and closes it
 - **THEN** the card SHALL show the new journey badge without reloading the view
-- **WHEN** the fan changes a followed artist's hype level elsewhere and returns to the All Nearby view
+- **WHEN** the fan changes a followed artist's hype level elsewhere and returns to the Concerts view
 - **THEN** that artist's cards SHALL show the matched state for the new level
 
-### Requirement: Natural Japanese Copy for the All Nearby View
+### Requirement: Natural Japanese Copy for the Concerts view
 
-All user-facing Japanese strings on the All Nearby surface SHALL read as natural, native Japanese; machine-translated or awkward phrasing SHALL be corrected. Japanese and English i18n keys SHALL remain at parity.
+All user-facing Japanese strings on the Concerts view surface SHALL read as natural, native Japanese; machine-translated or awkward phrasing SHALL be corrected. Japanese and English i18n keys SHALL remain at parity.
 
-#### Scenario: All Nearby strings are natural Japanese
+#### Scenario: Concerts view strings are natural Japanese
 
 - **WHEN** the swap tile's accessible names, area prompt, empty-state text, date-preset labels, and range hint are displayed in Japanese
 - **THEN** each SHALL be phrased in natural Japanese
-- **AND** every `allNearby.*` key present in the Japanese bundle SHALL also exist in the English bundle (and vice versa)
+- **AND** every `discoveryConcerts.*` key present in the Japanese bundle SHALL also exist in the English bundle (and vice versa)
 
-### Requirement: All Nearby dates are shown in the Japanese locale
+### Requirement: Concerts view's dates are shown in the Japanese locale
 
-Every user-facing date and date-range in the All Nearby filter SHALL be formatted for the Japanese locale via `Intl.DateTimeFormat('ja-JP')`; the browser's native `MM/DD/YYYY` input rendering SHALL NOT be the primary display of the selected range.
+Every user-facing date and date-range in the Concerts view's filter SHALL be formatted for the Japanese locale via `Intl.DateTimeFormat('ja-JP')`; the browser's native `MM/DD/YYYY` input rendering SHALL NOT be the primary display of the selected range.
 
 #### Scenario: Period row shows a localized range
 
@@ -1110,9 +1110,9 @@ Every user-facing date and date-range in the All Nearby filter SHALL be formatte
 - **WHEN** a quick preset (今週末 / 7日以内 / 30日以内) is applied
 - **THEN** the period row of the filter sheet SHALL display that preset's name rather than a raw date range
 
-### Requirement: The All Nearby period is chosen in a date-range sheet and its preset is kept
+### Requirement: The Concerts view's period is chosen in a date-range sheet and its preset is kept
 
-The All Nearby view SHALL expose its date filter as the period row of the All Nearby filter sheet (see "All Nearby filters open from the action launcher"); a tap on the row SHALL open one date-range bottom sheet. The sheet SHALL offer three quick presets (今週末, 7日以内, 30日以内) and a directly-editable custom range (start/end date fields), so a custom range is adjusted without any intermediate menu or drill-down. There is no standalone "カスタム" preset chip; custom selection is simply editing the date fields. The last quick preset the fan applied SHALL be kept on the device and applied on the fan's next visit to the All Nearby view; a custom range SHALL NOT be kept, and a visit after one starts from 7日以内. The kept preset SHALL be cleared at sign-in, sign-up and sign-out, with the area override. Without a kept preset the view SHALL start from 7日以内.
+The Concerts view SHALL expose its date filter as the period row of the Concerts view's filter sheet (see "Concerts view's filters open from the action launcher"); a tap on the row SHALL open one date-range bottom sheet. The sheet SHALL offer three quick presets (今週末, 7日以内, 30日以内) and a directly-editable custom range (start/end date fields), so a custom range is adjusted without any intermediate menu or drill-down. There is no standalone "カスタム" preset chip; custom selection is simply editing the date fields. The last quick preset the fan applied SHALL be kept on the device and applied on the fan's next visit to the Concerts view; a custom range SHALL NOT be kept, and a visit after one starts from 7日以内. The kept preset SHALL be cleared at sign-in, sign-up and sign-out, with the area override. Without a kept preset the view SHALL start from 7日以内.
 
 #### Scenario: Period row opens the range sheet in one tap
 
@@ -1170,81 +1170,81 @@ The All Nearby view SHALL expose its date filter as the period row of the All Ne
 
 #### Scenario: A preset is kept for the next visit
 
-- **WHEN** the fan applies 今週末, leaves Discovery, reloads the app and opens the All Nearby view again
+- **WHEN** the fan applies 今週末, leaves Discovery, reloads the app and opens the Concerts view again
 - **THEN** the view SHALL load 今週末's range, computed from the new day's date
 
 #### Scenario: A custom range is not kept
 
-- **WHEN** the fan applies a custom range from 2026-08-12 to 2026-08-20 and opens the All Nearby view again on a later visit
+- **WHEN** the fan applies a custom range from 2026-08-12 to 2026-08-20 and opens the Concerts view again on a later visit
 - **THEN** the view SHALL load 7日以内
 
 #### Scenario: The device keeps nothing
 
-- **WHEN** the device's storage is unavailable and the fan opens the All Nearby view
+- **WHEN** the device's storage is unavailable and the fan opens the Concerts view
 - **THEN** the view SHALL load 7日以内
 
-### Requirement: The All Nearby area is chosen in the filter sheet and kept on the device
+### Requirement: The Concerts view's area is chosen in the filter sheet and kept on the device
 
-The All Nearby view SHALL present the current reference area as the area row of the All Nearby filter sheet, and allow the user to override it by opening the shared `user-home-selector` from that row. The override SHALL be kept on the device, never on the user's account, and SHALL be used on the fan's next visit to the All Nearby view. Choosing the fan's own home area SHALL clear the override, so the view follows the home area again when it changes. Signing in, signing up and signing out SHALL clear the override and the kept date preset, so no one inherits another person's filter on a shared device.
+The Concerts view SHALL present the current reference area as the area row of the Concerts view's filter sheet, and allow the user to override it by opening the shared `home-area-selector` from that row. The override SHALL be kept on the device, never on the user's account, and SHALL be used on the fan's next visit to the Concerts view. Choosing the fan's own home area SHALL clear the override, so the view follows the home area again when it changes. Signing in, signing up and signing out SHALL clear the override and the kept date preset, so no one inherits another person's filter on a shared device.
 
 #### Scenario: Default area is user home
 
-- **WHEN** the All Nearby view opens for an authenticated user who has set a home area and the device keeps no override
+- **WHEN** the Concerts view opens for an authenticated user who has set a home area and the device keeps no override
 - **THEN** the area row SHALL display the user's home area name (prefecture display name)
 - **AND** the `GeoLocation` passed to `ListByLocation` SHALL use `user.home.centroid.latitude`, `user.home.centroid.longitude`, and `user.home.level_1` as `admin_area` (`centroid` is the nested `Coordinates` sub-message on the `Home` proto; `centroid_latitude`/`centroid_longitude` are reserved field names)
 
-#### Scenario: Area override via UserHomeSelector
+#### Scenario: Area override via HomeAreaSelector
 
 - **WHEN** the user taps the area row
-- **THEN** the `user-home-selector` component SHALL open
+- **THEN** the `home-area-selector` component SHALL open
 - **AND** on selection, the view SHALL use the new ISO 3166-2 code
 - **AND** `ListByLocation` SHALL be called with the new area's centroid coordinates and admin_area
 - **AND** the new area SHALL NOT be saved to the user's account
 
 #### Scenario: Area override is kept on the device
 
-- **WHEN** the user chooses 大阪府 while their home area is 東京都, then reloads the app and opens the All Nearby view
+- **WHEN** the user chooses 大阪府 while their home area is 東京都, then reloads the app and opens the Concerts view
 - **THEN** the area row SHALL display 大阪府 and the concerts SHALL be those near 大阪府
 - **AND** the user's home area SHALL still be 東京都
 
 #### Scenario: Choosing the home area clears the override
 
 - **WHEN** the user has an override of 大阪府, chooses 東京都 (their home area) and later changes their home area to 神奈川県
-- **THEN** the All Nearby view SHALL use 神奈川県
+- **THEN** the Concerts view SHALL use 神奈川県
 
 #### Scenario: Signing in, signing up or signing out clears the kept filter
 
 - **WHEN** a guest who chose 大阪府 and 今週末 signs in or signs up as a fan whose home area is 東京都
-- **THEN** the All Nearby view SHALL use 東京都 and 7日以内, and the filter item SHALL be in its default state
+- **THEN** the Concerts view SHALL use 東京都 and 7日以内, and the filter item SHALL be in its default state
 - **WHEN** a fan who chose 大阪府 signs out and another fan signs in on the same device
-- **THEN** the All Nearby view SHALL use the second fan's home area
+- **THEN** the Concerts view SHALL use the second fan's home area
 
 #### Scenario: Area override for unauthenticated user
 
-- **WHEN** an unauthenticated user opens the All Nearby view
+- **WHEN** an unauthenticated user opens the Concerts view
 - **AND** no guest home and no override are stored on the device
-- **THEN** the view SHALL open the `user-home-selector` as its area selector before listing any concert
+- **THEN** the view SHALL open the `home-area-selector` as its area selector before listing any concert
 - **AND** until an area is chosen, the area row of the filter sheet SHALL prompt the user to choose one
 - **AND** the chosen area SHALL be kept on the device as the override, not as the guest home
 
-### Requirement: All Nearby filters open from the action launcher
+### Requirement: Concerts view's filters open from the action launcher
 
-The All Nearby view SHALL show no filter control above the timetable: the stage header SHALL sit directly under the page header, as on the dashboard. The FAB action launcher SHALL offer a filter item while the All Nearby view is shown (see the FAB Menu's per-route actions). The filter item SHALL open the All Nearby filter sheet, which holds two rows, the area and the period, each showing its current value and opening its own selector. The filter item SHALL show its active state while the area differs from the fan's home area or the period differs from 7日以内. Changing a filter SHALL never change the timetable's height.
+The Concerts view SHALL show no filter control above the timetable: the stage header SHALL sit directly under the page header, as on the timetable. The action menu SHALL offer a filter item while the Concerts view is shown (see the action menu Menu's per-route actions). The filter item SHALL open the Concerts view's filter sheet, which holds two rows, the area and the period, each showing its current value and opening its own selector. The filter item SHALL show its active state while the area differs from the fan's home area or the period differs from 7日以内. Changing a filter SHALL never change the timetable's height.
 
 #### Scenario: Stage header under the page header
 
-- **WHEN** the All Nearby view is shown on a 375 px wide screen
+- **WHEN** the Concerts view is shown on a 375 px wide screen
 - **THEN** the top edge of the stage header SHALL touch the bottom edge of the page header, with no row between them
 
 #### Scenario: Filter item opens the filter sheet
 
-- **WHEN** the fan opens the launcher on the All Nearby view and taps the filter item
+- **WHEN** the fan opens the launcher on the Concerts view and taps the filter item
 - **THEN** the filter sheet SHALL open with an area row showing the current area and a period row showing the current period
 
 #### Scenario: A row opens its selector
 
 - **WHEN** the fan taps the area row of the filter sheet
-- **THEN** the filter sheet SHALL close and the `user-home-selector` SHALL open, so two sheets are never open at once
+- **THEN** the filter sheet SHALL close and the `home-area-selector` SHALL open, so two sheets are never open at once
 - **WHEN** the fan taps the period row of the filter sheet
 - **THEN** the filter sheet SHALL close and the date-range sheet SHALL open
 
@@ -1261,7 +1261,7 @@ The All Nearby view SHALL show no filter control above the timetable: the stage 
 - **THEN** the height of the concert timetable SHALL NOT change as a result
 
 ### Requirement: Discovery frame timings are reported
-On each visit to Discovery, the fan app SHALL send one usage analytics event about the frames of the artist bubbles when the visit ends: the fan leaves Discovery, switches to the All Nearby view, or hides the page. The event SHALL carry, over the frames in which the bubble field was shown and running: the number of frames measured, the median and 95th-percentile frame interval in milliseconds, the longest frame in milliseconds, the number of frames longer than 50 ms, and the number of bubbles shown when the visit ended. It SHALL also state whether bubble names were prepared off the main thread on this device. Time while the field is paused (search mode, the All Nearby view, a hidden page) SHALL NOT count. A visit with fewer than 30 measured frames SHALL NOT send the event. The event SHALL obey the analytics consent setting and the query-string rule of the analytics surface.
+On each visit to Discovery, the fan app SHALL send one usage analytics event about the frames of the artist bubbles when the visit ends: the fan leaves Discovery, switches to the Concerts view, or hides the page. The event SHALL carry, over the frames in which the bubble field was shown and running: the number of frames measured, the median and 95th-percentile frame interval in milliseconds, the longest frame in milliseconds, the number of frames longer than 50 ms, and the number of bubbles shown when the visit ended. It SHALL also state whether bubble names were prepared off the main thread on this device. Time while the field is paused (search mode, the Concerts view, a hidden page) SHALL NOT count. A visit with fewer than 30 measured frames SHALL NOT send the event. The event SHALL obey the analytics consent setting and the query-string rule of the analytics surface.
 
 #### Scenario: Fan leaves Discovery after browsing bubbles
 - **WHEN** the fan, with analytics on, watches and taps the bubbles for 10 s and then opens another tab of the app

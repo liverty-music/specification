@@ -92,7 +92,7 @@ The system SHALL handle navigation errors gracefully using Aurelia 2 router conf
 #### Scenario: 404 fallback route
 - **WHEN** a user navigates to a URL that does not match any defined route
 - **THEN** the router SHALL display a "Page Not Found" component
-- **AND** the component SHALL provide a link to navigate to the dashboard
+- **AND** the component SHALL provide a link to navigate to the timetable
 
 #### Scenario: Navigation error event subscription
 - **WHEN** a `au:router:navigation-error` event is fired by the router
@@ -142,8 +142,8 @@ Every error the `ErrorBoundaryService` captures SHALL be sent as an error report
 An error that wraps a cause SHALL be reported with its cause, and a rejection value that is not an error object SHALL be reported as it was. A report SHALL NOT contain authentication tokens, JWTs or OIDC `code`/`state` values; they are redacted before the report leaves the device. Failing to send a report SHALL NOT throw and SHALL NOT stop the banner from opening.
 
 #### Scenario: Error is reported with its Error ID and steps
-- **WHEN** a fan with analytics on opens the dashboard, then the event detail, and an unhandled error occurs
-- **THEN** one error report is sent with the banner's Error ID, the source "unhandled error" and the navigation steps for the dashboard and the event detail
+- **WHEN** a fan with analytics on opens the timetable, then the event detail, and an unhandled error occurs
+- **THEN** one error report is sent with the banner's Error ID, the source "unhandled error" and the navigation steps for the timetable and the event detail
 
 #### Scenario: Failed request carries its trace ID
 - **WHEN** a request to the backend fails with Internal and the error reaches the `ErrorBoundaryService`

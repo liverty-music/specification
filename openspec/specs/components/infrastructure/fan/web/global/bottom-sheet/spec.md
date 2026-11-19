@@ -2,48 +2,48 @@
 
 ## Purpose
 
-Provides the shared bottom sheet used across the app as the single overlay surface for dialogs such as artist selection and the follow action inside the event detail sheet.
+Provides the shared bottom sheet used across the app as the single overlay surface for dialogs such as artist selection and the follow action inside the concert sheet.
 
 ## Requirements
 
-### Requirement: Follow CTA in Event Detail Sheet
+### Requirement: Follow CTA in Concert Sheet
 
-When a user views a concert opened from the All Nearby view on Discovery, the event detail sheet SHALL provide a follow action for artists the user has not yet followed. This makes following an artist a natural outcome of finding a concert nearby.
+When a user views a concert opened from the Concerts view on Discovery, the concert sheet SHALL provide a follow action for artists the user has not yet followed. This makes following an artist a natural outcome of finding a concert nearby.
 
-#### Scenario: Follow button visible for unfollowed artist in All Nearby context
+#### Scenario: Follow button visible for unfollowed artist in Concerts view context
 
-- **WHEN** the user opens the event detail sheet for a concert in the All Nearby view
+- **WHEN** the user opens the concert sheet for a concert in the Concerts view
 - **AND** the concert's artist is not in the user's followed artists list
 - **THEN** the sheet SHALL display a "Follow this artist" button
 
 #### Scenario: Follow button hidden in My Timetable context
 
-- **WHEN** the user opens the event detail sheet for a concert in the dashboard timetable
+- **WHEN** the user opens the concert sheet for a concert in the timetable
 - **THEN** the follow button SHALL NOT be displayed regardless of follow status
 - **AND** the sheet behavior SHALL be unchanged from the pre-feature state
 
 #### Scenario: Follow action from detail sheet
 
-- **WHEN** the user taps "Follow this artist" in the event detail sheet
+- **WHEN** the user taps "Follow this artist" in the concert sheet
 - **THEN** `FollowService.Follow` SHALL be called
 - **AND** the button SHALL transition to a "Following" indicator
-- **AND** the DNA Orb absorption animation SHALL NOT play (the bubble field and its orb are not shown while the All Nearby view is)
+- **AND** the Discovery Orb absorption animation SHALL NOT play (the bubble field and its orb are not shown while the Concerts view is)
 
 #### Scenario: Follow button absent when artist data is unresolved
 
-- **WHEN** the event detail sheet is opened for a concert whose `artist` field is `undefined` (performer not yet resolved)
+- **WHEN** the concert sheet is opened for a concert whose `artist` field is `undefined` (performer not yet resolved)
 - **THEN** the follow button SHALL NOT be displayed
 - **AND** no error SHALL be thrown
 
 #### Scenario: No follow button for already-followed artist
 
-- **WHEN** the user opens the event detail sheet for a concert in the All Nearby view
+- **WHEN** the user opens the concert sheet for a concert in the Concerts view
 - **AND** the concert's artist is already followed
 - **THEN** the follow button SHALL NOT be displayed
 
 #### Scenario: Follow prompt for unauthenticated user
 
-- **WHEN** an unauthenticated user taps "Follow this artist" in the event detail sheet
+- **WHEN** an unauthenticated user taps "Follow this artist" in the concert sheet
 - **THEN** the system SHALL surface the sign-up prompt banner
 - **AND** `FollowService.Follow` SHALL NOT be called
 
@@ -246,7 +246,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 A bottom sheet SHALL allow the user to select one or more followed artists as a
 filter. Artists SHALL be presented as Material 3 filter chips. Each artist chip
 SHALL be prefixed with the number of that artist's upcoming concerts in the loaded
-dashboard set. The artist chips SHALL be ordered by that concert count descending
+timetable set. The artist chips SHALL be ordered by that concert count descending
 (ties broken by artist name ascending), and artists with zero upcoming concerts
 SHALL NOT be listed. A "全て解除" (Clear all) button SHALL appear beside the sheet
 title and allow the user to deselect all pending selections across every facet in
@@ -260,13 +260,13 @@ and causes screen readers to lose item count information.
 
 #### Scenario: Opening the bottom sheet
 
-- **WHEN** the user activates the filter item in the FAB action launcher
+- **WHEN** the user activates the filter item in the action menu
 - **THEN** the bottom sheet SHALL open listing the followed artists (that have upcoming concerts) as selectable chips
 - **AND** the launcher panel SHALL close as the sheet opens
 
 #### Scenario: Artist chip shows upcoming-concert count
 - **WHEN** an artist chip is rendered
-- **THEN** it SHALL display the count of that artist's upcoming concerts in the loaded dashboard set as a prefix to the artist name
+- **THEN** it SHALL display the count of that artist's upcoming concerts in the loaded timetable set as a prefix to the artist name
 
 #### Scenario: Chips ordered by concert count descending
 - **WHEN** the artist chips are listed
@@ -274,7 +274,7 @@ and causes screen readers to lose item count information.
 - **AND** ties SHALL be broken by artist name ascending
 
 #### Scenario: Zero-concert artists hidden
-- **WHEN** a followed artist has no upcoming concerts in the loaded dashboard set
+- **WHEN** a followed artist has no upcoming concerts in the loaded timetable set
 - **THEN** that artist SHALL NOT appear in the chip list
 
 #### Scenario: Counts stable while filtering
@@ -336,7 +336,7 @@ A bottom sheet with a heading SHALL show it directly below the handle bar, in th
 
 #### Scenario: Sheet with a heading
 
-- **WHEN** the All Nearby filter sheet opens
+- **WHEN** the Concerts view's filter sheet opens
 - **THEN** エリアと期間 is shown below the handle bar in the title-large style, and the sheet's accessible name is エリアと期間
 
 #### Scenario: Space below the heading
