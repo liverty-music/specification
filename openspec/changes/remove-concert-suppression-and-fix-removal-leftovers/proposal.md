@@ -39,5 +39,5 @@ Unchanged: `components/entity/ticket-stock/delete` already requires the behaviou
 
 ## Impact
 
-- backend: `internal/entity` (concert, event removal, order, series, suppressed concert), `internal/infrastructure/database/rdb` (concert, event removal, suppressed concert, ticket stock), `internal/usecase` (concert, concert creation), `internal/di`, `internal/infrastructure/server/ratelimit`, `internal/adapter/rpc` (admin notification and order handlers), mocks and tests; an Atlas migration that drops `suppressed_concerts` and replaces `delete_ticket_stock`.
+- backend: `internal/entity` (concert, event removal, order, series, suppressed concert), `internal/infrastructure/database/rdb` (concert, event removal, suppressed concert, ticket stock), `internal/usecase` (concert, concert creation), `internal/di`, `internal/infrastructure/server/ratelimit`, `internal/adapter/rpc` (admin notification and order handlers), `internal/adapter/webhook` and the Stripe webhook usecase (the dispute refund no longer passes a time), mocks and tests; an Atlas migration that drops `suppressed_concerts` and replaces `delete_ticket_stock`.
 - No proto, frontend or cloud-provisioning change: the admin RPC `ConcertService.Delete` keeps its name and its errors.
