@@ -30,26 +30,6 @@ It SHALL return the ids of the Events it made PUBLISHED in place; claimed Events
 - **WHEN** a Series has two DRAFT Events and only one is given
 - **THEN** only the given one is published and the other stays DRAFT
 
-### Requirement: Blocked slots fail the whole publish
-
-PublishEvents SHALL fail with FailedPrecondition, changing nothing, when any given Event's slot is held by an Event of another first-party Series, whether that Series belongs to another Organizer or to the same one, or by a CANCELLED Event. A SuppressedConcert at the slot SHALL NOT block the publish.
-
-#### Scenario: Suppressed slot
-- **WHEN** one given DRAFT Event's slot matches a SuppressedConcert and no Event is at that slot
-- **THEN** that Event becomes PUBLISHED and its id is returned
-
-#### Scenario: Another Organizer's slot
-- **WHEN** one given DRAFT Event's slot holds an Event of another Organizer's Series
-- **THEN** PublishEvents fails with FailedPrecondition and every given Event stays DRAFT
-
-#### Scenario: Slot of another Series of the same Organizer
-- **WHEN** one given DRAFT Event's slot holds a PUBLISHED Event of another Series of the same Organizer, with its own visibility, SeatTypes and TicketSales
-- **THEN** PublishEvents fails with FailedPrecondition, every given Event stays DRAFT, and the held Event stays in its Series with its visibility, SeatTypes and TicketSales unchanged
-
-#### Scenario: Cancelled slot
-- **WHEN** one given DRAFT Event's slot holds a CANCELLED Event
-- **THEN** PublishEvents fails with FailedPrecondition and every given Event stays DRAFT
-
 ### Requirement: Only drafts of the series
 
 PublishEvents SHALL fail with FailedPrecondition, changing nothing, when a given Event is not a DRAFT Event of the Series, with NotFound when the Series does not exist, and with InvalidArgument when no Event is given.
@@ -119,3 +99,19 @@ PublishEvents SHALL take an optional share token. When one is given, PublishEven
 
 - **WHEN** PublishEvents is given a share token that another Series holds
 - **THEN** PublishEvents fails with AlreadyExists, every given Event stays DRAFT and the Series has no share token
+
+### Requirement: Held slots fail the whole publish
+
+PublishEvents SHALL fail with FailedPrecondition, changing nothing, when any given Event's slot is held by an Event of another first-party Series, whether that Series belongs to another Organizer or to the same one, or by a CANCELLED Event.
+
+#### Scenario: Another Organizer's slot
+- **WHEN** one given DRAFT Event's slot holds an Event of another Organizer's Series
+- **THEN** PublishEvents fails with FailedPrecondition and every given Event stays DRAFT
+
+#### Scenario: Slot of another Series of the same Organizer
+- **WHEN** one given DRAFT Event's slot holds a PUBLISHED Event of another Series of the same Organizer, with its own visibility, SeatTypes and TicketSales
+- **THEN** PublishEvents fails with FailedPrecondition, every given Event stays DRAFT, and the held Event stays in its Series with its visibility, SeatTypes and TicketSales unchanged
+
+#### Scenario: Cancelled slot
+- **WHEN** one given DRAFT Event's slot holds a CANCELLED Event
+- **THEN** PublishEvents fails with FailedPrecondition and every given Event stays DRAFT

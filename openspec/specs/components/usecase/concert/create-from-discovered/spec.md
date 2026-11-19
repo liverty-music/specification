@@ -2,7 +2,7 @@
 
 ## Purpose
 
-CreateFromDiscovered takes one Artist's batch of newly discovered series, started by ConcertUseCase.SearchNewConcerts once per search. For each event it does one of four things: publishes it under its Series through Concert.Create, which tells the Artist's followers; stages it for admin review when its venue is unresolved or its slot collides with an Event already in the catalog; skips it when its slot is suppressed; or fills an announced start time onto the Artist's existing Event.
+CreateFromDiscovered takes one Artist's batch of newly discovered series, started by ConcertUseCase.SearchNewConcerts once per search. For each event it does one of three things: publishes it under its Series through Concert.Create, which tells the Artist's followers; stages it for admin review when its venue is unresolved or its slot collides with an Event already in the catalog; or fills an announced start time onto the Artist's existing Event.
 
 ```mermaid
 sequenceDiagram
@@ -11,7 +11,6 @@ participant UC as ConcertCreationUseCase.CreateFromDiscovered
 participant Concert
 participant Series
 participant Venue
-participant SuppressedConcert
 participant ConcertCandidate
 Note over UC: started by ConcertUseCase.SearchNewConcerts once per search, run again on failure
 loop each series with a title and events
@@ -46,16 +45,11 @@ loop each series with a title and events
       end
     end
     opt resolved event
-      UC->>SuppressedConcert: Exists
-      alt suppressed
-        Note over UC: neither published nor staged
-      else not suppressed
-        UC->>Concert: FindEventsByVenueAndDate
-        alt collides
-          UC->>ConcertCandidate: Upsert
-        else otherwise
-          Note over UC: to be published
-        end
+      UC->>Concert: FindEventsByVenueAndDate
+      alt collides
+        UC->>ConcertCandidate: Upsert
+      else otherwise
+        Note over UC: to be published
       end
     end
   end
@@ -141,17 +135,9 @@ When no place is chosen (the search finds none), CreateFromDiscovered SHALL stag
 - **WHEN** no place is chosen
 - **THEN** a ConcertCandidate without resolved place is stored and nothing is published
 
-### Requirement: Suppressed slot is skipped
-
-For a resolved event, CreateFromDiscovered SHALL check its Venue, date and start time (SuppressedConcert.Exists) and, when suppressed, SHALL neither publish nor stage it.
-
-#### Scenario: Deleted concert rediscovered
-- **WHEN** the event's slot was suppressed by an admin's delete
-- **THEN** it is neither published nor staged
-
 ### Requirement: Collision is staged, anything else is published
 
-For a resolved, unsuppressed event, CreateFromDiscovered SHALL look up the Events at its Venue and date (Concert.FindEventsByVenueAndDate). The event collides when an Event there has the same start time (or both have none), or when the event has no start time and an Event there has one. A colliding event SHALL be staged (ConcertCandidate.Upsert) and not published; its resolved preview is included when its venue was looked up, and omitted when it reused the Artist's existing Event's Venue. Any other event SHALL be published under the series' Series with the Artist as performer, together with the series' other published events (see "The published events of a series are created together"). The RejectedConcert SHALL NOT be consulted.
+For a resolved event, CreateFromDiscovered SHALL look up the Events at its Venue and date (Concert.FindEventsByVenueAndDate). The event collides when an Event there has the same start time (or both have none), or when the event has no start time and an Event there has one. A colliding event SHALL be staged (ConcertCandidate.Upsert) and not published; its resolved preview is included when its venue was looked up, and omitted when it reused the Artist's existing Event's Venue. Any other event SHALL be published under the series' Series with the Artist as performer, together with the series' other published events (see "The published events of a series are created together"). The RejectedConcert SHALL NOT be consulted.
 
 #### Scenario: Same slot as an existing event
 - **WHEN** an Event at the resolved Venue, date and start time exists
@@ -179,7 +165,7 @@ At the end of the batch, CreateFromDiscovered SHALL remove the Series it created
 
 ### Requirement: Each batch reports what it did
 
-At the end of a batch, whether it completed or failed, CreateFromDiscovered SHALL send one "concert ingest completed" signal for product analytics, under the trace of the discovery it handles, carrying the Artist, whether the batch completed or failed, and the numbers of events it published, staged for review, filled in on an existing Event, found suppressed and kept as conflicts. A failed batch reports what it had done before failing; each redelivery of a failed batch is a batch of its own. A failure to send it SHALL NOT change the batch.
+At the end of a batch, whether it completed or failed, CreateFromDiscovered SHALL send one "concert ingest completed" signal for product analytics, under the trace of the discovery it handles, carrying the Artist, whether the batch completed or failed, and the numbers of events it published, staged for review, filled in on an existing Event and kept as conflicts. A failed batch reports what it had done before failing; each redelivery of a failed batch is a batch of its own. A failure to send it SHALL NOT change the batch.
 
 #### Scenario: Mixed batch
 - **WHEN** a batch publishes 3 events and stages 1 for review

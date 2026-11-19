@@ -142,11 +142,3 @@ It SHALL then remove the ConcertCandidate, and, when nothing was added, remove t
 #### Scenario: Last staged row of an empty series
 - **WHEN** a fill-only approval removes the last ConcertCandidate of a Series with no Event
 - **THEN** that Series is removed
-
-### Requirement: Suppression is not checked on approval
-
-Approve SHALL NOT consult SuppressedConcerts; an admin approval can publish a slot that was suppressed after the concert was staged.
-
-#### Scenario: Slot suppressed after staging
-- **WHEN** a ConcertCandidate's slot became suppressed after it was staged and it is approved without collision
-- **THEN** it is published
