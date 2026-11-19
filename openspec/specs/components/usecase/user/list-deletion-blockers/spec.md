@@ -45,7 +45,7 @@ ListDeletionBlockers SHALL load the User through User.Get, failing with NotFound
 - **Pending lottery entry**: a LotteryEntry in state Entered (LotteryEntry.ListByUser).
 - **Payment in progress**: a Checkout that is Committed, or Held with its hold expiry not yet passed (Checkout.ListByUser), or a LotteryEntry in state Won that has no Order yet (Order.GetByLotteryEntryID), whose tickets are still being charged.
 
-It SHALL return an empty list when the User has none. A Voided Ticket, an Issued Ticket for an Event whose local date has passed, an Order in any status, a ResaleListing in any other status or expired (Listed at or after its deadline), a Won LotteryEntry that has an Order, a Lost LotteryEntry, a Held Checkout whose hold expiry has passed and a Completed, Expired or Released Checkout SHALL NOT block. A failure of any read SHALL be returned with its own code.
+It SHALL return an empty list when the User has none. A Voided Ticket, an Issued Ticket for an Event whose local date has passed, an Order in any status, a ResaleListing in any other status or expired (Listed at or after its close time), a Won LotteryEntry that has an Order, a Lost LotteryEntry, a Held Checkout whose hold expiry has passed and a Completed, Expired or Released Checkout SHALL NOT block. A failure of any read SHALL be returned with its own code.
 
 #### Scenario: Ticket for a concert next week
 
