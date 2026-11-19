@@ -1,7 +1,7 @@
 # components/infrastructure/fan/web/route/concert Specification
 
 ## Purpose
-The Concert page (`/events/:id`) is the public, shareable page of one first-party Event: what a fan sees when they open a link posted by an artist or a notification, whether or not they are signed in, and where ticket sales and following start.
+The Concert page (`/concerts/:id`) is the public, shareable page of one first-party Event: what a fan sees when they open a link posted by an artist or a notification, whether or not they are signed in, and where ticket sales and following start.
 
 ## Requirements
 
