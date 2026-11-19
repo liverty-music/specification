@@ -105,7 +105,7 @@ Two sales' windows SHALL overlap when each one starts before the other ends.
 
 A discovered sale's discovered time SHALL be set when the sale is first stored and SHALL never change afterwards, however often the sale is discovered again.
 
-#### Scenario: Re-discovery keeps the discovered time
+#### Scenario: Re-discovery keeps the find time
 - **WHEN** a sale first stored on 1 June is discovered again on 5 June with new details
 - **THEN** its discovered time stays 1 June
 
