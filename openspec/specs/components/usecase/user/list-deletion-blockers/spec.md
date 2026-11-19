@@ -24,7 +24,7 @@ loop each Issued Ticket
 end
 UC->>ResaleListing: ListByUser
 loop each Listed ResaleListing
-  UC->>Event: Get "listed resale before its deadline"
+  UC->>Event: Get "listed resale before its close time"
 end
 UC->>LotteryEntry: ListByUser "Entered is a pending lottery entry"
 UC->>Checkout: ListByUser "Committed or unexpired Held"
@@ -41,11 +41,11 @@ Note over UC: one blocker per kind with its count, a failed read returns its own
 ListDeletionBlockers SHALL load the User through User.Get, failing with NotFound for an unknown User, and SHALL return one blocker for each kind below that the User has, with how many of that kind:
 
 - **Upcoming ticket**: an Issued Ticket (Ticket.ListByUser) whose Event's local date (Event.Get) is on or after the current date at the Event's Venue (entity/venue "Current date at a venue").
-- **Listed resale**: an open ResaleListing (ResaleListing.ListByUser): in status Listed and before its deadline, read from its Event (Event.Get).
+- **Listed resale**: an open ResaleListing (ResaleListing.ListByUser): in status Listed and before its close time, read from its Event (Event.Get).
 - **Pending lottery entry**: a LotteryEntry in state Entered (LotteryEntry.ListByUser).
 - **Payment in progress**: a Checkout that is Committed, or Held with its hold expiry not yet passed (Checkout.ListByUser), or a LotteryEntry in state Won that has no Order yet (Order.GetByLotteryEntryID), whose tickets are still being charged.
 
-It SHALL return an empty list when the User has none. A Voided Ticket, an Issued Ticket for an Event whose local date has passed, an Order in any status, a ResaleListing in any other status or expired (Listed at or after its deadline), a Won LotteryEntry that has an Order, a Lost LotteryEntry, a Held Checkout whose hold expiry has passed and a Completed, Expired or Released Checkout SHALL NOT block. A failure of any read SHALL be returned with its own code.
+It SHALL return an empty list when the User has none. A Voided Ticket, an Issued Ticket for an Event whose local date has passed, an Order in any status, a ResaleListing in any other status or expired (Listed at or after its close time), a Won LotteryEntry that has an Order, a Lost LotteryEntry, a Held Checkout whose hold expiry has passed and a Completed, Expired or Released Checkout SHALL NOT block. A failure of any read SHALL be returned with its own code.
 
 #### Scenario: Ticket for a concert next week
 
@@ -69,7 +69,7 @@ It SHALL return an empty list when the User has none. A Voided Ticket, an Issued
 
 #### Scenario: Expired listing
 
-- **WHEN** the User's only ResaleListing is Listed and its deadline passed an hour ago, unsold
+- **WHEN** the User's only ResaleListing is Listed and its close time passed an hour ago, unsold
 - **THEN** ListDeletionBlockers returns an empty list
 
 #### Scenario: Entry awaiting its draw

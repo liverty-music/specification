@@ -80,7 +80,7 @@ Field numbers stay. The proto PR carries the `buf skip breaking` label.
 
 Go entity fields: `DiscoveredTime` to `FindTime`, `LastFoundTime` to `LastFindTime`, `SoldTime` to `SellTime`, `RejectedTime` to `RejectTime`, `SuppressedTime` to `SuppressTime`, `ScannedTime` to `ScanTime`, `SearchedTime` to `SearchTime`, `SignedTime` to `SignTime`, `BoundTime` to `BindTime`, `RevokedTime` to `RevokeTime`, `RegisteredTime` to `RegisterTime`, and the deadline of a ResaleListing to `CloseTime`. Outside `entity`: `CreatedAt` to `CreateTime` in the Zitadel webhook payloads (JSON keys kept), `ReceivedAt` to `ReceiveTime` in the Stripe webhook input. `slog` keys follow the column names (`start_time`, `last_find_time`).
 
-TS: the ResaleListing entity and mapper (`sellTime`, `closeTime`), the wallet snapshot kept on the device (`savedAt` to `saveTime`), and the referral record in local storage (`expiresAt` to `expireTime`). A record saved under an old key fails the reader's shape check and is dropped like a missing one; no user has saves worth migrating.
+TS: the ResaleListing entity and mapper (`sellTime`, `closeTime`), the wallet snapshot kept on the device (`savedAt` to `saveTime`), and the referral record in local storage (`expiresAt` to `expireTime`). A referral record saved under the old key fails the reader's shape check and is dropped like a missing one. A wallet snapshot has no shape check: one saved under the old key is still shown offline, with its load time blank, until the next online load overwrites it; dropping it would hide the fan's tickets at the door. No user has saves worth migrating.
 
 ### Spec renames
 
@@ -94,14 +94,15 @@ Requirement text goes through the delta specs. Attribute tables in entity Purpos
 
 - [The migration reaches prod when the backend PR merges, while prod still runs the release that reads old names] → Accepted outage. Cut the backend release and the cloud-provisioning tag bump right after the merge, so the outage lasts one release and one sync.
 - [An old frontend reads JSON keys the new backend no longer sends (`soldTime`, `deadlineTime`)] → Deploy the frontend in the same window. The fan's resale listings and the admin approval queue read these keys.
-- [A durable workflow or outbox row written before the cutover carries a renamed field] → Outbox payloads are binary protobuf, which a field rename does not affect. Workflow inputs are serialized Go values: before the cutover, confirm no DBOS workflow is pending (`dbos.workflow_status`), as the read-only prod check in tasks says.
+- [A durable workflow or outbox row written before the cutover carries a renamed field] → Outbox payloads are binary protobuf, which a field rename does not affect. DBOS stores workflow inputs, step results and outputs as JSON, so a renamed Go field without a `json` tag would lose its value; no type a registered workflow stores holds a renamed field, so a pending workflow resumes unchanged.
+- [Between the migration and the new release, the old worker's every-minute schedules (DrawDueSales, DrawResale) read renamed columns] → They fail with undefined_column, which is not retried, and end ERROR, raising `workflow.needs_admin`. Accepted (no users): delete those runs after the rollout.
 - [A query the hand edit misses fails only at run time] → The repository integration tests run every query against a migrated database; `grep -rnE '\b[a-z_]+_at\b'` over `internal/` must find only the external JSON keys listed in Non-Goals.
 
 ## Migration Plan
 
 1. specification: merge the proto PR, publish the release, wait for BSR generation.
 2. backend and frontend: prepare both PRs against the new generated types; push only after BSR generation (workspace dependency order).
-3. Check prod read-only: no pending DBOS workflow.
+3. Check that no type a registered workflow stores holds a renamed field.
 4. Merge the backend PR (the migration applies), publish the backend release, merge the cloud-provisioning tag bump; merge and release the frontend in the same window.
 5. Verify: the AtlasMigration status is applied, the rollout is complete, and the logs show no `column ... does not exist` error.
 

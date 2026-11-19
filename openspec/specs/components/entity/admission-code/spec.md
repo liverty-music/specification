@@ -8,7 +8,7 @@ An AdmissionCode is what a fan's device shows as the entry QR code at the venue:
 | user | the User presenting the Tickets; must be the user of each | required |
 | event | the event the Tickets admit to | required |
 | tickets | the Tickets presented together, for same-time group entry | required, 1 to 10, each at most once; a Ticket not for the event is refused at admission |
-| signed time | when the device signed it, by the device's clock | required |
+| sign time | when the device signed it, by the device's clock | required |
 | signature | made with the private key whose public key is the user's WalletPublicKey | required |
 
 ```mermaid
@@ -41,7 +41,7 @@ An AdmissionCode SHALL present 1 to 10 distinct Tickets. A code that presents no
 
 ### Requirement: A code is fresh for a short time around its signing
 
-An AdmissionCode SHALL be fresh at a time when its signed time is at most 30 seconds before that time and at most 15 seconds after it. The second bound allows for a device clock that runs slightly fast.
+An AdmissionCode SHALL be fresh at a time when its sign time is at most 30 seconds before that time and at most 15 seconds after it. The second bound allows for a device clock that runs slightly fast.
 
 #### Scenario: Just shown
 

@@ -11,8 +11,8 @@ A Scanner is one device's right to admit fans to one event during that event's a
 | link token | the secret part of the link the Organizer hands to venue staff | required, random, at least 128 bits, assigned on creation; never shown again once the Scanner is InUse |
 | bound public key | the public key of the device the Scanner is bound to, ECDSA over P-256 | absent until the Scanner is bound; set once |
 | status | lifecycle | Unused, InUse or Revoked |
-| bound time | when a device first opened the link | absent until the Scanner is bound |
-| revoked time | when the Organizer revoked the Scanner | absent until revoked |
+| bind time | when a device first opened the link | absent until the Scanner is bound |
+| revoke time | when the Organizer revoked the Scanner | absent until revoked |
 
 ```mermaid
 erDiagram
@@ -48,7 +48,7 @@ A Scanner's number SHALL be 1 for the first Scanner of its event and, for each l
 
 ### Requirement: A new scanner starts Unused
 
-A new Scanner SHALL start Unused, with a fresh random link token, no bound public key, no bound time and no revoked time.
+A new Scanner SHALL start Unused, with a fresh random link token, no bound public key, no bind time and no revoke time.
 
 #### Scenario: New scanner
 
@@ -71,7 +71,7 @@ A Scanner SHALL be usable exactly when its status is Unused or InUse.
 
 ### Requirement: A call is proven by the bound device
 
-A call through an InUse Scanner SHALL be proven when it carries a signature that verifies with the Scanner's bound public key over the link token, the call's content and a signed time, and that signed time is at most 30 seconds before and at most 15 seconds after the time the call is checked. A call through an Unused or Revoked Scanner SHALL never be proven.
+A call through an InUse Scanner SHALL be proven when it carries a signature that verifies with the Scanner's bound public key over the link token, the call's content and a sign time, and that sign time is at most 30 seconds before and at most 15 seconds after the time the call is checked. A call through an Unused or Revoked Scanner SHALL never be proven.
 
 #### Scenario: Call from the bound device
 

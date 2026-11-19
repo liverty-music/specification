@@ -6,10 +6,10 @@ Records that a search for an Artist found at least one new concert.
 
 ## Requirements
 
-### Requirement: Last found time set to now
+### Requirement: Last find time set to now
 
-MarkFound SHALL set the last found time of the Artist's ConcertSearch to the current time; when the Artist has no ConcertSearch it SHALL change nothing and succeed.
+MarkFound SHALL set the last find time of the Artist's ConcertSearch to the current time; when the Artist has no ConcertSearch it SHALL change nothing and succeed.
 
 #### Scenario: Found
 - **WHEN** MarkFound is called for an Artist with a ConcertSearch
-- **THEN** its last found time is the current time
+- **THEN** its last find time is the current time

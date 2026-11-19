@@ -7,7 +7,7 @@ WalletPublicKeyUseCase.Register records the public key of the key pair the calli
 
 ### Requirement: The caller's device becomes the one that shows tickets
 
-Register SHALL take the calling fan, a public key and the current time, and store it with WalletPublicKey.Register, which makes it the fan's only key; an invalid key fails as Register fails. It SHALL require nothing beyond the fan's existing sign-in and SHALL return the registered time and whether a different device's key was replaced. A code signed on a device whose key was replaced SHALL from then on be refused at the venue.
+Register SHALL take the calling fan, a public key and the current time, and store it with WalletPublicKey.Register, which makes it the fan's only key; an invalid key fails as Register fails. It SHALL require nothing beyond the fan's existing sign-in and SHALL return the register time and whether a different device's key was replaced. A code signed on a device whose key was replaced SHALL from then on be refused at the venue.
 
 #### Scenario: First time on a phone
 

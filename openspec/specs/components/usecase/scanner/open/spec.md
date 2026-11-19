@@ -7,7 +7,7 @@ ScannerUseCase.Open is what a device does when venue staff open a Scanner's link
 
 ### Requirement: The scanner binds to the first device
 
-Open SHALL take a link token, the device's public key, a call signature with its signed time, and the current time. It SHALL find the Scanner with Scanner.GetByLinkToken and fail with PermissionDenied when no Scanner holds the link token. Before binding, it SHALL check that the call is proven by the given public key, and fail with PermissionDenied without binding when it is not, so a Scanner is only ever bound to a key whose private key the device holds. It SHALL then bind the Scanner with Scanner.BindDevice, failing with PermissionDenied when BindDevice reports Revoked, without telling it apart from an unknown link token, and with FailedPrecondition when BindDevice reports OtherDevice.
+Open SHALL take a link token, the device's public key, a call signature with its sign time, and the current time. It SHALL find the Scanner with Scanner.GetByLinkToken and fail with PermissionDenied when no Scanner holds the link token. Before binding, it SHALL check that the call is proven by the given public key, and fail with PermissionDenied without binding when it is not, so a Scanner is only ever bound to a key whose private key the device holds. It SHALL then bind the Scanner with Scanner.BindDevice, failing with PermissionDenied when BindDevice reports Revoked, without telling it apart from an unknown link token, and with FailedPrecondition when BindDevice reports OtherDevice.
 
 #### Scenario: Staff open the link for the first time
 

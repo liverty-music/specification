@@ -9,7 +9,7 @@ A RejectedScan is the permanent note that a scan at the venue, or one Ticket in 
 | scanner | the Scanner that scanned | required |
 | ticket | the Ticket the refusal is about | required, except absent when the reason is Forged |
 | reason | why it was refused | required: Forged, Expired, OtherEvent, Voided or AlreadyAdmitted |
-| scanned time | when the scan was decided | required |
+| scan time | when the scan was decided | required |
 
 ```mermaid
 erDiagram

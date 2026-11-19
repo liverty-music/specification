@@ -21,7 +21,7 @@ A RejectedConcert entry is an append-only record of a concert candidate an admin
 | resolved admin area | resolved venue's admin area | optional |
 | reason | why it was dropped | required |
 | reviewed by | identity of the reviewing admin | optional |
-| rejected time | when it was dropped | required |
+| reject time | when it was dropped | required |
 
 ```mermaid
 erDiagram

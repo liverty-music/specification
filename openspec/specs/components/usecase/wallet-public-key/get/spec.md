@@ -12,7 +12,7 @@ Get SHALL take the calling fan and return their WalletPublicKey with WalletPubli
 #### Scenario: Fan with an entry device
 
 - **WHEN** a fan whose key is K2 calls Get
-- **THEN** K2 is returned with its registered time
+- **THEN** K2 is returned with its register time
 
 #### Scenario: Fan without an entry device
 

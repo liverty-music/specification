@@ -95,11 +95,11 @@ Before the external search, SearchNewConcerts SHALL restart the Artist's Concert
 
 #### Scenario: Productive search
 - **WHEN** the search hands on two new concerts
-- **THEN** the ConcertSearch is completed and its last found time is now
+- **THEN** the ConcertSearch is completed and its last find time is now
 
 #### Scenario: Nothing new
 - **WHEN** the search finds only known concerts
-- **THEN** the ConcertSearch is completed and its last found time is unchanged
+- **THEN** the ConcertSearch is completed and its last find time is unchanged
 
 #### Scenario: External search fails
 - **WHEN** the external search fails with an error

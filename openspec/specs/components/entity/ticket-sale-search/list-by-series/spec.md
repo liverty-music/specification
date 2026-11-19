@@ -11,7 +11,7 @@ ListBySeries SHALL return the TicketSaleSearch of each given series that has one
 
 #### Scenario: One searched, one never searched
 - **WHEN** ListBySeries is called with series A, last searched on 1 October, and series B, never searched
-- **THEN** it returns only the TicketSaleSearch of series A, with searched time 1 October
+- **THEN** it returns only the TicketSaleSearch of series A, with search time 1 October
 
 #### Scenario: No series given
 - **WHEN** ListBySeries is called with no series
