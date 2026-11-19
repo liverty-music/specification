@@ -28,6 +28,7 @@ An admin deletes a Concert only to clean up test data: the delete button is reac
 - `components/usecase/concert/create-from-discovered`: the suppressed-slot skip is removed, a resolved event is no longer qualified as unsuppressed, and the ingest signal no longer counts suppressed events. Purpose and sequence diagram edited at archive (Purpose).
 - `components/usecase/order/refund`: Refund acts at its own current time instead of taking it as an input (backend#701); the outcome is the same.
 - `components/adapter/admin/api/rpc/order`: the Refund boundary passes the Order and the reason, not the time.
+- `components/adapter/fan/api/webhook/payment-events`: a dispute calls Refund with the Order and the reason Dispute, not the time the notice was received; Refund takes its own current time.
 - `components/usecase/concert/search-new-concerts`: drops the mention of SuppressedConcerts.
 - `components/usecase/concert-candidate/approve`: the requirement that approval does not check suppression is removed.
 - `components/usecase/series/publish`: drops the sentence and scenario about a slot where an admin deleted a Concert.
@@ -38,5 +39,5 @@ Unchanged: `components/entity/ticket-stock/delete` already requires the behaviou
 
 ## Impact
 
-- backend: `internal/entity` (concert, event removal, order, series, suppressed concert), `internal/infrastructure/database/rdb` (concert, event removal, suppressed concert, ticket stock), `internal/usecase` (concert, concert creation), `internal/di`, `internal/infrastructure/server/ratelimit`, `internal/adapter/rpc` (admin notification and order handlers), mocks and tests; an Atlas migration that drops `suppressed_concerts` and replaces `delete_ticket_stock`.
+- backend: `internal/entity` (concert, event removal, order, series, suppressed concert), `internal/infrastructure/database/rdb` (concert, event removal, suppressed concert, ticket stock), `internal/usecase` (concert, concert creation), `internal/di`, `internal/infrastructure/server/ratelimit`, `internal/adapter/rpc` (admin notification and order handlers), `internal/adapter/webhook` and the Stripe webhook usecase (the dispute refund no longer passes a time), mocks and tests; an Atlas migration that drops `suppressed_concerts` and replaces `delete_ticket_stock`.
 - No proto, frontend or cloud-provisioning change: the admin RPC `ConcertService.Delete` keeps its name and its errors.
