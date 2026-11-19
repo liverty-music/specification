@@ -7,12 +7,12 @@ Binds a Scanner to the public key of the first device that opens its link, and t
 
 ### Requirement: BindDevice binds once and recognises the bound device
 
-BindDevice SHALL take a Scanner, a public key and a time. When the Scanner is Unused, it SHALL set the bound public key and the bound time, make the Scanner InUse and report Bound. When the Scanner is InUse with the same public key, it SHALL change nothing and report Bound. When the Scanner is InUse with another public key, it SHALL change nothing and report OtherDevice. When the Scanner is Revoked, it SHALL change nothing and report Revoked. Checking and binding SHALL be one indivisible step, so that when two devices open an Unused Scanner's link at the same time exactly one is bound. It SHALL fail with InvalidArgument when the public key is not a valid P-256 key, and with NotFound when no Scanner has the id.
+BindDevice SHALL take a Scanner, a public key and a time. When the Scanner is Unused, it SHALL set the bound public key and the bind time, make the Scanner InUse and report Bound. When the Scanner is InUse with the same public key, it SHALL change nothing and report Bound. When the Scanner is InUse with another public key, it SHALL change nothing and report OtherDevice. When the Scanner is Revoked, it SHALL change nothing and report Revoked. Checking and binding SHALL be one indivisible step, so that when two devices open an Unused Scanner's link at the same time exactly one is bound. It SHALL fail with InvalidArgument when the public key is not a valid P-256 key, and with NotFound when no Scanner has the id.
 
 #### Scenario: First device
 
 - **WHEN** an Unused Scanner is bound with public key P1 at 14:10
-- **THEN** the Scanner is InUse with P1 and bound time 14:10, and BindDevice reports Bound
+- **THEN** the Scanner is InUse with P1 and bind time 14:10, and BindDevice reports Bound
 
 #### Scenario: Same device again
 

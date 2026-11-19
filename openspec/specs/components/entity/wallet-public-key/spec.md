@@ -7,7 +7,7 @@ A WalletPublicKey is the public half of a key pair that a fan's device creates f
 |-----------|---------|------------|
 | user | the User whose device created the key | required; one WalletPublicKey per User |
 | public key | the public key, ECDSA over P-256 | required, a valid point on the curve |
-| registered time | when the device registered it | required |
+| register time | when the device registered it | required |
 
 ```mermaid
 erDiagram

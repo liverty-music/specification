@@ -9,7 +9,7 @@ A ConcertSearch records, per Artist, the latest external concert search: when it
 | artist | the Artist searched | required; one ConcertSearch per Artist |
 | search time | when the latest search started | required |
 | status | pending, completed or failed | required |
-| last found time | when a search last found at least one new concert | optional; absent means never |
+| last find time | when a search last found at least one new concert | optional; absent means never |
 
 ```mermaid
 erDiagram
@@ -61,12 +61,12 @@ A ConcertSearch SHALL be in progress at a moment when its status is pending and 
 
 ### Requirement: Recently discovered
 
-A ConcertSearch SHALL count as recently discovered at a moment when it has a last found time and less than the discovery window has passed since it. A ConcertSearch with no last found time is never recently discovered.
+A ConcertSearch SHALL count as recently discovered at a moment when it has a last find time and less than the discovery window has passed since it. A ConcertSearch with no last find time is never recently discovered.
 
 #### Scenario: Found 3 days ago with a 14-day window
-- **WHEN** the last found time is 3 days before the moment and the window is 14 days
+- **WHEN** the last find time is 3 days before the moment and the window is 14 days
 - **THEN** the ConcertSearch is recently discovered
 
 #### Scenario: Never found
-- **WHEN** the ConcertSearch has no last found time
+- **WHEN** the ConcertSearch has no last find time
 - **THEN** it is not recently discovered

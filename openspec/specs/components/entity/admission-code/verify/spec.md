@@ -7,7 +7,7 @@ Checks a decoded AdmissionCode against its User's WalletPublicKey and the curren
 
 ### Requirement: Verify accepts only a code signed by the active key and fresh
 
-Verify SHALL take an AdmissionCode, a WalletPublicKey and a time. It SHALL report Forged when the key is not the code's user's key or the signature does not verify with it over the code's user, event, tickets and signed time; Expired when the signature verifies but the code is not fresh at that time; and Valid otherwise. Verify SHALL not fail.
+Verify SHALL take an AdmissionCode, a WalletPublicKey and a time. It SHALL report Forged when the key is not the code's user's key or the signature does not verify with it over the code's user, event, tickets and sign time; Expired when the signature verifies but the code is not fresh at that time; and Valid otherwise. Verify SHALL not fail.
 
 #### Scenario: Code just shown
 

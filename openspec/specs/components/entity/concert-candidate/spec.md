@@ -20,7 +20,7 @@ A ConcertCandidate is a discovered performance held for admin review instead of 
 | resolved venue name | canonical name of the resolved venue | optional |
 | resolved admin area | admin area of the resolved venue | optional |
 | resolved coordinates | location of the resolved venue | optional |
-| discovered time | when it was first staged | required |
+| find time | when it was first staged | required |
 
 ```mermaid
 erDiagram

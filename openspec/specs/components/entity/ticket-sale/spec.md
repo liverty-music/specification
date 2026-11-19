@@ -13,7 +13,7 @@ A TicketSale is one sale opportunity (受付) for some or all events of a Series
 | end time | when the sale closes, an instant entered and shown in Japan time | required; for an Organizer's Lottery sale, 1 to 14 days after the start time inclusive |
 | verification requirement | whether fans must hold an Active IdentityVerification to take part | None (the default), Verified-any or JPKI-only; None on a discovered sale |
 | events | the events of its Series it sells | an Organizer's sale: at least one; a discovered sale: none |
-| discovered time | when discovery first stored the sale | a discovered sale only, required; set once and never changed |
+| find time | when discovery first stored the sale | a discovered sale only, required; set once and never changed |
 | result date | the calendar day in Japan time on which a lottery's results are announced | a discovered Lottery sale only, optional; no earlier than the day of the end time |
 
 Events announced about it:
@@ -101,17 +101,17 @@ Two sales' windows SHALL overlap when each one starts before the other ends.
 - **WHEN** one sale runs from 1 to 10 November and the other from 8 to 20 November
 - **THEN** the windows overlap
 
-### Requirement: The discovered time is set once
+### Requirement: The find time is set once
 
-A discovered sale's discovered time SHALL be set when the sale is first stored and SHALL never change afterwards, however often the sale is discovered again.
+A discovered sale's find time SHALL be set when the sale is first stored and SHALL never change afterwards, however often the sale is discovered again.
 
 #### Scenario: Re-discovery keeps the find time
 - **WHEN** a sale first stored on 1 June is discovered again on 5 June with new details
-- **THEN** its discovered time stays 1 June
+- **THEN** its find time stays 1 June
 
 ### Requirement: An Organizer's sale names events, a discovered sale none
 
-A TicketSale of a Series that has an Organizer SHALL be that Organizer's sale. It SHALL name at least one event, each an event of its Series, SHALL sell every TicketStock of the events it names, and SHALL have no discovered time. A TicketSale of a Series without an Organizer SHALL be a discovered sale. It SHALL name no event, SHALL have a discovered time and SHALL have the verification requirement None.
+A TicketSale of a Series that has an Organizer SHALL be that Organizer's sale. It SHALL name at least one event, each an event of its Series, SHALL sell every TicketStock of the events it names, and SHALL have no find time. A TicketSale of a Series without an Organizer SHALL be a discovered sale. It SHALL name no event, SHALL have a find time and SHALL have the verification requirement None.
 
 #### Scenario: Organizer's presale
 - **WHEN** a sale belongs to a Series owned by an Organizer and names two of its events

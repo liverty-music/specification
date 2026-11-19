@@ -60,7 +60,7 @@ Note over UC: a failed Append still returns the result, a failed Ticket.Admit fa
 
 ### Requirement: Only the bound device of a usable scanner, during the admission window
 
-Admit SHALL take a link token, a call signature with its signed time, the scanned text and the current time. It SHALL find the Scanner with Scanner.GetByLinkToken and fail with PermissionDenied when no Scanner holds the link token, when the Scanner is Revoked, or when the call is not proven by the Scanner's bound device. It SHALL read the Scanner's event with Event.Get and fail with FailedPrecondition, recording nothing, when the current time is outside the Scanner's admission window. A Scanner revoked while a scan is being decided SHALL be treated as Revoked: Admit fails with PermissionDenied, and Tickets of the scan admitted before the revocation stay admitted and are reported AlreadyAdmitted on a later scan.
+Admit SHALL take a link token, a call signature with its sign time, the scanned text and the current time. It SHALL find the Scanner with Scanner.GetByLinkToken and fail with PermissionDenied when no Scanner holds the link token, when the Scanner is Revoked, or when the call is not proven by the Scanner's bound device. It SHALL read the Scanner's event with Event.Get and fail with FailedPrecondition, recording nothing, when the current time is outside the Scanner's admission window. A Scanner revoked while a scan is being decided SHALL be treated as Revoked: Admit fails with PermissionDenied, and Tickets of the scan admitted before the revocation stay admitted and are reported AlreadyAdmitted on a later scan.
 
 #### Scenario: Revoked link
 

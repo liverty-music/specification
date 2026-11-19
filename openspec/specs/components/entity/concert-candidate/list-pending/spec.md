@@ -8,7 +8,7 @@ Lists every ConcertCandidate awaiting review in review-queue order.
 
 ### Requirement: Oldest first
 
-ListPending SHALL return every ConcertCandidate ordered by discovered time ascending; an empty queue SHALL yield an empty list.
+ListPending SHALL return every ConcertCandidate ordered by find time ascending; an empty queue SHALL yield an empty list.
 
 #### Scenario: Two concert candidates
 - **WHEN** one ConcertCandidate was staged yesterday and one today

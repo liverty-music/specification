@@ -88,7 +88,7 @@ For each fan and each stage that applies to the sale, ScanDueReminders SHALL req
 - the stage has not expired
 - TicketSaleReminder.ListSentStages does not show that stage as sent to that fan
 
-The due time of a stage SHALL be its anchor. For a discovered sale, a stage whose anchor is earlier than the sale's discovered time SHALL NOT be requested.
+The due time of a stage SHALL be its anchor. For a discovered sale, a stage whose anchor is earlier than the sale's find time SHALL NOT be requested.
 
 A stage expires as follows:
 
