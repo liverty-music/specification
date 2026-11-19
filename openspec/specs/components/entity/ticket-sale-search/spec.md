@@ -19,6 +19,6 @@ erDiagram
 
 A ticket sale search's searched time SHALL NOT be after the current time.
 
-#### Scenario: Future searched time
+#### Scenario: Future search time
 - **WHEN** a ticket sale search carries a searched time one hour from now
 - **THEN** the ticket sale search is invalid

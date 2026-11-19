@@ -14,6 +14,6 @@ Upsert SHALL create the Artist's ConcertSearch when there is none and otherwise 
 - **WHEN** the Artist has no ConcertSearch and pending is given
 - **THEN** a pending ConcertSearch with the current search time exists
 
-#### Scenario: Restart keeps last found time
+#### Scenario: Restart keeps last find time
 - **WHEN** the Artist's ConcertSearch has a last found time and is upserted as pending
 - **THEN** its search time is now, its status pending, and its last found time unchanged
