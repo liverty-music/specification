@@ -24,7 +24,7 @@ A fan web screen or shared part had a different name in each layer: the home scr
 - **One English title per screen.** The page header and the browser tab show the same title, in English in every language (the bottom navigation labels already are). Labels that name a screen use the same words: Discovery's two views are the Artists view and the Concerts view, and the swap tile reads 「ライブ」 / "Concerts" (was 「近くのライブ」 / "Near you"), since the Concerts view lists concerts in any area the fan picks, not only near them. Checkout, lottery and resale screens take titles built from their names (Checkout, Lottery Entry, Lottery Entries, Resale Entry, Resale Entries), and Tickets is "Tickets" in the header as in the tab bar.
 - **Every fan route spec states its address**, so the frontend can keep the list of spec names and addresses as one constant, and a unit test fails when the route table drifts from it.
 - **Analytics values follow the names.** The `source` values sent to the analytics service (`dashboard`, `discovery_orb`, `all_nearby`, `dashboard_prompt`, `all_nearby_prompt`, `event_page`) take the new names (design D5); continuity with events already recorded is not kept.
-- Not changed: the callback addresses registered with the identity and verification providers (`/auth/callback`, `/auth/passkeys-callback`, `/verify/callback`), `/tickets`, `/orders/:id`, `/resale-entries`, `/notifications`, `/settings/**`, `/my-artists`, `/discovery`, `/legal/*`, `/verify-email`, and the admin, organizer and reception apps.
+- Not changed: the callback addresses registered with the identity and verification providers (`/auth/callback`, `/auth/passkeys-callback`, `/verify/callback`), `/tickets`, `/orders/:id`, `/resale-entries`, `/notifications`, `/settings/**`, `/my-artists`, `/discovery`, `/legal/*`, `/verify-email`, and the admin, organizer and reception apps' own names and addresses. The organizer console's copy of a published date's fan address does follow (`/concerts/<event id>`).
 
 ## Capabilities
 
@@ -41,18 +41,20 @@ None. (`route/resale-entries` was split out of the resale entry spec in the rena
 - `components/infrastructure/fan/web/route/discovery`: the Concerts view's address is `view=concerts`, the swap tile's name, and a first-party concert card opens `/concerts/:id`.
 - `components/infrastructure/fan/web/route/sign-in-help`, `route/welcome`, `route/settings`: the sign-in help address is `/sign-in-help`.
 - `components/infrastructure/fan/web/global/page-header`: each screen has one English title, shown in the header and the browser tab.
+- `components/infrastructure/fan/web/global/i18n`: the brand expression registry lists every screen's title.
 - `components/infrastructure/fan/web/global/page-help`: Discovery's help names the Concerts view.
 - `components/infrastructure/fan/web/global/bottom-nav-bar`: the Timetable tab's path.
 - `components/infrastructure/fan/web/global/link-preview`: concert page addresses carry the concert's preview.
 - `components/infrastructure/fan/web/global/analytics`: the error report's exception names the timetable's address.
 - `components/infrastructure/fan/web/global/post-signup-dialog`: the timetable's address after sign-up.
+- `components/infrastructure/organizer/web/route/event`: the fan address shown for a published date is `/concerts/<event id>`.
 - `components/entity/notification`: the link of each type uses the new addresses.
 - `components/usecase/notification/notify-new-concerts`: the message links to the new addresses. The operations it relies on are unchanged.
 - `stories/open-a-shared-event-link`, `stories/attribute-a-purchase-to-a-referral-link`, `stories/roam-app-as-guest`: the addresses they open.
 
 ## Impact
 
-- **frontend**: file, folder, class, element and i18n renames across the fan web (approximately 265 files); the route table; the analytics source values; a new constant of route spec names and addresses with a unit test; `@spec` paths and scenario names in tests.
+- **frontend**: file, folder, class, element and i18n renames across the fan web (approximately 265 files); the route table; the analytics source values; the organizer console's fan address and its guide; a new constant of route spec names and addresses with a unit test; `@spec` paths and scenario names in tests.
 - **backend**: `Notification` link building, the link preview's route and `og:url`, and the passkey-change email's link; `@spec` scenario names in tests whose scenarios were renamed.
 - **specification**: none beyond this change (the main specs were renamed in the commit before it).
 - **Analytics**: insights that filter on the old `source` values need the new values.

@@ -1,4 +1,4 @@
-# User Home Selector
+# Home Area Selector
 
 ## Purpose
 

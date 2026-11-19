@@ -336,8 +336,8 @@ Switching between the routes of the bottom navigation bar's tabs SHALL animate, 
 
 #### Scenario: Tab switch
 
-- **WHEN** the fan taps the My Artists tab while Home is shown
-- **THEN** Home fades out and My Artists fades in within 250-350 ms
+- **WHEN** the fan taps the My Artists tab while the Timetable is shown
+- **THEN** the Timetable fades out and My Artists fades in within 250-350 ms
 - **AND** the navigation bar and the page header do not fade
 
 #### Scenario: Reduced motion preference

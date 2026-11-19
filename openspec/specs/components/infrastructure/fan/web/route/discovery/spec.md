@@ -407,11 +407,11 @@ The invariants — exclude followed artists, deduplicate by name/id/mbid, and en
 - **THEN** the 50-bubble capacity SHALL be enforced by the field owner
 - **AND** the physics layer SHALL receive a field already within capacity and SHALL NOT re-cap it
 
-### Requirement: Artists view re-experience on Discover tab
-The system SHALL provide the onboarding Artists view as a reusable discovery experience on the Discover tab, with a simplified 3-row grid layout. After following an artist, the Discovery page SHALL call `ConcertService.ListByArtist` to check for existing concerts and update the onboarding progress row. The page SHALL NOT call `SearchNewConcerts` directly.
+### Requirement: Artists view re-experience on Discovery tab
+The system SHALL provide the onboarding Artists view as a reusable discovery experience on the Discovery tab, with a simplified 3-row grid layout. After following an artist, the Discovery page SHALL call `ConcertService.ListByArtist` to check for existing concerts and update the onboarding progress row. The page SHALL NOT call `SearchNewConcerts` directly.
 
 #### Scenario: Default Artists view display
-- **WHEN** the Discover tab is opened
+- **WHEN** the Discovery tab is opened
 - **THEN** the system SHALL display the physics-based artist Artists view (same as onboarding)
 - **AND** the Discovery Orb SHALL be displayed at the bottom
 - **AND** tapping a bubble SHALL trigger the absorption animation and follow the artist (kept on the device for a guest, sent to the server for a signed-in fan)
@@ -447,11 +447,11 @@ The system SHALL provide the onboarding Artists view as a reusable discovery exp
 - **AND** SHALL NOT call `SearchNewConcerts`
 - **AND** each artist that has stored concerts SHALL count as having a found concert for the onboarding progress row
 
-### Requirement: Manual search on Discover tab
+### Requirement: Manual search on Discovery tab
 The system SHALL provide a text search for targeted artist discovery.
 
 #### Scenario: Search bar display
-- **WHEN** the Discover tab is opened
+- **WHEN** the Discovery tab is opened
 - **THEN** a search bar SHALL be displayed at the top of the screen
 
 #### Scenario: Entering search mode
@@ -487,7 +487,7 @@ The search bar SVG icons SHALL have explicit intrinsic dimensions to prevent lay
 
 ---
 
-### Requirement: Bubble physics pauses when Discover tab is inactive
+### Requirement: Bubble physics pauses when Discovery tab is inactive
 The system SHALL manage Artists view resources efficiently while the bubble field is not visible.
 
 #### Scenario: Search mode pauses the simulation
@@ -504,15 +504,15 @@ The system SHALL manage Artists view resources efficiently while the bubble fiel
 - **THEN** the physics simulation SHALL be paused, and it SHALL resume when the document is visible again
 
 #### Scenario: Tab deactivation
-- **WHEN** the user navigates away from the Discover tab
+- **WHEN** the user navigates away from the Discovery tab
 - **THEN** the physics simulation SHALL be stopped and its resources released
 
 #### Scenario: Tab reactivation
-- **WHEN** the user returns to the Discover tab
+- **WHEN** the user returns to the Discovery tab
 - **THEN** the bubble field SHALL be drawn again from the cached field, as "Discovery bubble pool caching on re-entry" states
 
 ### Requirement: Reset to Top 50 control
-The Discover tab SHALL provide a Reset control that returns the bubble field to the global Top 50 artists, independent of the user's followed artists. The control SHALL be an icon-only (refresh/reset) button placed at the leading edge of the genre row as a fixed sibling beside the horizontally-scrollable genre chips, so it remains visible while the chips scroll. The control SHALL expose an accessible label.
+The Discovery tab SHALL provide a Reset control that returns the bubble field to the global Top 50 artists, independent of the user's followed artists. The control SHALL be an icon-only (refresh/reset) button placed at the leading edge of the genre row as a fixed sibling beside the horizontally-scrollable genre chips, so it remains visible while the chips scroll. The control SHALL expose an accessible label.
 
 #### Scenario: Reset restores global Top 50
 - **WHEN** the user activates the Reset control
@@ -657,7 +657,7 @@ The tap and landing sounds SHALL honor the user's existing mute and volume prefe
 - **WHEN** audio has not yet been unlocked by a user gesture
 - **THEN** no AudioContext SHALL be forcibly started outside a gesture, consistent with the existing lazy-unlock behavior
 
-### Requirement: Discover page debounces search with stale response guard
+### Requirement: Discovery page debounces search with stale response guard
 The Discovery screen SHALL debounce artist search input by 300ms and discard stale responses.
 
 #### Scenario: Search is debounced

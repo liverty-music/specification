@@ -37,7 +37,8 @@ The frontend renames that follow (folder → folder; class names follow the fold
 | now | after |
 |---|---|
 | `routes/dashboard` | `routes/timetable` |
-| `routes/event` (`event-page.ts`) | `routes/concert` (`concert-page.ts`) |
+| `routes/event/event-route.ts` (`EventRoute`) | `routes/concert/concert-route.ts` (`ConcertRoute`) |
+| `routes/event/event-page.ts` (types `EventPageEvent`, `EventPerformer`) | `routes/concert/concert-page.ts` (`ConcertPageConcert`, `ConcertPerformer`) |
 | `routes/lottery-entry` | `routes/new-lottery-entry` |
 | `routes/lottery-entry-status` | `routes/lottery-entries` |
 | `routes/resale-entry` | `routes/new-resale-entry` |
@@ -57,13 +58,13 @@ The frontend renames that follow (folder → folder; class names follow the fold
 | `components/user-home-selector` | `components/home-area-selector` |
 | `services/push-offer-service.ts` | `services/notification-prompt-service.ts` |
 
-i18n namespaces: `dashboard` → `timetable`, `nav.home` → `nav.timetable`, `eventDetail` → `concertSheet`, `eventCard` → `concertCard`, `eventPage` → `concert`, `allNearby` → `discoveryConcerts`, `pushOffer` and `notification` → `notificationPrompt`, `userHome` → `homeAreaSelector`, `lotteryEntry` → `newLotteryEntry`, `lotteryEntryStatus` → `lotteryEntries`, `resaleEntry` → `newResaleEntry`, `passkeyRecovery` → `signInHelp`, `authCallback` → `signInCallback`, `verifyCallback` → `identityVerificationCallback`, `fabMenu` → `actionMenu`, `nav.order` → `order.title`.
+i18n namespaces: `dashboard` → `timetable`, `nav.home` → `nav.timetable`, `eventDetail` → `concertSheet`, `eventCard` → `concertCard`, `eventPage` → `concert`, `allNearby` → `discoveryConcerts`, `pushOffer` and `notification` → `notificationPrompt`, `userHome` → `homeAreaSelector`, `lotteryEntry` → `newLotteryEntry`, `lotteryEntryStatus` → `lotteryEntries`, `resaleEntry` → `newResaleEntry`, `passkeyRecovery` → `signInHelp`, `authCallback` → `signInCallback`, `verifyCallback` → `identityVerificationCallback`, `fabMenu` → `actionMenu`. Screen titles move to `nav.<name>` (design D3), and the localized `<name>.title` keys (`checkout.title`, `lotteryEntry.title`, `passkeyRecovery.title`, `verifyEmail.title`, `notifications.title`, `passkeys.title`, `deleteAccount.title`, …) go away.
 
 Alternative: rename only the folders and leave i18n keys. Rejected: the keys are what a translator and a grep meet first, and a half rename is the inconsistency this change removes.
 
 ### D2. A constant of route spec names and addresses, checked by a unit test
 
-`src/route-specs.ts` lists every routed fan screen: its spec name (`'timetable'`, or `null` for a screen with no spec) and its address pattern, copied from the spec's "The screen's address" requirement:
+`src/route-specs.ts` lists every routed fan screen: its spec name (`'timetable'`, or `null` for a screen with no spec) and its address pattern, copied from the requirement of that spec that states the address ("The screen's address" in most route specs; the address requirements already in route/discovery, route/notifications, route/legal and route/sign-in-help):
 
 ```ts
 export const ROUTE_SPECS = {
@@ -74,13 +75,15 @@ export const ROUTE_SPECS = {
 } as const
 ```
 
-The route table in `app-shell.ts` takes each `path` from this constant. `src/route-specs.spec.ts` checks, for every non-redirect route: the component's import path is `./routes/<name>/<name>-route`, the module exports `<Name>Route`, `data.titleKey` is `<name>.title`, and the path equals the constant's. The constant is a second copy of what the specs state; a spec change that moves an address also changes this file (a task line in every such change).
+The route table in `app-shell.ts` takes each `path` from this constant. `src/route-specs.spec.ts` checks, for every non-redirect route: the component's import path is `./routes/<name>/<name>-route`, the module exports `<Name>Route`, `data.titleKey` is `nav.<name>` (camelCase), and the path equals the constant's. The constant is a second copy of what the specs state; a spec change that moves an address also changes this file (a task line in every such change).
 
 Alternative: clone the specification repository in frontend CI and compare against the spec files. Rejected by the user: the clone costs every CI run for a check a constant already gives.
 
 ### D3. One English title per screen, from one i18n key
 
-Each screen's `<name>.title` key holds its English title in both `en` and `ja` (the header stays English, as the bottom navigation labels already are). The page header shows it, and `buildTitle` builds the browser tab title from the same key through `I18N`, so the hand-written `title:` strings in `app-shell.ts` go away. A route whose screen has no page header still sets `data.titleKey`; a flag (`data.header: false`) keeps the header hidden. The titles are the table in `global/page-header` "A screen has one English title".
+The project already keeps invariant English expressions in one registry (`global/i18n` "Brand Expression Registry", Layer B) and binds a tab page's header to its `nav.*` label (the same requirement's scenario "Navigation tab labels are invariant across locales", and route/settings "Settings Page Header Label"). This change extends that rule to every screen instead of adding a second key: each screen's title is a registry row bound as `nav.<name>`, with the same English value in `en` and `ja`. The page header shows it, and `buildTitle` builds the browser tab title from the same key through `I18N`, so the hand-written `title:` strings in `app-shell.ts` go away. A route whose screen has no page header still sets `data.titleKey`; a flag (`data.header: false`) keeps the header hidden on the screens page-header "Routes without a page header" lists.
+
+Alternative: a new `<name>.title` key per screen. Rejected: it duplicates `nav.<name>` for the tab screens and contradicts the registry rule above.
 
 Other visible copy that names a screen follows the same words: the Discovery swap tile reads 「ライブ」 / "Concerts" (was 「近くのライブ」 / "Near you"), the timetable's empty-state link reads 「ライブを探す」, and the page-help section of Discovery is titled 「ライブ」 / "Concerts".
 
@@ -92,6 +95,7 @@ The address table is in proposal.md. Details:
 - `concerts/:id` is the first-party concert page; `concerts/:id/checkout`, `concerts/:id/lottery-entries/new`, `concerts/:id/lottery-entries` and `concerts/:id/resale-entries/new` are its children. Seat type and sale go in the query (`stock`, `sale`), so nesting stays one level deep.
 - Discovery's view query becomes `view=concerts` (was `view=nearby`); the device-kept value of `discovery.view` becomes `'concerts'`, and an old `'nearby'` value reads as the default Artists view. `discovery.nearbyFilter` becomes `discovery.concertsFilter`; the old key is removed on startup like `push.offerDeclines`.
 - `/passkey-recovery` becomes `/sign-in-help`; the backend's passkey-change email links there.
+- The organizer console builds a published date's fan address in `organizer/model/concert-model.ts` (`fanPageUrlOf`) and its guide shows the address pattern in `organizer/guide/guide.html:470`; both become `/concerts/<id>`.
 - Backend: `Notification.link` returns `/concerts/<id>` for a first-party concert and `/timetable?concert=<id>` otherwise; link preview serves `GET /link-preview/concerts/{id}` and sets `og:url` to `/concerts/<id>`; the Caddyfile asks for tags when the path starts with `/concerts/`.
 
 Sources for the address rule: the Rails Routing Guide (`GET /photos/new` "return an HTML form for creating a new photo"; "only nest resources 1 level deep"; shallow nesting) and Google Search Central "URL structure" (hyphens, simple descriptive words). The SPA routers' own docs (Aurelia 2, Angular, Vue Router, React Router, Next.js, SvelteKit) state no path naming convention; Aurelia (`route-parameters.md`), Angular (`read-route-state.md`) and SvelteKit (`50-state-management.md`) put filters and similar state in the query string, which D4 follows.
@@ -113,7 +117,7 @@ Tests that name a moved spec or a reworded scenario are updated in the same PR a
 ## Risks / Trade-offs
 
 - [Two specs-to-code copies of addresses (spec text and `ROUTE_SPECS`)] → A spec change that moves an address carries a task to change `ROUTE_SPECS`; the unit test then catches a route table that did not follow.
-- [Old links stop working: push notifications already delivered, emails already sent, shared `/events/<id>` posts] → Accepted: the product has no users yet. Shared links of first-party concerts posted by organizers are re-shared after the deploy.
+- [Old links stop working: push notifications already delivered, emails already sent, shared `/events/<id>` posts] → Accepted: the product has no users yet. The organizer console and the fan web deploy from the same frontend PR, so the console never shows an address the fan web does not serve; links organizers already posted are re-shared after the deploy.
 - [Link preview between the frontend and the backend deploy] → The frontend asks `/link-preview/concerts/<id>` before the backend serves it; the Caddyfile's not-OK branch serves the site-wide preview until the backend deploys.
 - [A large rename conflicts with open frontend branches] → Merge the open PRs (#985, #889) first; do the rename in one PR per repository, folders first with `git mv` so history follows.
 

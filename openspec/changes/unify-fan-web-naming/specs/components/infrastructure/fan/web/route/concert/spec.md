@@ -77,3 +77,17 @@ A kept code SHALL stay on the device across sign-up and sign-in, across other ta
 #### Scenario: Unknown event
 - **WHEN** a fan opens `/concerts/<id>?ref=member-a` of an event that is not found
 - **THEN** no code is kept
+
+## ADDED Requirements
+
+### Requirement: The screen's address
+
+The concert page SHALL be served at `/concerts/<id>`, where `<id>` is the Event. `/events/<id>` SHALL NOT be an address of the concert page; it is an unknown address like any other.
+
+#### Scenario: The page's address
+- **WHEN** a guest opens a shared link to a published public event
+- **THEN** the app shows its concert page at `/concerts/<id>`
+
+#### Scenario: The old address is gone
+- **WHEN** a guest opens `/events/<id>` of a published public event
+- **THEN** the app shows the not-found screen

@@ -34,7 +34,7 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 #### Scenario: Navigation shown on post-onboarding routes
 - **WHEN** the user is on the Timetable or post-onboarding routes
 - **THEN** the system SHALL display the bottom navigation bar in the `nav` grid area
-- **AND** the navigation bar SHALL include tab icons and labels for Home, Discover, My Artists and Tickets, in that order, two on each side of an empty centre slot reserved for the action menu
+- **AND** the navigation bar SHALL include tab icons and labels for Timetable, Discovery, My Artists and Tickets, in that order, two on each side of an empty centre slot reserved for the action menu
 - **AND** the navigation bar SHALL NOT include a Settings tab
 
 #### Scenario: Navigation remains visible beneath area setup dialog
@@ -45,7 +45,7 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 
 #### Scenario: Timetable icon data attribute for coach mark targeting
 - **WHEN** the bottom navigation bar renders
-- **THEN** the Timetable (Home) tab link SHALL carry `data-nav="home"`, which identifies the tab for tests and analytics (no coach mark targets the navigation bar)
+- **THEN** the Timetable tab link SHALL carry `data-nav="home"`, which identifies the tab for tests and analytics (no coach mark targets the navigation bar)
 - **AND** the My Artists tab link SHALL carry `data-nav="my-artists"`
 
 #### Scenario: Pages do not compensate for navigation bar height
@@ -129,15 +129,15 @@ SHALL highlight that tab.
 
 #### Scenario: Tab route displayed
 
-- **WHEN** the displayed route is Home, Discover, My Artists or Tickets
+- **WHEN** the displayed route is Timetable, Discovery, My Artists or Tickets
 - **THEN** that tab SHALL be highlighted and every other tab SHALL NOT be
 
-#### Scenario: Concert deep-link highlights Home
+#### Scenario: Concert deep-link highlights Timetable
 
 - **WHEN** the displayed route is a concert deep-link (`/concerts/:id`)
 - **THEN** the Timetable tab SHALL be highlighted
 
-#### Scenario: Concert page highlights Home
+#### Scenario: Concert page highlights Timetable
 
 - **WHEN** the displayed route is a Concert page (`/events/:id`)
 - **THEN** the Timetable tab SHALL be highlighted

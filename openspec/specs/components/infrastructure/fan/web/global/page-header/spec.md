@@ -95,7 +95,7 @@ displayed, and its identity SHALL remain on screen unchanged.
 - **THEN** the page header title and the active tab SHALL be those of the route
   actually displayed
 
-#### Scenario: Routes without a title show no header
+#### Scenario: Routes without a page header
 
 - **WHEN** the displayed route declares no page title (legal documents, About,
   not-found)
