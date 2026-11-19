@@ -68,9 +68,10 @@ Organizer(id, name, zitadel_org_id UNIQUE, provisioning_state)
 ```
 `zitadel_org_id` is the load-bearing link from the token's Organization claim
 to the Organizer PK; **DB is the source of truth**, org metadata mirror is
-deferred. Not exposed on the consumer proto (internal linkage). Audit
-timestamps use domain-specific `*_at` names (schema-lint bans
-`created_at/updated_at`).
+deferred. Not exposed on the consumer proto (internal linkage). Timestamps
+follow the single naming rule in `AGENTS.md` (`<verb>_time`, as in proto);
+schema-lint bans `*_at` columns and the `update_time`/`delete_time` audit
+columns.
 
 ## RPC surface
 
