@@ -37,11 +37,12 @@ The rows locked are the ones `eventRemovalLockQueries` lock today (TicketStocks,
 ### D3 — Suppression is removed in two deploys
 
 - First, the code stops reading and writing `suppressed_concerts`: `SuppressedConcert` entity and repository, the `Exists` gate and its tally in `CreateFromDiscovered`, the insert in `Delete`, DI wiring and mocks.
-- Then a migration drops `suppressed_concerts`. Splitting keeps running pods of the previous release (which still read the table) working while the new release rolls out; the AtlasMigration can run before the new pods are ready.
+- Then a migration drops `suppressed_concerts` (a table, so `schema.sql` and `atlas migrate diff`). Splitting keeps running pods of the previous release (which still read the table) working while the new release rolls out; the AtlasMigration can run before the new pods are ready.
 
 ### D4 — delete_ticket_stock keeps its decision in SQL (backend#741)
 
 - `delete_ticket_stock` is `SECURITY DEFINER` so that `organizer-console-api` holds EXECUTE on one function instead of DELETE on `orders`, `checkouts`, `lottery_entries`, `resale_entries` and `card_authorizations`. Passing the removable statuses in from Go would let that role remove Orders of any status, so the Void-only rule stays inside the function: this is the one place where the decision does not move to an entity, by design.
+- The replacement is a hand-written migration: functions stay out of `schema.sql` (backend AGENTS.md, schema section).
 - Each DELETE in the function is filtered by `status = 5` (Void), the state its check allowed, as `removeEvents` already does: an Order that is not Void is left in place and its RESTRICT foreign key fails the whole delete.
 - Locks: the function locks the stock row `FOR UPDATE`. An Order insert takes `FOR KEY SHARE` on the same row through its foreign key, so an insert after the lock waits and then fails, and an insert before it is committed before the check runs. The race in backend#741 is therefore probably already prevented; that is inferred from PostgreSQL's row-lock conflicts, not observed. A test that runs a lottery-entry insert concurrently with the delete verifies it, and the filters are a second guard either way.
 - A table test over every `entity.OrderStatus` value checks that only Void Orders let the delete through, so a new status cannot silently become removable.
@@ -49,7 +50,7 @@ The rows locked are the ones `eventRemovalLockQueries` lock today (TicketStocks,
 ### D5 — Leftovers
 
 - backend#739: `ratelimit.Limiter` takes `now func() time.Time` (as `NewClientThrottle` does) and calls `rate.Limiter.AllowN(now(), 1)`; the test advances a fake clock instead of depending on wall-clock timing.
-- backend#701: the admin notification and order handlers drop their hand-written required-field checks and `connect.NewError` calls; protovalidate and the apperr interceptor give the same codes. Where a field is not annotated as required in the proto, the check stays and moves into the usecase as an `apperr` InvalidArgument (no proto change in this change). The production-only PermissionDenied of the debug RPC stays a usecase or interceptor decision, not a handler `connect.NewError`.
+- backend#701: the admin notification and order handlers drop their hand-written required-field checks and `connect.NewError` calls; protovalidate and the apperr interceptor give the same codes. Where a field is not annotated as required in the proto, the check stays and moves into the usecase as an `apperr` InvalidArgument (no proto change in this change). The production-only refusal of the debug RPC is a boundary rule (spec `adapter/admin/api/rpc/notification`, "Direct new-concert push only outside production"), so it stays in the handler, returned as an `apperr` PermissionDenied; a usecase does not read the deployment environment. `OrderUseCase.Refund` reads its injected `Clock`; the handler stops passing `time.Now()`.
 - backend#310: re-read `ConcertRepository.Create` against the current upsert; if two concurrent creates of one natural key can still both report a new id, fix it with an integration test; otherwise close the issue with the evidence.
 
 ## Risks / Trade-offs

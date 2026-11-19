@@ -25,7 +25,7 @@ An admin deletes a Concert only to clean up test data: the delete button is reac
 - `components/entity/order`: adds the rule that an Order leaves with its Event only when Void or Refunded.
 - `components/entity/series`: adds the rule that a first-party Series leaves with its last Event and a discovered Series stays.
 - `components/usecase/concert/delete`: removes the Concert with Concert.Delete; nothing is suppressed. Purpose edited at archive (Purpose).
-- `components/usecase/concert/create-from-discovered`: the suppressed-slot skip is removed. Purpose and sequence diagram edited at archive (Purpose).
+- `components/usecase/concert/create-from-discovered`: the suppressed-slot skip is removed, a resolved event is no longer qualified as unsuppressed, and the ingest signal no longer counts suppressed events. Purpose and sequence diagram edited at archive (Purpose).
 - `components/usecase/concert/search-new-concerts`: drops the mention of SuppressedConcerts.
 - `components/usecase/concert-candidate/approve`: the requirement that approval does not check suppression is removed.
 - `components/usecase/series/publish`: drops the sentence and scenario about a slot where an admin deleted a Concert.

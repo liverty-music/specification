@@ -52,7 +52,7 @@ Delete SHALL remove the Event and, with it:
 - every Organizer's TicketSale the removal leaves naming no event;
 - the Event's Series when it leaves with its last Event (see Series, "A first-party series leaves with its last event"), with its SeatTypes.
 
-All of these effects SHALL happen together or not at all. A discovered Series and the Series' discovered TicketSales SHALL remain. Delete SHALL record nothing about the removed Event's Venue, date or start time: a later discovery or publish at that slot is handled like any other.
+All of these effects SHALL happen together or not at all. A discovered Series and the Series' discovered TicketSales SHALL remain. Delete SHALL record nothing about the removed Event's Venue, date or start time, so a Concert can be created at that slot again.
 
 #### Scenario: Concert with fan journeys
 - **WHEN** a Concert that fans track in TicketJourneys is deleted
@@ -78,6 +78,6 @@ All of these effects SHALL happen together or not at all. A discovered Series an
 - **WHEN** one of two Events of a first-party Series is deleted
 - **THEN** the Series, its SeatTypes and its other Event remain
 
-#### Scenario: Same slot discovered after the delete
-- **WHEN** an Event is deleted and a later discovery finds a concert at the same Venue, date and start time
-- **THEN** that concert is published or staged like any new discovery
+#### Scenario: Same slot created again after the delete
+- **WHEN** an Event is deleted and a Concert at the same Venue, date and start time is then created (Concert.Create)
+- **THEN** a new Event is created at that slot
