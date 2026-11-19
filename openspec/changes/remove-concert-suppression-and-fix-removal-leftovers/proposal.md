@@ -8,7 +8,7 @@ An admin deletes a Concert only to clean up test data: the delete button is reac
 - **Concert.DeleteAndSuppress becomes Concert.Delete.** It removes the Event with the same records as today, with the same refusals; the only difference is that nothing is suppressed. The unused Delete that removed an Event without the removal's locks and checks goes (backend#700).
 - **The per-record rules of a removal are the entities' own.** An Order leaves with its Event only when it is Void or Refunded; a first-party Series leaves when the removal leaves it with no Event, and a discovered Series stays. Concert.Delete and Organizer.Delete apply these rules; their outcomes do not change.
 - **TicketStock.Delete removes only the Void Orders its check allowed** (backend#741). An Order that names the TicketStock and is not Void still makes the delete fail, also one created while the delete runs.
-- **Leftovers with no change in behaviour:** the rate limiter takes its clock as an argument, so its test no longer depends on wall-clock timing (backend#739); the admin notification and order handlers leave request validation and error codes to the shared interceptors (backend#701); ConcertRepository.Create's natural-key race is re-checked against the current code and fixed or closed (backend#310).
+- **Leftovers with no change in what a caller sees:** the rate limiter takes its clock as an argument, so its test no longer depends on wall-clock timing (backend#739); the admin notification and order handlers leave request validation and error codes to the shared interceptors (backend#701); ConcertRepository.Create's natural-key race is re-checked against the current code and fixed or closed (backend#310).
 
 ## Capabilities
 
@@ -26,6 +26,8 @@ An admin deletes a Concert only to clean up test data: the delete button is reac
 - `components/entity/series`: adds the rule that a first-party Series leaves with its last Event and a discovered Series stays.
 - `components/usecase/concert/delete`: removes the Concert with Concert.Delete; nothing is suppressed. Purpose edited at archive (Purpose).
 - `components/usecase/concert/create-from-discovered`: the suppressed-slot skip is removed, a resolved event is no longer qualified as unsuppressed, and the ingest signal no longer counts suppressed events. Purpose and sequence diagram edited at archive (Purpose).
+- `components/usecase/order/refund`: Refund acts at its own current time instead of taking it as an input (backend#701); the outcome is the same.
+- `components/adapter/admin/api/rpc/order`: the Refund boundary passes the Order and the reason, not the time.
 - `components/usecase/concert/search-new-concerts`: drops the mention of SuppressedConcerts.
 - `components/usecase/concert-candidate/approve`: the requirement that approval does not check suppression is removed.
 - `components/usecase/series/publish`: drops the sentence and scenario about a slot where an admin deleted a Concert.
