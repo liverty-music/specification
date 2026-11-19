@@ -36,7 +36,7 @@ A follower notified of a first-party concert by NotificationUseCase.NotifyNewCon
 
 ### Requirement: Cancelled event stays explained
 
-After an Organizer cancels a published PUBLIC Series with SeriesUseCase.Cancel, the links of its Events SHALL still open their Event pages, showing that the concert is 中止 (cancelled) and selling nothing.
+After an Organizer cancels a published PUBLIC Series with SeriesUseCase.Cancel, the links of its Events SHALL still open their Concert pages, showing that the concert is 中止 (cancelled) and selling nothing.
 
 #### Scenario: Link opened after cancellation
 
