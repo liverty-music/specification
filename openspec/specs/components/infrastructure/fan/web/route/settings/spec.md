@@ -467,7 +467,7 @@ The guest call-to-action hero at the top of the Settings page SHALL show a "can'
 #### Scenario: Guest opens sign-in help from Settings
 
 - **WHEN** an unauthenticated user taps "can't sign in" in the Settings guest hero
-- **THEN** the app navigates to `/passkey-recovery`
+- **THEN** the app navigates to `/sign-in-help`
 
 ### Requirement: Passkey management requires a recent sign-in
 
@@ -679,3 +679,11 @@ The system SHALL allow users to change the display language of the application. 
 - **WHEN** a user taps the "Language" row and selects the language already in effect
 - **THEN** the system SHALL close the selection UI without issuing an RPC
 - **AND** no DB write SHALL occur
+
+### Requirement: The screen's address
+
+Settings SHALL be served at `/settings`.
+
+#### Scenario: The screen's address
+- **WHEN** a fan opens Settings
+- **THEN** the address bar shows `/settings`

@@ -110,6 +110,8 @@ Sources for the address rule: the Rails Routing Guide (`GET /photos/new` "return
 
 Insights defined in cloud-provisioning (`src/posthog/components/product-analytics.ts`) filter on none of these values. Insights made by hand in PostHog are not known; tasks list them read-only and, when one filters on an old value, move it into the Pulumi program with the new value (cloud-provisioning AGENTS.md "Changing Pulumi code").
 
+Checked on 2026-11-20 after both deploys (PostHog `system.insights`, `system.cohorts`, `system.actions`): none of the 7 saved insights, and no cohort or action, filters on an old value. Nothing moved.
+
 ### D6. Test annotations
 
 Tests that name a moved spec or a reworded scenario are updated in the same PR as the code they test: the 39 frontend files with old spec paths, and backend tests whose `@spec` scenario names the rename commit reworded (event page → concert page). `scripts/check-scenario-coverage.py <change> --repos <worktree>` shows the scenarios of this change without a test.
@@ -127,3 +129,11 @@ Tests that name a moved spec or a reworded scenario are updated in the same PR a
 2. frontend: one PR with the renames, the new routes, `ROUTE_SPECS` and the title change; deploy.
 3. backend: one PR with the new links, the link preview route and the email link; deploy. Until then, a new notification links to an address the frontend no longer has, which opens not-found; no fan is affected.
 4. Rollback: revert the frontend PR (and the backend PR if deployed). The specs stay renamed; only addresses roll back.
+
+## Scenarios verified by review
+
+The three scenarios below are rules for editing the brand expression registry in `global/i18n`, not behaviour of the app; a change that adds or removes copy is reviewed against them.
+
+@spec-manual components/infrastructure/fan/web/global/i18n "Adding a new brand expression" -- reviewed in the plan PR of a change that adds a coined phrase
+@spec-manual components/infrastructure/fan/web/global/i18n "Removing a graduated expression" -- reviewed in the plan PR of a change that models an expression as an entity
+@spec-manual components/infrastructure/fan/web/global/i18n "Registry SHALL NOT include deprecated colloquial terms" -- reviewed in the plan PR of a change that edits the registry

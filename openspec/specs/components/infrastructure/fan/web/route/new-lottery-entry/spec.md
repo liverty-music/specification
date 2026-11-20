@@ -88,3 +88,15 @@ The screen SHALL enter the Lottery sale and the TicketStock it was opened for an
 #### Scenario: Presale entry
 - **WHEN** a fan opens the screen for the ファンクラブ先行 sale and the S席 of the 3 November event, priced 8000 yen with a limit of 4
 - **THEN** the screen shows ファンクラブ先行, the 3 November event, S席 and 8000 yen, and offers 1 to 4 tickets
+
+### Requirement: The screen's address
+
+The lottery entry form for one seat type of a lottery sale SHALL be served at `/concerts/<id>/lottery-entries/new?sale=<saleId>&stock=<stockId>`; the concert page's entry action for that seat type opens it. After the entry is confirmed, the form's confirmation SHALL link to the fan's entries in that sale at `/concerts/<id>/lottery-entries?sale=<saleId>`.
+
+#### Scenario: Opening the entry form
+- **WHEN** a fan taps the entry action of a seat type on `/concerts/<id>`
+- **THEN** the app shows the form at `/concerts/<id>/lottery-entries/new?sale=<saleId>&stock=<stockId>`
+
+#### Scenario: After confirming
+- **WHEN** the fan confirms the entry
+- **THEN** the confirmation links to `/concerts/<id>/lottery-entries?sale=<saleId>`

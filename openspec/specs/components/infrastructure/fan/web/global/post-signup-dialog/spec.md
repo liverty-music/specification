@@ -82,7 +82,7 @@ Whether an authenticated callback is treated as a first sign-up SHALL be determi
 - **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-up** flow
 - **AND** the post-signup dialog has never been scheduled on this device
 - **THEN** the system SHALL schedule the post-signup celebration and dialog
-- **AND** the system SHALL navigate to `/dashboard`
+- **AND** the system SHALL navigate to `/timetable`
 - **AND** the Timetable SHALL show the celebration and then the dialog
 
 #### Scenario: Dialog not shown on subsequent logins
@@ -96,7 +96,7 @@ Whether an authenticated callback is treated as a first sign-up SHALL be determi
 - **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-in** flow
 - **AND** no user identifier is cached locally (e.g. a new browser/device, cleared storage, or a prior guest session)
 - **THEN** the system SHALL NOT schedule the post-signup celebration and dialog
-- **AND** the user SHALL be navigated to `/dashboard` without a first-run payoff
+- **AND** the user SHALL be navigated to `/timetable` without a first-run payoff
 
 #### Scenario: Both steps in order
 

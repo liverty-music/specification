@@ -31,7 +31,7 @@ The page SHALL show the event's date and start time in Japan time, its venue and
 
 ### Requirement: The fan page of a published date
 
-For a published date of a PUBLIC concert, the page SHALL show the address of the date's fan event page (`/events/<event id>` on the fan app) with a copy action, so the member can share it. A draft or cancelled date, and any date of an UNLISTED concert, SHALL show no fan address, because fans cannot open it.
+For a published date of a PUBLIC concert, the page SHALL show the address of the date's fan concert page (`/concerts/<event id>` on the fan app) with a copy action, so the member can share it. A draft or cancelled date, and any date of an UNLISTED concert, SHALL show no fan address, because fans cannot open it.
 
 #### Scenario: Public date
 

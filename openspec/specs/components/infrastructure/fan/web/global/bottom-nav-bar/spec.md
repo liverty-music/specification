@@ -45,7 +45,7 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 
 #### Scenario: Timetable icon data attribute for coach mark targeting
 - **WHEN** the bottom navigation bar renders
-- **THEN** the Timetable tab link SHALL carry `data-nav="home"`, which identifies the tab for tests and analytics (no coach mark targets the navigation bar)
+- **THEN** the Timetable tab link SHALL carry `data-nav="timetable"`, the route name, which identifies the tab for tests and analytics (no coach mark targets the navigation bar)
 - **AND** the My Artists tab link SHALL carry `data-nav="my-artists"`
 
 #### Scenario: Pages do not compensate for navigation bar height
@@ -61,7 +61,7 @@ The app shell's navigation-visibility state SHALL be `false` for fullscreen rout
 - **THEN** the navigation SHALL be hidden
 
 #### Scenario: Non-fullscreen route
-- **WHEN** the active route path is `dashboard` or `about`
+- **WHEN** the active route path is `timetable` or `about`
 - **THEN** the navigation SHALL be shown
 
 ### Requirement: Animated selection state
@@ -134,12 +134,12 @@ SHALL highlight that tab.
 
 #### Scenario: Concert deep-link highlights Timetable
 
-- **WHEN** the displayed route is a concert deep-link (`/concerts/:id`)
+- **WHEN** the displayed route is a concert deep-link (`/timetable?concert=:id`)
 - **THEN** the Timetable tab SHALL be highlighted
 
 #### Scenario: Concert page highlights Timetable
 
-- **WHEN** the displayed route is a Concert page (`/events/:id`)
+- **WHEN** the displayed route is a Concert page (`/concerts/:id`)
 - **THEN** the Timetable tab SHALL be highlighted
 
 #### Scenario: Route outside every tab

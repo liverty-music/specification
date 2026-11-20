@@ -134,7 +134,7 @@ For each matched follower, the requested notification's subject SHALL be the art
 #### Scenario: Link to the earliest matched concert
 
 - **WHEN** a follower's matched concerts are on 2026-09-10 and 2026-09-03
-- **THEN** the link is `/concerts/<id of the 2026-09-03 concert>`
+- **THEN** the link is `/timetable?concert=<id of the 2026-09-03 concert>`
 
 #### Scenario: Same day, earlier start
 
@@ -149,7 +149,7 @@ For each matched follower, the requested notification's subject SHALL be the art
 #### Scenario: First-party concert links to its concert page
 
 - **WHEN** the earliest matched concert belongs to a Series published by an Organizer
-- **THEN** the link is `/events/<id of that concert>`
+- **THEN** the link is `/concerts/<id of that concert>`
 
 ### Requirement: One new_concerts notification requested per matched follower
 

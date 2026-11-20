@@ -932,7 +932,7 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 
 Discovery SHALL show a swap tile beside the orb, inside the band below the floor that bubbles never cross, so that no bubble and no part of the orb is ever drawn under the tile and the bubble field keeps the same size it has without the tile. The tile SHALL sit on the dominant-hand side of the orb, just outside the largest size the orb can grow to: on a 375 px wide screen, right-handed, its centre is between 260 px and 300 px from the left edge. In left-handed mode (the action menu's handedness setting) it SHALL be mirrored to the left of the orb.
 
-The tile's icon SHALL draw two arrows in a loop, one magenta and one cyan. The glyph of the view on screen SHALL be drawn large over the arrows, and the glyph of the other view SHALL be drawn as a small badge in the tile's bottom corner: the artist bubbles are three bubbles (purple, teal and gold) with small sparkles, and the Concerts view is a ticket marked LIVE with a white location pin. The tile SHALL show no text label. Its accessible name SHALL name the view a tap leads to: 「近くのライブ」 on the artist bubbles and 「アーティスト」 on the Concerts view (English: "Near you" and "Artists").
+The tile's icon SHALL draw two arrows in a loop, one magenta and one cyan. The glyph of the view on screen SHALL be drawn large over the arrows, and the glyph of the other view SHALL be drawn as a small badge in the tile's bottom corner: the artist bubbles are three bubbles (purple, teal and gold) with small sparkles, and the Concerts view is a ticket marked LIVE with a white location pin. The tile SHALL show no text label. Its accessible name SHALL name the view a tap leads to: 「ライブ」 on the artist bubbles and 「アーティスト」 on the Concerts view (English: "Concerts" and "Artists").
 
 A tap SHALL switch the view. The arrows SHALL make a half turn, always in the same direction, while the two glyphs trade places and sizes with a spring motion, and the new view SHALL appear as a circle growing out of the tile; the whole motion SHALL end within 700 ms. With a reduced-motion preference the view and the icon SHALL change at once, without motion.
 
@@ -949,7 +949,7 @@ A tap SHALL switch the view. The arrows SHALL make a half turn, always in the sa
 #### Scenario: Switching back to the artist bubbles
 - **WHEN** the fan taps the swap tile on the Concerts view
 - **THEN** Discovery shows the artist bubbles, the search bar and the genre chips again
-- **AND** the tile shows the bubbles large and the ticket as the corner badge, and its accessible name is 「近くのライブ」
+- **AND** the tile shows the bubbles large and the ticket as the corner badge, and its accessible name is 「ライブ」
 
 #### Scenario: Reduced motion
 - **WHEN** a fan with a reduced-motion preference taps the swap tile
@@ -974,15 +974,15 @@ A tap SHALL switch the view. The arrows SHALL make a half turn, always in the sa
 
 ### Requirement: Discovery's view is addressable and remembered
 
-Discovery SHALL open on the Concerts view when its address carries `view=nearby`, at any onboarding state. Switching views SHALL rewrite the address (`/discovery?view=nearby` or `/discovery`) without adding a history entry. Without `view=nearby` in the address, Discovery SHALL open on the view the fan used last on the same device, except while the fan is onboarding, when it SHALL open on the artist bubbles. When the device cannot keep that choice, Discovery SHALL open on the artist bubbles.
+Discovery SHALL open on the Concerts view when its address carries `view=concerts`, at any onboarding state. Switching views SHALL rewrite the address (`/discovery?view=concerts` or `/discovery`) without adding a history entry. Without `view=concerts` in the address, Discovery SHALL open on the view the fan used last on the same device, except while the fan is onboarding, when it SHALL open on the artist bubbles. When the device cannot keep that choice, Discovery SHALL open on the artist bubbles.
 
 #### Scenario: Link to the Concerts view
-- **WHEN** the fan opens `/discovery?view=nearby`
+- **WHEN** the fan opens `/discovery?view=concerts`
 - **THEN** Discovery shows the Concerts view
 
 #### Scenario: Switching rewrites the address
 - **WHEN** the fan switches from the artist bubbles to the Concerts view
-- **THEN** the address becomes `/discovery?view=nearby`
+- **THEN** the address becomes `/discovery?view=concerts`
 - **AND** going back leaves Discovery as it would have without the switch
 
 #### Scenario: The last view is remembered
@@ -1044,7 +1044,7 @@ The Concerts view SHALL display concerts returned by `ConcertService.ListByLocat
 #### Scenario: First-party concert opens its concert page
 
 - **WHEN** the fan taps the card of a concert whose Series belongs to an Organizer in the Concerts view's list
-- **THEN** the app SHALL navigate to `/events/<id>` and SHALL NOT open the detail sheet
+- **THEN** the app SHALL navigate to `/concerts/<id>` and SHALL NOT open the detail sheet
 
 #### Scenario: Closing the detail sheet returns to the list
 
@@ -1071,7 +1071,7 @@ The Concerts view SHALL display concerts returned by `ConcertService.ListByLocat
 #### Scenario: Journey badge shown
 
 - **GIVEN** the fan has a journey of status Tracking for a concert
-- **WHEN** that concert appears in the Concerts view, including on a first visit straight to `/discovery?view=nearby`
+- **WHEN** that concert appears in the Concerts view, including on a first visit straight to `/discovery?view=concerts`
 - **THEN** its card SHALL show the same journey badge as on the timetable
 
 #### Scenario: Journey or hype changed in the detail sheet

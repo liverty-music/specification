@@ -32,10 +32,10 @@ tf 21 ui Member_Event
 
 ### Requirement: A purchase counts for the link the fan came from
 
-After an Organizer creates a FirstCome TicketSale for a published event of a PUBLIC Series with TicketSaleUseCase.Create, a fan who opens `/events/<id>?ref=<code>` for an event of that Series SHALL be able to sign up from the Concert page and buy with CheckoutUseCase.Start, CheckoutUseCase.AuthorizeCard and OrderUseCase.Place within 7 days, and the Order SHALL then be counted under that code by TicketSaleUseCase.ListOwnByEvent for the event once it is Paid. The code is fixed when the Order is created: a hold the fan already has, resumed by CheckoutUseCase.Start for the same TicketStock and ticket count, keeps the code it was created with, even after the fan opened another member's link. A lottery entry authorized the same way SHALL be counted under its code once it won and its Order became Paid.
+After an Organizer creates a FirstCome TicketSale for a published event of a PUBLIC Series with TicketSaleUseCase.Create, a fan who opens `/concerts/<id>?ref=<code>` for an event of that Series SHALL be able to sign up from the Concert page and buy with CheckoutUseCase.Start, CheckoutUseCase.AuthorizeCard and OrderUseCase.Place within 7 days, and the Order SHALL then be counted under that code by TicketSaleUseCase.ListOwnByEvent for the event once it is Paid. The code is fixed when the Order is created: a hold the fan already has, resumed by CheckoutUseCase.Start for the same TicketStock and ticket count, keeps the code it was created with, even after the fan opened another member's link. A lottery entry authorized the same way SHALL be counted under its code once it won and its Order became Paid.
 
 #### Scenario: Guest from a member's link buys after signing up
-- **WHEN** a guest opens `/events/<id>?ref=member-a`, signs up from the Concert page and buys 2 tickets of 3000 yen
+- **WHEN** a guest opens `/concerts/<id>?ref=member-a`, signs up from the Concert page and buys 2 tickets of 3000 yen
 - **THEN** the Organizer's Sales tab for the event lists member-a with 1件 2枚 6,000円
 
 #### Scenario: Last link wins
