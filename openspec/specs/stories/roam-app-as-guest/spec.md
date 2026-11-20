@@ -32,7 +32,7 @@ The system SHALL provide a global authentication lifecycle hook (`AuthHook`) tha
 #### Scenario: Guest with no follows lands on the timetable
 
 - **WHEN** a user has `isAuthenticated = false`
-- **AND** the user navigates to `/dashboard` with zero followed artists
+- **AND** the user navigates to `/timetable` with zero followed artists
 - **THEN** the system SHALL allow the timetable to load
 - **AND** the timetable SHALL present an empty-state call-to-action pointing to discovery
 - **AND** the system SHALL NOT redirect the user away from the timetable

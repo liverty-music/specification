@@ -450,3 +450,11 @@ When push is on, and for a guest, the snack for a level SHALL appear only the fi
 
 - **WHEN** a signed-in fan changes a hype level and saving fails twice
 - **THEN** the failure message is shown and no hype snack is shown
+
+### Requirement: The screen's address
+
+My Artists SHALL be served at `/my-artists`.
+
+#### Scenario: The screen's address
+- **WHEN** a fan taps the My Artists tab
+- **THEN** the address bar shows `/my-artists`

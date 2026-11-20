@@ -12,11 +12,11 @@ Before any usage analytics event leaves the device, the fan app SHALL remove the
 An error report (`components/infrastructure/fan/web/global/error-banner`) is the one exception, and it applies to its current address only. On that address the query keys `artists`, `journey` and `from` SHALL be kept with their values, because the timetable they configure cannot be reproduced without them. Every other key and the fragment SHALL be removed. The value of `ref` SHALL never be sent; the error report SHALL state only whether the current address had a `ref` key. The first address of the visit and the address the fan came from SHALL be stripped as for every other event.
 
 #### Scenario: Event on a referral link
-- **WHEN** a fan opens `/events/<id>?ref=member-a` with analytics on and the page sends an analytics event
-- **THEN** the event's current address is `/events/<id>` on the app's origin, without `?ref=member-a`
+- **WHEN** a fan opens `/concerts/<id>?ref=member-a` with analytics on and the page sends an analytics event
+- **THEN** the event's current address is `/concerts/<id>` on the app's origin, without `?ref=member-a`
 
 #### Scenario: First address of the visit
-- **WHEN** the fan's visit started on `/events/<id>?ref=member-a` and a later page sends an analytics event
+- **WHEN** the fan's visit started on `/concerts/<id>?ref=member-a` and a later page sends an analytics event
 - **THEN** no address in the event contains `ref=member-a`
 
 #### Scenario: Another site's address
@@ -28,16 +28,16 @@ An error report (`components/infrastructure/fan/web/global/error-banner`) is the
 - **THEN** no analytics event is sent, as before
 
 #### Scenario: Error report on a filtered timetable
-- **WHEN** an error is reported while the fan is on `/dashboard?artists=a1,a2&journey=tour&from=welcome&utm_source=x#top`
-- **THEN** the error report's current address is `/dashboard?artists=a1,a2&journey=tour&from=welcome` on the app's origin
+- **WHEN** an error is reported while the fan is on `/timetable?artists=a1,a2&journey=tour&from=welcome&utm_source=x#top`
+- **THEN** the error report's current address is `/timetable?artists=a1,a2&journey=tour&from=welcome` on the app's origin
 
 #### Scenario: Error report on a referral link
-- **WHEN** an error is reported while the fan is on `/events/<id>?ref=member-a`
-- **THEN** the error report's current address is `/events/<id>`, no address in the report contains `member-a`, and the report states that a `ref` key was present
+- **WHEN** an error is reported while the fan is on `/concerts/<id>?ref=member-a`
+- **THEN** the error report's current address is `/concerts/<id>`, no address in the report contains `member-a`, and the report states that a `ref` key was present
 
 #### Scenario: Other events keep the timetable filter out
-- **WHEN** the fan is on `/dashboard?artists=a1` and the page sends an analytics event that is not an error report
-- **THEN** the event's current address is `/dashboard`, without `?artists=a1`
+- **WHEN** the fan is on `/timetable?artists=a1` and the page sends an analytics event that is not an error report
+- **THEN** the event's current address is `/timetable`, without `?artists=a1`
 
 ### Requirement: Every screen change and every leave is recorded
 

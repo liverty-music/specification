@@ -65,3 +65,11 @@ When UserService.Delete succeeds, the app SHALL clear the fan's sign-in session,
 
 - **WHEN** UserService.Delete fails with FailedPrecondition because the fan bought a ticket elsewhere meanwhile
 - **THEN** the screen lists the new blocker and offers no delete control
+
+### Requirement: The screen's address
+
+The account deletion screen SHALL be served at `/settings/delete-account`.
+
+#### Scenario: The screen's address
+- **WHEN** a signed-in fan chooses to delete their account in Settings
+- **THEN** the app shows `/settings/delete-account`

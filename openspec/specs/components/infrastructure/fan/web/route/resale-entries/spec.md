@@ -24,3 +24,11 @@ The screen SHALL list the fan's resale entries from ResaleEntryService.List, new
 #### Scenario: Draw decided first
 - **WHEN** a fan confirms the withdrawal just after the 12:00 draw made the entry win
 - **THEN** the screen says the draw has already decided the entry and shows it as 当選
+
+### Requirement: The screen's address
+
+The resale entries screen SHALL be served at `/resale-entries`.
+
+#### Scenario: The screen's address
+- **WHEN** a fan opens `/resale-entries` signed in
+- **THEN** the app shows the fan's resale entries

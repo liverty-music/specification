@@ -282,3 +282,11 @@ From a virtual ticket, the fan SHALL be able to share an image of it. The image 
 
 - **WHEN** the fan taps 画像を共有 in a desktop browser that cannot share files
 - **THEN** the image is downloaded
+
+### Requirement: The screen's address
+
+The tickets screen SHALL be served at `/tickets`.
+
+#### Scenario: The screen's address
+- **WHEN** a fan taps the Tickets tab
+- **THEN** the address bar shows `/tickets`

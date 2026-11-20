@@ -97,9 +97,11 @@ displayed, and its identity SHALL remain on screen unchanged.
 
 #### Scenario: Routes without a page header
 
-- **WHEN** the displayed route declares no page title (legal documents, About,
-  not-found)
+- **WHEN** the displayed route is one that shows no page header (welcome, About,
+  the concert page, consent, the legal documents, the sign-in, passkeys and
+  identity verification callbacks, not-found)
 - **THEN** no page header SHALL be rendered
+- **AND** the browser tab SHALL still show the route's title
 
 ### Requirement: Page header is a single shell-hosted instance bound to the displayed route
 The `page-header` CE SHALL be rendered as a single persistent instance owned by the app shell (not one instance per route), and its title SHALL be bound to the displayed route's configured title rather than authored per route. As the displayed route changes, the header SHALL update in place without being unmounted and remounted across route changes.
@@ -134,3 +136,15 @@ While a fan is signed in, the shell-hosted page header SHALL show a bell that op
 #### Scenario: Open the center
 - **WHEN** the fan taps the bell
 - **THEN** the notification center opens
+
+### Requirement: A screen has one English title
+
+Each fan screen SHALL have one title: its navigation tab label or its screen title in the brand expression registry (`components/infrastructure/fan/web/global/i18n`), in English in every language the app offers. The page header, where the screen has one, and the browser tab SHALL both show that title. A Discovery view or a sheet opened on a screen SHALL NOT change the screen's title.
+
+#### Scenario: Japanese display keeps the English title
+- **WHEN** a fan using the app in Japanese opens checkout
+- **THEN** the page header and the browser tab both show "Checkout"
+
+#### Scenario: A sheet does not change the title
+- **WHEN** a fan opens `/timetable?concert=<id>`
+- **THEN** the browser tab shows "Timetable"

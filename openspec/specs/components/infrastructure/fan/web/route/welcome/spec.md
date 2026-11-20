@@ -298,7 +298,7 @@ Wherever the welcome page shows the `[Log In]` CTA, it SHALL show a "can't sign 
 #### Scenario: Link opens the sign-in help screen
 
 - **WHEN** the user taps the "can't sign in" link
-- **THEN** the app navigates to `/passkey-recovery`
+- **THEN** the app navigates to `/sign-in-help`
 
 ### Requirement: Starting onboarding is reported
 
@@ -307,3 +307,11 @@ The landing page SHALL send one usage analytics event when a visitor taps `[Get 
 #### Scenario: Get Started
 - **WHEN** a guest taps `[Get Started]`
 - **THEN** one onboarding-started event is sent
+
+### Requirement: The screen's address
+
+The welcome page SHALL be served at `/welcome`, and `/` SHALL lead to it.
+
+#### Scenario: The page's address
+- **WHEN** a guest opens `/`
+- **THEN** the app shows the welcome page at `/welcome`

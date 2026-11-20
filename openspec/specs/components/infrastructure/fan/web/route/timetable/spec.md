@@ -62,30 +62,30 @@ The frontend SHALL render all user-facing text in the concert sheet via i18n key
 
 ### Requirement: Deep-link auto-open of a concert sheet
 
-When the timetable loads at the `/concerts/:id` route (for example, from a tapped push notification), it SHALL automatically open the detail sheet for concert `:id` once the authoritative concert list has resolved, and SHALL derive the timetable's artist filter from that concert. This reuses the existing `/concerts/:id` URL that the detail sheet already writes on manual open, so a deep-link and a manual card tap converge on the same URL and the same state.
+When the timetable loads at `/timetable?concert=:id` (for example, from a tapped push notification), it SHALL automatically open the detail sheet for concert `:id` once the authoritative concert list has resolved, and SHALL derive the timetable's artist filter from that concert. The `concert` query parameter is the same one the detail sheet writes on manual open, so a deep-link and a manual card tap converge on the same URL and the same state.
 
 The auto-open SHALL resolve the concert against the authoritative `listByFollower` fetch that the timetable already performs — NOT against a cache first-paint, and without any additional get-by-id RPC, timer, or optimistic pre-open. When the concert is absent from the resolved list (for example, the recipient unfollowed the artist after the notification was sent, or the concert carries an invalid date / unresolved performer), the timetable SHALL degrade gracefully: apply the artist filter if derivable and leave the sheet closed, never surfacing an error.
 
 #### Scenario: Deep-link opens the concert after the authoritative fetch resolves
 
-- **WHEN** the timetable loads at `/concerts/<concertId>` and the `listByFollower` fetch resolves with a concert whose id is `<concertId>`
+- **WHEN** the timetable loads at `/timetable?concert=<concertId>` and the `listByFollower` fetch resolves with a concert whose id is `<concertId>`
 - **THEN** the system SHALL open that concert's detail sheet
 - **AND** the sheet SHALL NOT be opened from a stale cache first-paint before the authoritative fetch resolves
 
 #### Scenario: Deep-link derives the artist filter from the opened concert
 
-- **WHEN** a concert sheet is auto-opened from a `/concerts/:id` deep-link
+- **WHEN** a concert sheet is auto-opened from a `/timetable?concert=:id` deep-link
 - **THEN** the timetable's `filteredArtistIds` SHALL be set to `[concert.artistId]` so only that artist's concerts remain behind the sheet
 
 #### Scenario: Closing the deep-linked sheet does not reload the timetable
 
-- **WHEN** the fan closes a detail sheet that was auto-opened from a `/concerts/:id` deep-link
+- **WHEN** the fan closes a detail sheet that was auto-opened from a `/timetable?concert=:id` deep-link
 - **THEN** the URL SHALL revert via `history.replaceState` without triggering router navigation
 - **AND** the timetable already mounted behind the sheet SHALL be revealed without a re-fetch
 
 #### Scenario: Target concert absent degrades to filter-only
 
-- **WHEN** the timetable loads at `/concerts/<concertId>` but the resolved `listByFollower` result contains no concert with id `<concertId>`
+- **WHEN** the timetable loads at `/timetable?concert=<concertId>` but the resolved `listByFollower` result contains no concert with id `<concertId>`
 - **THEN** the system SHALL NOT open a detail sheet
 - **AND** SHALL NOT surface an error
 - **AND** SHALL apply the artist filter only when the artist is still derivable
@@ -94,15 +94,15 @@ The auto-open SHALL resolve the concert against the authoritative `listByFollowe
 The timetable SHALL accept an `artists` query parameter containing one or more artist IDs (comma-separated UUIDs). When present, only concerts belonging to the listed artists SHALL be displayed. When absent or empty, all followed-artist concerts SHALL be displayed as normal.
 
 #### Scenario: Single artist filter from URL
-- **WHEN** the user navigates to `/dashboard?artists=<artistId>`
+- **WHEN** the user navigates to `/timetable?artists=<artistId>`
 - **THEN** only concerts whose `artistId` matches `<artistId>` SHALL be shown in the concert highway
 
 #### Scenario: Multiple artist filter from URL
-- **WHEN** the user navigates to `/dashboard?artists=<id1>,<id2>`
+- **WHEN** the user navigates to `/timetable?artists=<id1>,<id2>`
 - **THEN** only concerts whose `artistId` is in `{id1, id2}` SHALL be shown in the concert highway
 
 #### Scenario: No filter — unfiltered view preserved
-- **WHEN** the user navigates to `/dashboard` (no `artists` param)
+- **WHEN** the user navigates to `/timetable` (no `artists` param)
 - **THEN** all followed-artist concerts SHALL be displayed unchanged
 
 #### Scenario: Unknown artist ID in filter
@@ -118,7 +118,7 @@ When the user changes the active filter via the UI, the timetable URL SHALL be u
 
 #### Scenario: User adds an artist to the filter
 - **WHEN** the user selects an artist in the filter bottom sheet and confirms
-- **THEN** the browser URL SHALL update to `/dashboard?artists=<selectedIds>` via `history.replaceState`
+- **THEN** the browser URL SHALL update to `/timetable?artists=<selectedIds>` via `history.replaceState`
 - **THEN** the concert highway SHALL immediately display only matching concerts
 
 #### Scenario: Page reload preserves filter
@@ -128,12 +128,12 @@ When the user changes the active filter via the UI, the timetable URL SHALL be u
 
 ### Requirement: Push notification deep-link to filtered timetable
 
-Tapping a new-concert push notification SHALL open the deep-linked concert's detail sheet on the timetable, with the timetable filtered to that concert's artist. The notification carries a `/concerts/<concertId>` URL (see the `concert-detail` deep-link auto-open requirement). The artist filter SHALL be **derived from the opened concert** (`filteredArtistIds = [concert.artistId]`), not carried as a `?artists=` query parameter in the notification URL.
+Tapping a new-concert push notification SHALL open the deep-linked concert's detail sheet on the timetable, with the timetable filtered to that concert's artist. The notification carries a `/timetable?concert=<concertId>` URL (see the `concert-detail` deep-link auto-open requirement). The artist filter SHALL be **derived from the opened concert** (`filteredArtistIds = [concert.artistId]`), not carried as a `?artists=` query parameter in the notification URL.
 
 #### Scenario: Notification tap opens the concert filtered to its artist
 
-- **WHEN** a push notification with `data.url = "/concerts/<concertId>"` is tapped
-- **THEN** the browser SHALL navigate to `/concerts/<concertId>`
+- **WHEN** a push notification with `data.url = "/timetable?concert=<concertId>"` is tapped
+- **THEN** the browser SHALL navigate to `/timetable?concert=<concertId>`
 - **AND** the timetable SHALL derive the artist filter from the opened concert so only that artist's concerts remain behind the sheet
 
 #### Scenario: Deep-link auto-open suppressed during onboarding
@@ -210,7 +210,7 @@ The timetable "My Timetable" SHALL, by default, display only concerts whose date
 
 #### Scenario: Fresh load defaults to today onward
 
-- **WHEN** the user opens `/dashboard` with no date query parameter
+- **WHEN** the user opens `/timetable` with no date query parameter
 - **THEN** the timetable SHALL request `ConcertService.ListFollowed` with `from` set to the client's current local date
 - **AND** only concerts on or after today SHALL be displayed
 - **AND** past concerts of followed artists SHALL NOT be displayed
@@ -227,7 +227,7 @@ The timetable SHALL accept a date query parameter (e.g. `from`) containing a sin
 
 #### Scenario: Past date from URL
 
-- **WHEN** the user navigates to `/dashboard?from=<pastDate>`
+- **WHEN** the user navigates to `/timetable?from=<pastDate>`
 - **THEN** the timetable SHALL request `ConcertService.ListFollowed` with `from = <pastDate>`
 - **AND** concerts on or after `<pastDate>` (including past ones) SHALL be displayed
 
@@ -284,15 +284,15 @@ The active date filter SHALL survive a page reload and be shareable via the URL,
 The timetable SHALL accept a `journey` query parameter containing one or more ticket-journey status values (comma-separated, from `tracking`, `applied`, `unpaid`, `paid`, `lost`). When present, only concerts whose `journeyStatus` is in the listed set SHALL be displayed. When absent or empty, concerts SHALL NOT be constrained by journey status.
 
 #### Scenario: Single status filter from URL
-- **WHEN** the user navigates to `/dashboard?journey=unpaid`
+- **WHEN** the user navigates to `/timetable?journey=unpaid`
 - **THEN** only concerts whose `journeyStatus` is `unpaid` SHALL be shown in the concert highway
 
 #### Scenario: Multiple status filter from URL
-- **WHEN** the user navigates to `/dashboard?journey=applied,unpaid`
+- **WHEN** the user navigates to `/timetable?journey=applied,unpaid`
 - **THEN** only concerts whose `journeyStatus` is in `{applied, unpaid}` SHALL be shown
 
 #### Scenario: No journey filter — unconstrained by status
-- **WHEN** the user navigates to `/dashboard` with no `journey` param
+- **WHEN** the user navigates to `/timetable` with no `journey` param
 - **THEN** concerts SHALL NOT be filtered by journey status (concerts with no status set SHALL still be shown)
 
 #### Scenario: Concerts without a journey status are excluded when filtering
@@ -708,7 +708,7 @@ celebration/onboarding latch, or an in-flight deep-link resolution.
 - **WHEN** the re-entry cached render is reflected from the component lifecycle
 - **THEN** the background refresh SHALL still fetch and swap in fresh data
 - **AND** the data-ready celebration / onboarding-completion latch SHALL still
-  fire once when due, and a pending `/concerts/:id` deep-link SHALL still open
+  fire once when due, and a pending `/timetable?concert=:id` deep-link SHALL still open
   the detail sheet
 
 ### Requirement: The timetable renders a window of dates around the fan
@@ -760,19 +760,19 @@ the stage header SHALL hold for every group.
 
 ### Requirement: Closing the detail sheet keeps the timetable's filters in the URL
 
-When the concert sheet closes by the sheet's own means (light dismiss or swipe down), the URL SHALL return to the timetable URL the fan was on when the sheet opened, query parameters included, so the URL always restores the timetable the fan is looking at. A sheet auto-opened from a `/concerts/:id` deep-link SHALL close to the timetable URL carrying the artist filter the deep-link derived. Closing SHALL still revert the URL via `history.replaceState` without triggering router navigation, and closing by the browser back button SHALL remain the browser's own navigation.
+When the concert sheet closes by the sheet's own means (light dismiss or swipe down), the URL SHALL return to the timetable URL the fan was on when the sheet opened, its query parameters included and `concert` removed, so the URL always restores the timetable the fan is looking at. A sheet auto-opened from a `/timetable?concert=:id` deep-link SHALL close to the timetable URL carrying the artist filter the deep-link derived. Closing SHALL still revert the URL via `history.replaceState` without triggering router navigation, and closing by the browser back button SHALL remain the browser's own navigation.
 
 #### Scenario: Closing keeps the active filters in the URL
 
-- **WHEN** the detail sheet is opened while the timetable is filtered (for example `/dashboard?artists=<id>`, a journey facet or a `from` date)
+- **WHEN** the detail sheet is opened while the timetable is filtered (for example `/timetable?artists=<id>`, a journey facet or a `from` date)
 - **AND** the fan closes the sheet by light dismiss or swipe down
 - **THEN** the URL SHALL be that same filtered timetable URL, query parameters included
 - **AND** reloading that URL SHALL show the same filtered timetable the fan was looking at
 
 #### Scenario: Closing a deep-linked sheet returns to the filtered timetable URL
 
-- **WHEN** the fan closes a detail sheet that was auto-opened from a `/concerts/:id` deep-link
-- **THEN** the URL SHALL be `/dashboard?artists=<concert.artistId>`, the filter the deep-link derived
+- **WHEN** the fan closes a detail sheet that was auto-opened from a `/timetable?concert=:id` deep-link
+- **THEN** the URL SHALL be `/timetable?artists=<concert.artistId>`, the filter the deep-link derived
 - **AND** reloading that URL SHALL show the same filtered timetable
 
 ### Requirement: Concert sheet
@@ -785,7 +785,7 @@ The system SHALL provide a detail view for a selected discovered concert using a
 - **THEN** the system SHALL open a bottom sheet displaying the concert detail
 - **AND** the sheet SHALL be shown with `showPopover()` as a non-modal `popover="manual"` sheet, so it never blocks the page behind it and coach marks can still appear above it
 - **AND** the sheet element SHALL be a `<dialog>` providing native dialog semantics (implicit `role="dialog"`)
-- **AND** the URL SHALL update to `/concerts/:id` via `history.pushState` without triggering full page navigation
+- **AND** the URL SHALL gain `concert=<id>` next to the timetable's other query parameters (for example `/timetable?artists=<artistId>&concert=<id>`) via `history.pushState` without triggering full page navigation
 - **AND** the sheet SHALL be anchored flush to the bottom edge of the viewport
 
 #### Scenario: Display venue information
@@ -855,7 +855,7 @@ The system SHALL provide a detail view for a selected discovered concert using a
 
 ### Requirement: Timetable routes event selection and shows its loading states
 
-`timetable-route` SHALL handle event selection and loading/empty states directly. Selecting a first-party concert SHALL navigate to its Concert page (`/events/:id`); selecting a discovered concert SHALL open the `concert-sheet` dialog. Returning from the Concert page SHALL show the timetable at the date the fan left it on.
+`timetable-route` SHALL handle event selection and loading/empty states directly. Selecting a first-party concert SHALL navigate to its Concert page (`/concerts/:id`); selecting a discovered concert SHALL open the `concert-sheet` dialog. Returning from the Concert page SHALL show the timetable at the date the fan left it on.
 
 #### Scenario: Event selection handled by timetable
 - **WHEN** a user taps a discovered concert's card in the concert list
@@ -863,7 +863,7 @@ The system SHALL provide a detail view for a selected discovered concert using a
 
 #### Scenario: First-party concert opens its concert page
 - **WHEN** a user taps the card of a concert whose Series belongs to an Organizer, in the timetable
-- **THEN** the app SHALL navigate to `/events/<id>` and SHALL NOT open the detail sheet
+- **THEN** the app SHALL navigate to `/concerts/<id>` and SHALL NOT open the detail sheet
 
 #### Scenario: Back from the concert page
 - **WHEN** the fan opened a Concert page from a card dated 2026-11-20 deep in the timetable and goes back
@@ -877,16 +877,16 @@ The system SHALL provide a detail view for a selected discovered concert using a
 
 ### Requirement: Empty timetable offers the Concerts view
 
-Whenever the timetable shows an empty timetable, the empty state SHALL offer, next to its link to Discovery, a second link that opens the Concerts view on Discovery (`/discovery?view=nearby`). This holds for the guest who follows no artist and for the fan whose followed artists have no concert to show.
+Whenever the timetable shows an empty timetable, the empty state SHALL offer, next to its link to Discovery, a second link that opens the Concerts view on Discovery (`/discovery?view=concerts`). This holds for the guest who follows no artist and for the fan whose followed artists have no concert to show.
 
 #### Scenario: Guest with no follows
 - **WHEN** a guest who follows no artist opens the timetable
-- **THEN** the empty state shows the link to Discovery and a link 「近くのライブを見る」
-- **AND** tapping 「近くのライブを見る」 opens Discovery on the Concerts view
+- **THEN** the empty state shows the link to Discovery and a link 「ライブを探す」
+- **AND** tapping 「ライブを探す」 opens Discovery on the Concerts view
 
 #### Scenario: Followed artists with nothing to show
 - **WHEN** a fan follows artists but none of them has a concert to show
-- **THEN** the empty state shows the link to Discovery and the link 「近くのライブを見る」
+- **THEN** the empty state shows the link to Discovery and the link 「ライブを探す」
 
 #### Scenario: Timetable with concerts
 - **WHEN** the timetable shows at least one concert
@@ -956,3 +956,15 @@ The timetable SHALL offer two month-jump buttons, previous month and next month,
 
 - **WHEN** the fan has asked the system for reduced motion and taps a month-jump button
 - **THEN** the target month is shown at the top without a scrolling animation
+
+### Requirement: The screen's address
+
+The timetable SHALL be served at `/timetable`, with its filters and the open concert sheet carried as query parameters (`artists`, `journey`, `from`, `concert`). `/dashboard` SHALL NOT be an address of the timetable; it is an unknown address like any other.
+
+#### Scenario: The timetable's address
+- **WHEN** a fan taps the Timetable tab
+- **THEN** the address bar shows `/timetable`
+
+#### Scenario: The old address is gone
+- **WHEN** a fan opens `/dashboard`
+- **THEN** the app shows the not-found screen

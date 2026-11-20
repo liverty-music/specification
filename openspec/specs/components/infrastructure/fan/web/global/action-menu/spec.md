@@ -143,9 +143,9 @@ the navigation bar (see "The action menu yields to a snack bar or a bottom banne
 - **THEN** the action menu SHALL be sunk into the navigation bar, 40px across and horizontally centred
 - **AND** no part of the action menu SHALL extend above the navigation bar's top edge
 
-#### Scenario: action menu stays above the Discovery dna orb
+#### Scenario: action menu stays above the Discovery orb
 
-- **WHEN** the Discovery route is displayed and the dna orb extends behind the action menu
+- **WHEN** the Discovery route is displayed and the discovery orb extends behind the action menu
 - **THEN** the action menu SHALL be in the browser top layer
 - **AND** a tap at the action menu's centre SHALL reach the action menu, not the orb
 
