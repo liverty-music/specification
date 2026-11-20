@@ -24,7 +24,7 @@ Prod evidence (PostHog `$ai_generation`, 2026-10-21..11-20): the calls with more
 
 ## Decisions
 
-**D1. Read the concert pages and take their page-specific links.** After `officialPageLinks` selects the top page's links, the searcher fetches the first 3 links of the concert tier (not `news`) with the same guarded client (`NewOfficialPageClient`: 5 s, 2 MB, public addresses only, same registrable domain after redirects), concurrently. From each page it takes every same-domain `<a href>` (normalized as `matchLink` does, without the keyword filter) that is not the top page and not a link of the top page, de-duplicated, in page order, concert page by concert page. These go after the top-page links; the list stops at 20 (URL context's per-request limit).
+**D1. Read the concert pages and take their page-specific links.** The top-page read returns, besides the selected links, which of them are concert-tier and the set of every same-domain link the top page carries (normalized like the selected links); today `selectLinks` drops both, so this widens its result. The searcher then fetches the first 3 links of the concert tier (not `news`) with the same guarded client (`NewOfficialPageClient`: 5 s, 2 MB, public addresses only, same registrable domain after redirects), concurrently. From each page it takes every same-domain `<a href>` (normalized as `matchLink` does, without the keyword filter) that is not the top page and not a link of the top page, de-duplicated, in page order, concert page by concert page. These go after the top-page links; the list stops at 20 (URL context's per-request limit).
   - Excluding the top page's links drops the site navigation (goods, profile, news index) that every page repeats, which leaves the page's own content: tour detail pages, ticket pages, articles. The keyword filter is not reused for this level: detail pages often have opaque paths (`/contents/123`), which a keyword rule would drop.
   - Alternative: keep only links under the concert page's path (`/live/` → `/live/tour-a/`). Rejected: sites in the prod tail put details elsewhere (`/contents/schedule` lists `/contents/<id>`).
   - Alternative: follow news pages too. Rejected: a news index links dozens of articles and would fill the 20 slots with unrelated pages.
@@ -54,7 +54,7 @@ Prod evidence (PostHog `$ai_generation`, 2026-10-21..11-20): the calls with more
 
 ## Risks / Trade-offs
 
-- [More URL context input tokens per call; up to 20 pages instead of 8] → D4 rejects the change if cost per call rises; the 20-page cap bounds it.
+- [More URL context input tokens per call; up to 20 pages instead of 8] → The 20-page cap bounds it, and D4 rejects the detail links if cost per call rises (task 3.1 then removes them before the backend PR merges).
 - [Page-specific links include non-concert pages (ticket FAQ, articles)] → They cost tokens but do not change results: the prompt still asks only for the artist's shows; the evaluation measures recall and cost with them in.
 - [JavaScript-rendered concert pages carry no links in their HTML] → Those artists keep today's behavior (searching); the prod check shows how many remain in the over-20 group.
 - [Small fixture; a variant can win by chance] → 3 repetitions, and the prod check after release; a regression in prod reverts by config (model, thinking) or by a code revert (links).

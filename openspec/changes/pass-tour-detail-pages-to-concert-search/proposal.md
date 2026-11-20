@@ -13,7 +13,7 @@ The model is due for a decision too: `gemini-3.8-flash` is now listed as previou
   - a prompt instruction that caps the searches at 10;
   - thinking `minimal`;
   - leaving the Google Search tool out when detail pages are listed (URL context only).
-- The evaluated model, thinking level and prompt are adopted when they meet the acceptance criteria in design.md. Leaving out the Google Search tool changes what Search searches, so if it qualifies it ships in a follow-up change with its own spec delta.
+- Every evaluated variant ships only when it meets the acceptance criteria in design.md (D4), the detail-page links included: if they fail, they are removed from the implementation branch before it merges and this change drops its delta spec. The evaluated model, thinking level and prompt are adopted the same way. Leaving out the Google Search tool changes what Search searches, so if it qualifies it ships in a follow-up change with its own spec delta.
 - cloud-provisioning: the base `concert-discovery` ConfigMap's stale model and thinking values (`gemini-3.6-flash` / `medium`, overridden in prod) are corrected, and the prod pin follows the adopted model.
 
 ## Capabilities

@@ -1,6 +1,6 @@
 ## 1. Tour detail page links (components/entity/concert/search, backend)
 
-- [ ] 1.1 After `officialPageLinks`, fetch the first 3 concert-tier links with the guarded client in parallel and collect their same-domain links that are neither the top page nor a top-page link, de-duplicated and in page order, capped at 20 pages in total (design D1); verify `httptest` unit tests annotated with the spec scenarios "Tour detail pages behind a live page", "Only the first 3 concert pages followed", "News page not followed", "Concert page link to another domain ignored", "At most 20 pages" and "Concert page unavailable", and that the existing scenario tests of the requirement still pass
+- [ ] 1.1 Make the top-page read also return which selected links are concert-tier and every same-domain link of the top page (design D1); then fetch the first 3 concert-tier links with the guarded client in parallel and collect their same-domain links that are neither the top page nor a top-page link, de-duplicated and in page order, capped at 20 pages in total (design D1); verify `httptest` unit tests annotated with the spec scenarios "Tour detail pages behind a live page", "Only the first 3 concert pages followed", "News page not followed", "Concert page link to another domain ignored", "At most 20 pages" and "Concert page unavailable", and that the existing scenario tests of the requirement still pass
 - [ ] 1.2 Append the detail links to the prompt's linked-pages block and to `LinkedPageURLs` (design D2); verify a request-capture unit test shows top-page links first, then the detail links, and the prompt unchanged when no concert page yields links
 - [ ] 1.3 Update `docs/gemini-concert-searcher-tuning.md` (pipeline section) and the package `AGENTS.md` to describe the second fetch level and the 20-page cap; verify both name the 3-page and 20-page limits
 
@@ -11,7 +11,7 @@
 
 ## 3. Evaluation runs (backend)
 
-- [ ] 3.1 Run 1 (baseline vs detail links on `gemini-3.8-flash`, 3 reps, all fixture artists); verify the result files are committed under `testdata/ab_results/` and the tuning doc records the D4 verdict
+- [ ] 3.1 Run 1 (baseline vs detail links on `gemini-3.8-flash`, 3 reps, all fixture artists); verify the result files are committed under `testdata/ab_results/` and the tuning doc records the D4 verdict. If the links fail D4, remove the group 1 code and tests from the backend branch before 4.2, delete this change's delta spec in the store, and verify `openspec validate pass-tour-detail-pages-to-concert-search --strict` passes with the change marked `skip_specs: true`
 - [ ] 3.2 Run 2 (the run-1 winner on `gemini-4-hydrogen`, thinking `low`); verify the tuning doc records the D4 verdict including p90 latency and the `groundingChunks` result, and add that result to backend #772
 - [ ] 3.3 Run 3 on the winning model (search cap; lowest thinking level; Google Search off for artists with detail links); verify the tuning doc records a D4 verdict per variant, and, if Google Search off meets D4, an issue for the follow-up change exists
 
