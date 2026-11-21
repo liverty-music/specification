@@ -27,6 +27,6 @@ The model is due for a decision too: `gemini-3.8-flash` is previous-generation a
 
 - **backend:** `internal/infrastructure/gcp/gemini` (official page link discovery, request building, prompt), the A/B harness and its fixture (`testdata/ab_ground_truth.json`), `pkg/config` defaults when another model or thinking level is adopted, and `docs/gemini-concert-searcher-tuning.md` for the results.
 - **cloud-provisioning:** `k8s/namespaces/backend/base/cronjob/concert-discovery/configmap.env` and, if the model changes, the prod overlay pin.
-- **Cost and latency:** up to 3 more HTTP GETs per Search to official pages, and more URL context input tokens; the evaluation weighs them against the search queries saved. Goal: concert-discovery below about 4,000 queries a month, so every Gemini job fits the 5,000-query monthly free tier.
+- **Cost and latency:** the official top page is still read once per Search; the prompt grows by up to 60 labeled links (about 700–1,850 input tokens on the fixture), against the search queries and URL context reads it saves ($0.075 per call against $0.113 on the fixture, design D7). Goal: concert-discovery below about 4,000 queries a month, so every Gemini job fits the 5,000-query monthly free tier.
 - **Out of scope:** spreading searches over days to stay under the 1,500-per-day search cap (backend #864), and registering official sites for the 27 artists that have none (backend #865).
 - No proto or DB change.
