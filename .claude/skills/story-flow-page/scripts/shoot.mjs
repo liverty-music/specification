@@ -25,8 +25,12 @@ for (const [scheme, switchTo] of [['light'], ['dark'], ['light', 'dark']]) {
     .catch(() => {})
   if (switchTo) await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), switchTo)
   const name = switchTo ? `${scheme}-to-${switchTo}` : scheme
+  // Count what was drawn rather than trusting the wait: if the Mermaid import
+  // fails (offline, blocked CDN) the script never runs and no error reaches us.
   const notDrawn = await page.evaluate(() =>
-    [...document.querySelectorAll('.drawn')].map((d) => d.textContent).filter((t) => t.startsWith('この図を描けませんでした')),
+    [...document.querySelectorAll('.drawn')]
+      .filter((d) => !d.querySelector('svg'))
+      .map((d) => d.textContent || `empty ${d.className} (the drawing script did not run or did not finish)`),
   )
   for (let i = 0; i < panels; i++) {
     await page.locator('.panel').nth(i).screenshot({ path: `${outDir}/${name}-diagram-${i + 1}.png` })
