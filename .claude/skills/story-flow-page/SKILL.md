@@ -47,7 +47,7 @@ Use `assets/page-template.html` (CSS tokens for both themes, and the script that
 11. **spec の食い違い** (only when there is one): where two specs, or a spec and the code, disagree on something the page draws. For each: what each source says (path, and file:line for code), which one the page draws (the story, unless the user says otherwise), and what a reader sees in the app today. Mark the step in the diagram with a note that points here. Tell the user about each one in the report as well; a conflict is a finding, not a footnote.
 12. **Source note**: the spec paths, the `specification` commit SHA or date, open changes included, and the Mermaid version.
 
-Every section from 5 on opens the same way:
+Every section with a diagram (parts 5 to 7) opens the same way; the parts after it have no diagram, but still open with one sentence on what they hold and why:
 
 - **Context** (one or two sentences): who is in which situation and why it matters, then what the diagram shows.
 - **この図で確かめること**: three or four claims, each with its condition, each traceable to a requirement or scenario.
