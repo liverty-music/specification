@@ -30,8 +30,11 @@ UC->>LotteryEntry: ListEnteredByTicketSaleAndTicketStock
 break a closed Lottery sale still has Entered entries for the stock
   Note over UC: fail with FailedPrecondition
 end
-break count below 1 or above the per-account limit
+break count below 1
   Note over UC: fail with InvalidArgument
+end
+break count above the per-account limit
+  Note over UC: fail with FailedPrecondition
 end
 opt sale requires verification
   UC->>IdentityVerification: GetByUserID
@@ -67,7 +70,7 @@ Start SHALL take the calling fan, a TicketStock, a ticket count, an optional Ref
 - It SHALL fail with FailedPrecondition when Event.IsEventPublished reports false for the stock's event, as for a 中止 (cancelled) concert.
 - It SHALL read the event's sales with TicketSale.ListByEvent. The Checkout belongs to the FirstCome sale of the event whose window is open at the current time; when there is none, Start SHALL fail with FailedPrecondition.
 - It SHALL fail with FailedPrecondition while a Lottery sale of the event has closed and still has Entered entries for the stock, read with LotteryEntry.ListEnteredByTicketSaleAndTicketStock, because that draw has not yet taken its winners' tickets from the stock.
-- It SHALL fail with InvalidArgument when the count is below 1 or above the event's per-account limit.
+- It SHALL fail with InvalidArgument when the count is below 1, and with FailedPrecondition when it is above the event's per-account limit.
 - It SHALL apply the verification gate.
 - It SHALL read what the fan holds for the event with Order.GetHeldForEvent, not counting the Order of the fan's own holding Checkout, which is resumed or replaced, and fail with FailedPrecondition when the application does not fit the event.
 - It SHALL then call Checkout.GetOrCreateHeld with the sale, the stock, the count and the ReferralCode, and return the Checkout it gives; its failures are returned unchanged.
@@ -104,6 +107,10 @@ Starting again with the same count while the hold lasts SHALL resume the same Ch
 
 #### Scenario: Count over the limit
 - **WHEN** the fan asks for 5 tickets and the event's per-account limit is 4
+- **THEN** Start fails with FailedPrecondition and nothing is held
+
+#### Scenario: No tickets
+- **WHEN** the fan asks for 0 tickets
 - **THEN** Start fails with InvalidArgument and nothing is held
 
 #### Scenario: Presale winner over the limit
