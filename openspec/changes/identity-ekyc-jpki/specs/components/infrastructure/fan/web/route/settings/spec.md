@@ -4,7 +4,7 @@
 
 ### Requirement: The identity verification result is shown on Settings
 
-When a fan returns from the PocketSign app, the verification callback address SHALL show only a progress indicator while the result is confirmed, and SHALL then open Settings without keeping the callback address in the history. On success, Settings SHALL show the snackbar "本人確認が完了しました" and the identity verification badge SHALL read 確認済み without a reload. On failure, Settings SHALL show the reason inside the identity verification row, next to the 本人確認する button, and SHALL keep it until the fan starts verification again. The reasons are: no verification in progress on this device; verification not available right now; the card read did not finish or has expired; the verification details did not match; something else went wrong. When the card was already used to verify another account, Settings SHALL NOT offer 本人確認する and SHALL show the reason with the support contact. When this device has no verification in progress and the fan already has an Active IdentityVerification, Settings SHALL show no failure.
+When a fan returns from the PocketSign app, the verification callback address SHALL show only a progress indicator while the result is confirmed, and SHALL then open Settings without keeping the callback address in the history. On success, Settings SHALL show the snackbar "本人確認が完了しました" and the identity verification badge SHALL read 確認済み without a reload. On failure, Settings SHALL show the reason inside the identity verification row, next to the 本人確認する button, and SHALL keep it until the fan starts verification again. The reasons are: no verification in progress on this device; verification not available right now; the card read did not finish or has expired; the verification details did not match; something else went wrong. When the card was already used to verify another account, Settings SHALL NOT offer 本人確認する and SHALL show the reason with the support contact. When this device has no verification in progress and the fan already has an Active IdentityVerification, Settings SHALL show no failure. Until Settings has loaded the fan's IdentityVerification, and when that load fails, Settings SHALL show neither a failure reason nor 本人確認する, because it cannot yet tell a verified fan from an unverified one.
 
 #### Scenario: Verification succeeds
 
@@ -35,6 +35,16 @@ When a fan returns from the PocketSign app, the verification callback address SH
 
 - **WHEN** the callback address is opened on a device with no verification in progress and the account is unverified
 - **THEN** Settings shows "本人確認の手続きが見つかりませんでした。設定画面からもう一度お試しください。" next to 本人確認する
+
+#### Scenario: Verified fan on a slow connection
+
+- **WHEN** a fan with an Active IdentityVerification opens the callback address again on a device with no verification in progress, and the fan's IdentityVerification has not loaded yet
+- **THEN** Settings shows no failure reason and no 本人確認する, and once it loads the badge reads 確認済み with still no failure reason
+
+#### Scenario: Verification cannot be loaded
+
+- **WHEN** a failure reason is waiting for Settings and loading the fan's IdentityVerification fails
+- **THEN** Settings shows no failure reason and no 本人確認する
 
 #### Scenario: Retry clears the reason
 
