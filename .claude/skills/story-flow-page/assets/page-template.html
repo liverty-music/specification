@@ -1,0 +1,112 @@
+<meta charset="utf-8">
+<title>{{TITLE}}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600&display=swap">
+<style>
+/* Story flow page template (story-flow-page skill). Layout: one reading column; each diagram sits in its own panel that scrolls sideways when wide. Diagrams follow the page theme. */
+:root {
+  --bg: #f6f5f8;
+  --surface: #ffffff;
+  --diagram-bg: #ffffff;
+  --fg: #1d1b24;
+  --muted: #5c5868;
+  --line: #dcd8e4;
+  --accent: #b0136e;
+  --font-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14121a; --surface: #1d1a26; --diagram-bg: #1d1a26; --fg: #ece9f3; --muted: #a8a3b6; --line: #34303f;
+    --accent: #ff5cb0; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14121a; --surface: #1d1a26; --diagram-bg: #1d1a26; --fg: #ece9f3; --muted: #a8a3b6; --line: #34303f;
+  --accent: #ff5cb0; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.8; }
+main {
+  max-width: 1040px; margin: 0 auto;
+  padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 44px;
+}
+header, section { display: grid; gap: 14px; min-width: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--accent); }
+h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.3; margin: 0; text-wrap: balance; }
+h2 { font-size: 20px; margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 42em; }
+.lede { color: var(--muted); }
+.panel { background: var(--diagram-bg); border: 1px solid var(--line); border-radius: 10px; padding: 20px; overflow-x: auto; }
+pre.diagram { margin: 0; background: transparent; color: var(--fg); font-family: var(--font-body); white-space: pre; }
+pre.diagram svg { max-width: none; height: auto; }
+.mono { font-family: var(--font-mono); font-size: .88em; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; }
+tr:last-child td { border-bottom: 0; }
+.note { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; color: var(--muted); max-width: 46em; font-size: 14px; }
+ul { margin: 0; padding-left: 1.2em; max-width: 44em; }
+li + li { margin-top: 4px; }
+h3 { font-size: 15px; margin: 0; }
+pre.diagram.done { display: none; }
+.drawn svg { max-width: none; height: auto; }
+.drawn-dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .drawn-light { display: none; }
+  :root:not([data-theme="light"]) .drawn-dark { display: block; }
+}
+:root[data-theme="dark"] .drawn-light { display: none; }
+:root[data-theme="dark"] .drawn-dark { display: block; }
+</style>
+
+<main>
+  <header>
+    <div class="eyebrow">stories/{{STORY_ID}}</div>
+    <h1>{{TITLE}}</h1>
+    <p class="lede">{{PURPOSE: what this page lets the reader check, and that the spec wins when they disagree}}</p>
+  </header>
+
+  <!-- Copy this skeleton's <main> contents into <work-dir>/main.html and run scripts/build.py.
+       One <section> per part, in the order SKILL.md "Page outline" gives. A section with a diagram: -->
+  <section>
+    <h2>{{N}}. {{SCENE}}</h2>
+    <p>{{CONTEXT: who is doing what and why, and what the diagram shows}}</p>
+    <h3>この図で確かめること</h3>
+    <ul>
+      <li>{{CLAIM with its condition}}</li>
+    </ul>
+    <div class="panel"><pre class="diagram">{{DIAGRAM:2-scene-name}}</pre><div class="drawn drawn-light"></div><div class="drawn drawn-dark"></div></div>
+  </section>
+</main>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs";
+
+// Each diagram is drawn twice, once per theme, and CSS shows the drawing that
+// matches the page theme (the same conditions that pick the page colors), so a
+// theme switch needs no redraw. The theme given here wins over each diagram
+// type's default (redux-color in v12).
+const panels = [...document.querySelectorAll(".panel")];
+
+await document.fonts.ready; // labels are measured in the web font
+let n = 0;
+for (const [theme, cls] of [["redux-color", ".drawn-light"], ["redux-dark-color", ".drawn-dark"]]) {
+  mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme });
+  for (const panel of panels) {
+    const src = panel.querySelector("pre.diagram").textContent;
+    const out = panel.querySelector(cls);
+    try {
+      const { svg } = await mermaid.render("diagram-" + ++n, src);
+      out.innerHTML = svg;
+    } catch (err) {
+      out.textContent = "この図を描けませんでした: " + String(err);
+    }
+  }
+}
+for (const pre of document.querySelectorAll("pre.diagram")) pre.classList.add("done");
+</script>
