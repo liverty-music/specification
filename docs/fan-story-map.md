@@ -112,7 +112,7 @@ Source: `route/timetable`, `global/home-area-selector`, `global/celebration-over
   Onboarding latches as completed on a meaningful arrival (at least one follow).
 - An empty Timetable offers 「アーティストを探す」 (Discovery) and, to a
   signed-in fan only, 「ライブを探す」 (the Concerts view).
-- A guest sees the signup banner 「新着ライブを通知で受け取ろう！」 [Sign Up].
+- A guest sees the signup banner 「新着ライブ通知を受け取ろう！」 [Sign Up].
 
 ### チケットを逃さない (concert sheet)
 
