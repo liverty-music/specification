@@ -11,7 +11,7 @@ See proposal.md - Why. Current state:
 ## Goals / Non-Goals
 
 **Goals:**
-- Every outbreak on `main` (from the first failed nightly until a green one) reaches the owner in Slack once, with a cause, without anyone opening GitHub first. Later failures of the same outbreak are comments on its Issue, not new messages: one run per outbreak keeps the routine limits and the subscription free.
+- Every outbreak on `main` reaches the owner in Slack once, with a cause, without anyone opening GitHub first. Later failures of the same outbreak are comments on its Issue, not new messages: one run per outbreak keeps the routine limits and the subscription free.
 - A failure Claude can fix arrives as a reviewed-ready pull request; the owner only reviews and merges.
 - The Issue state tells whether `main` is red now.
 
@@ -33,6 +33,8 @@ A new reusable workflow `liverty-music/.github/.github/workflows/report-main-ci.
 | failure | yes | comment run URL and SHA |
 | success | yes | if a failed run in the Issue has this run's SHA, add label `flaky`; comment "passed on <sha>"; close |
 | success | none | nothing |
+
+An outbreak is the lifetime of one such Issue: it starts when the Issue opens and ends when it closes, whether a green nightly or the owner closes it. If the owner closes it while `main` is still red, the next failure takes the `failure | none` row and starts a new outbreak (new Issue, routine run and Slack message); that is intended, since a manual close says the owner considers the earlier outbreak handled.
 
 The failed SHAs are read back from the Issue body and comments (one line `sha: <40 hex>` per report), so no state lives outside the Issue.
 
