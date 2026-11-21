@@ -9,6 +9,7 @@ ResaleEntryUseCase.AuthorizeCard opens the card authorization a fan's official r
 
 AuthorizeCard SHALL take the signed-in fan, a TicketStock, a ticket count, the fan's full name and phone number for 本人確認 (identity check), and an optional referral code. It SHALL:
 - read the stock with TicketStock.Get, failing with NotFound when it does not exist, and fail with FailedPrecondition when its resale is not open at the current time or Event.IsEventPublished reports false for its event, as for a 中止 (cancelled) concert;
+- fail with InvalidArgument when the count is below 1, or the full name or phone number is missing or breaks the User's personal details rule, and with FailedPrecondition when the count is above the event's per-account limit;
 - read the tickets the fan holds for the event with Order.GetHeldForEvent and fail with FailedPrecondition when the application does not fit the event (the per-account limit or the seat type rule), so the fan is not asked to authenticate a card for an entry that would be refused;
 - fail with FailedPrecondition when the fan does not hold an Active IdentityVerification and any sale of the event requires verification;
 - open a CardAuthorization with CardAuthorization.Create for the seat type's amount for the count, carrying the TicketStock, the count and the referral code, and return it.
@@ -28,3 +29,11 @@ AuthorizeCard SHALL take the signed-in fan, a TicketStock, a ticket count, the f
 #### Scenario: Verification required
 - **WHEN** a sale of the event requires verification and the fan holds none
 - **THEN** AuthorizeCard fails with FailedPrecondition
+
+#### Scenario: Count over the limit
+- **WHEN** the fan asks for 5 tickets and the event's per-account limit is 4
+- **THEN** AuthorizeCard fails with FailedPrecondition and no card authorization is opened
+
+#### Scenario: Missing identity details
+- **WHEN** the full name or the phone number is empty
+- **THEN** AuthorizeCard fails with InvalidArgument and no card authorization is opened

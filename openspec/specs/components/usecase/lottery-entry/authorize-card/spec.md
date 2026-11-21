@@ -20,8 +20,11 @@ UC->>TicketStock: Get
 break not Lottery, or the sale does not name the stock's event
   Note over UC: FailedPrecondition
 end
-break count, full name or phone number invalid
+break count below 1, or full name or phone number invalid
   Note over UC: InvalidArgument
+end
+break count above the per-account limit
+  Note over UC: FailedPrecondition
 end
 UC->>Event: IsEventPublished
 break window not open, or event not published
@@ -68,7 +71,7 @@ When the sale requires verification, AuthorizeCard SHALL require the fan to hold
 
 AuthorizeCard SHALL take a Lottery TicketSale, a TicketStock, the calling fan, a ticket count, a full name, a phone number and an optional ReferralCode. In this order it SHALL:
 - read the sale with TicketSale.Get and the stock with TicketStock.Get, failing with NotFound when either does not exist, and fail with FailedPrecondition when the sale's method is not Lottery or the sale does not name the stock's event;
-- fail with InvalidArgument when the count is below 1 or above the event's per-account limit, or the full name or phone number is missing or breaks the User's personal details rule;
+- fail with InvalidArgument when the count is below 1, or the full name or phone number is missing or breaks the User's personal details rule, and with FailedPrecondition when the count is above the event's per-account limit;
 - fail with FailedPrecondition when the sale's window is not open at the current time, or when Event.IsEventPublished reports false for the stock's event, as for a 中止 (cancelled) concert;
 - apply the verification gate;
 - read what the fan holds for the event with Order.GetHeldForEvent and fail with FailedPrecondition when the application does not fit the event;
@@ -104,8 +107,8 @@ It SHALL store no Order and no LotteryEntry, and failures of the operations it c
 - **THEN** AuthorizeCard fails with FailedPrecondition and no card authorization is opened
 
 #### Scenario: Count over the limit
-- **WHEN** the fan requests more tickets than the event's per-account limit
-- **THEN** AuthorizeCard fails with InvalidArgument
+- **WHEN** the fan requests 5 tickets and the event's per-account limit is 4
+- **THEN** AuthorizeCard fails with FailedPrecondition and no card authorization is opened
 
 #### Scenario: Presale winner reaches the limit
 - **WHEN** the event's per-account limit is 4, the fan won 4 S席 tickets in the presale, not yet issued, and authorizes their card for 1 S席 in the general sale
