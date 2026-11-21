@@ -33,5 +33,5 @@ The entity operations these usecases call (Event's per-account limit rule, Order
 
 - specification: proto comments of `rpc/checkout/v1`, `rpc/lottery_entry/v1`, `rpc/resale_entry/v1` (comments only; no field or type change).
 - backend: `internal/entity/order.go` (`ValidateTicketCount`), the `# Possible errors` of `internal/usecase/checkout_uc.go`, `lottery_entry_uc.go`, `resale_entry_uc.go`, and their tests.
-- frontend: `src/routes/checkout/checkout-route.ts`, `src/routes/new-lottery-entry/new-lottery-entry-route.ts`, `src/routes/new-resale-entry/new-resale-entry-route.ts`, new i18n text in `src/locales/{ja,en}/translation.json`, and their tests.
+- frontend: `src/routes/checkout/checkout-route.ts`, `src/routes/new-lottery-entry/new-lottery-entry-route.ts`, `src/routes/new-resale-entry/new-resale-entry-route.ts`, new i18n text in `src/locales/{ja,en}/translation.json` (the name or phone number refusal, and the lottery entry's "cannot be made now" refusal), and their tests.
 - Deploy order: frontend before backend, since each merge deploys to production.
