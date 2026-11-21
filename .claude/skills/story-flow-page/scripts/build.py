@@ -25,7 +25,7 @@ def diagram(m: re.Match) -> str:
 
 # Check main.html itself, before the diagrams go in: Mermaid source may
 # contain "{{" (a hexagon node), which is not a leftover placeholder.
-leftover = re.search(r"\{\{(?!DIAGRAM:)[^}]*\}\}", main)
+leftover = re.search(r"\{\{(?!DIAGRAM:[\w-]+\}\})[^}]*\}\}", main)
 if leftover:
     sys.exit("main.html still has a placeholder: " + leftover.group(0))
 main = re.sub(r"\{\{DIAGRAM:([\w-]+)\}\}", diagram, main)
