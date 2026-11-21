@@ -74,7 +74,7 @@ Synced passkeys (iCloud Keychain / Google Password Manager) survive single-devic
 
 ### Requirement: Every console sign-in names one Organization
 
-The organizer console SHALL start every sign-in tied to exactly one Organizer's Organization and SHALL never start a sign-in that names none, because such a sign-in matches the fan account of a person whose fan and Organizer emails are the same. After a sign-in, the console SHALL remember that Organization on the device and name it in the next sign-in there until an address names another. The sign-in screen SHALL ask for the email alone: it SHALL show no domain or other text after the email field, since people type their whole email.
+The organizer console SHALL start every sign-in tied to exactly one Organizer's Organization and SHALL never start a sign-in that names none, because such a sign-in matches the fan account of a person whose fan and Organizer emails are the same. After a sign-in to an Organization admits the member, the console SHALL remember that Organization on the device and name it in the next sign-in there, until a later sign-in admits the member to another. An Organization named only by an address whose sign-in did not admit the member SHALL NOT be remembered and SHALL NOT replace the remembered one. The sign-in screen SHALL ask for the email alone: it SHALL show no domain or other text after the email field, since people type their whole email.
 
 #### Scenario: Owner whose email is also a fan account
 
@@ -85,6 +85,16 @@ The organizer console SHALL start every sign-in tied to exactly one Organizer's 
 
 - **WHEN** the console is opened on a device with no remembered Organization and no Organization in its address
 - **THEN** no sign-in starts and the find-organizer screen is shown
+
+#### Scenario: Link to an Organizer that does not exist
+
+- **WHEN** someone opens `https://organizer.liverty-music.app/?org=gone-records` on a device with no remembered Organization, the sign-in does not admit them, and they then open the console without the link
+- **THEN** no sign-in starts and the find-organizer screen is shown
+
+#### Scenario: Failed link keeps the remembered Organization
+
+- **WHEN** an owner whose device remembers xx-records' Organization opens `https://organizer.liverty-music.app/?org=gone-records`, that sign-in does not admit them, and they then open the console without the link
+- **THEN** the sign-in for xx-records' Organization starts
 
 #### Scenario: Sign-in screen asks for the email alone
 
