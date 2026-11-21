@@ -70,7 +70,7 @@ Each guide moment SHALL be shown at most once on a device. It SHALL count as see
 
 ### Requirement: Help replays a guide moment
 
-A help section that has a guide moment SHALL offer a 「チュートリアル」 (EN "Show me") button. Pressing it SHALL close help and show that moment on the current screen whether or not it was seen, under the rules of this surface except that the screen's own condition is not checked.
+A help section that has a guide moment SHALL offer a 「チュートリアル」 (EN "Show me") button while that moment's target is on the screen, and no button while it is not (the bubble field on the Concerts view, the 🔥 dots with no followed artist). Pressing it SHALL close help and show that moment on the current screen whether or not it was seen, under the rules of this surface except that the screen's own condition is not checked.
 
 #### Scenario: Replay the hype moment
 - **WHEN** a fan who has set hype levels before opens My Artists help and presses 「チュートリアル」 in the Hype section
@@ -78,7 +78,7 @@ A help section that has a guide moment SHALL offer a 「チュートリアル」
 
 ### Requirement: Guide moments are reported
 
-The fan app SHALL send one usage analytics event when a guide moment appears, one when the fan uses its target, and one when it ends otherwise, each naming the moment, whether the fan is a guest, and whether the fan is in onboarding; the ending event SHALL also say why it ended (a tap elsewhere, leaving the screen, or it was blocked and never shown).
+The fan app SHALL send one usage analytics event when a guide moment appears, one when the fan uses its target, and one when it ends otherwise, each naming the moment, whether the fan is a guest, and whether the fan is in onboarding; the ending event SHALL also say why it ended: a tap elsewhere, leaving the screen, or a sheet, dialog or celebration opening over it. A moment kept from appearing by such a blocker sends no event until it appears.
 
 #### Scenario: Moment used
 - **WHEN** the swap-tile moment appears and the fan taps the tile

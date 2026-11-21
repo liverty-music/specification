@@ -37,13 +37,13 @@ point fans to features instead.
 
 ### Requirement: Page-specific Help Content
 
-The help bottom-sheet SHALL display page-specific guide content when opened. Only the active page's content SHALL be rendered. Each page's content SHALL be composed of one or more discrete sub-sections (see "Multi-section help sheet structure"), so the sheet can address multiple topics without conflating them. Help text SHALL describe the controls the page shows today. A section whose feature has a guide moment SHALL end with a 「チュートリアル」 button that replays that moment, as the guide-moment surface's "Help replays a guide moment" states.
+The help bottom-sheet SHALL display page-specific guide content when opened. Only the active page's content SHALL be rendered. Each page's content SHALL be composed of one or more discrete sub-sections (see "Multi-section help sheet structure"), so the sheet can address multiple topics without conflating them. Help text SHALL describe the controls the page shows today. A section whose feature has a guide moment SHALL end with a 「チュートリアル」 button that replays that moment while the moment's target is on the screen, and SHALL show no such button while it is not, as the guide-moment surface's "Help replays a guide moment" states.
 
 #### Scenario: Discovery help content
 
 - **WHEN** the help bottom-sheet opens on the Discovery page for a signed-in fan
 - **THEN** the sheet renders three sub-sections:
-  - "アーティストの探し方" / "Finding Artists" — containing the description that tapping artist bubbles follows them, the inline chip demo, the two tips (genre tabs, search bar), and the 「チュートリアル」 button that replays the bubble field's guide moment
+  - "アーティストの探し方" / "Finding Artists" — containing the description that tapping artist bubbles follows them, the inline chip demo, the two tips (genre tabs, search bar), and, while the artist bubbles are shown, the 「チュートリアル」 button that replays the bubble field's guide moment
   - "ライブ" / "Concerts" — for a signed-in fan only — containing the description that the swap tile beside the orb opens the concerts near the chosen area within a chosen period, including artists the fan does not follow yet, and that an artist can be followed from a concert's detail, and the 「チュートリアル」 button that replays the swap tile's guide moment on the artist bubbles or the Concerts view's guide moment on the Concerts view
   - "フォロー解除" / "Unfollowing" — containing the single sentence pointing users to the My Artists page for unfollow operations
 - **WHEN** the help bottom-sheet opens on the Discovery page for a guest
@@ -65,7 +65,7 @@ The help bottom-sheet SHALL display page-specific guide content when opened. Onl
     - The description sentence: JA `Hype（熱量）で通知の範囲が変わります。` / EN `Hype controls how far away you get notified.` (the dots on each row explain themselves; the help does not describe them)
     - The tier table (see "Hype tier table is a 3-column grid") explaining the four hype tier values: `Watch / 通知なし` · `Home / HOMEエリアのライブを通知` · `Nearby / 近くのライブも通知` · `Away / 全てのライブを通知`
     - A practical tip: JA `遠征してでも見たいアーティストは Away に設定してみましょう！` / EN `Set artists you'd travel for to Away to never miss them!`
-    - The 「チュートリアル」 button that replays the hype dots' guide moment
+    - While the fan follows at least one artist (the 🔥 dots are shown), the 「チュートリアル」 button that replays the hype dots' guide moment
   - "フォロー解除" / "Unfollowing" — containing: JA `画面下中央のアクションメニューで「編集」を選ぶと、各行に削除ボタンが表示され、フォローを解除できます。` / EN `Choose Edit in the action menu at the bottom centre to show a remove button on each row and unfollow artists.`
 - **AND** the help text does not mention a slider, a header Edit control, a long-press gesture, or a menu at the bottom right (the action menu is centred in the bottom navigation bar)
 

@@ -38,7 +38,7 @@ Seen marks are `guide.seen:<id>` in localStorage through a new `src/adapter/stor
 
 The target gets a `guide-target="<id>"` custom attribute that adds `data-guide-active` while `current` is that id; CSS draws the glow (an inner edge for the bubble field, a ring for buttons) and the motion, which `prefers-reduced-motion` turns into a steady glow. The line is a `popover="manual"` element anchored to the target with CSS Anchor Positioning (`position-anchor`, `position-try-fallbacks: flip-block`), shown after any open top-layer element so it sits above it without `z-index`, with `role="status"`. It takes no pointer events. A document-level `pointerdown` listener in the service ends the moment on any tap outside the target; route `detaching` ends it on leave.
 
-`sheet.notify` is rendered inline instead, in the concert sheet's existing hint slot above the ticket section (`event-sheet-hint`), because an element anchored from outside cannot sit inside the sheet's scrolling dialog. Alternative: the existing `coach-mark` — rejected; it dims the viewport and its spec keeps it Welcome-only.
+`sheet.notify` is rendered inline instead, in the concert sheet's existing hint slot above the ticket section (`concert-sheet-hint`), because an element anchored from outside cannot sit inside the sheet's scrolling dialog. Alternative: the existing `coach-mark` — rejected; it dims the viewport and its spec keeps it Welcome-only.
 
 ### 3. Each screen requests its own moment
 
@@ -70,7 +70,7 @@ The auth callback already knows the sign-up came from 🔔 (`resolveAuthTrackEve
 
 ### 8. The follow action moves into the sheet header
 
-`event-follow-cta` moves from the end of the concert sheet into its header row beside the artist name (a two-column grid: name `1fr`, button `auto`), with `discoveryConcerts.follow.action` = 「Follow」 and `.following` = 「Following」 in both locales.
+`concert-follow-cta` moves from the end of the concert sheet into its header row beside the artist name (a two-column grid: name `1fr`, button `auto`), with `discoveryConcerts.follow.action` = 「Follow」 and `.following` = 「Following」 in both locales.
 
 ### 9. Copy
 
@@ -101,7 +101,7 @@ English values follow the spec scenarios. The Japanese copy was chosen by the ow
 
 ### 10. Analytics
 
-`analytics-events.ts` gains `guide_shown`, `guide_acted` and `guide_dismissed` with `moment`, `is_guest`, `is_onboarding`, and `reason` (`other_tap`, `route_leave`, `blocked`) on dismissal. With few users, PostHog session recordings confirm the timing.
+`analytics-events.ts` gains `guide_shown`, `guide_acted` and `guide_dismissed` with `moment`, `is_guest`, `is_onboarding`, and `reason` (`other_tap`, `route_leave`, `blocked`) on dismissal; `blocked` means a sheet, dialog or celebration opened over a moment already shown, and a moment that waits behind a blocker sends nothing until it appears. With few users, PostHog session recordings confirm the timing.
 
 ## Risks / Trade-offs
 
