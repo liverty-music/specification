@@ -51,6 +51,9 @@ Events that were removed (never fired, duplicated another event, or double-count
 | `ticket.lottery.entry.submitted` | FE | ticket | dormant | `event_id`, `lottery_round`, `trace_id?` | Lottery funnel — activates when ticket sales ship |
 | `ticket.purchase.initiated` | FE | ticket | dormant | `ticket_id`, `event_id`, `price_bucket`, `trace_id?` | Purchase funnel — activates when ticket sales ship |
 | `entry.checkin.attempted` | FE | entry | dormant | `event_id`, `trace_id?` | Entry funnel — activates when venue entry ships |
+| `guide.shown` | FE | guide | active | `moment`, `is_guest`, `is_onboarding`, `trace_id?` | Guide moments: how many fans see each moment (`discovery.follow`, `discovery.swap`, `concerts.filter`, `sheet.notify`, `myArtists.hype`). A moment waiting behind a sheet, a dialog or a celebration sends nothing until it appears |
+| `guide.acted` | FE | guide | active | `moment`, `is_guest`, `is_onboarding`, `trace_id?` | Guide moments: the share of shown moments whose target the fan used |
+| `guide.dismissed` | FE | guide | active | `moment`, `is_guest`, `is_onboarding`, `reason`, `trace_id?` | Guide moments: why a shown moment ended unused. `reason` is `other_tap` (a tap outside the target), `route_leave` (the fan left the screen) or `blocked` (a sheet, dialog or celebration opened over it) |
 | `notification.requested` | FE | notification | active | `source`, `trace_id?` | Notification opt-in funnel (paired) |
 | `push_subscription.subscribed` | BE | push_subscription | active | `device_type`, `trace_id?` | Notification opt-in funnel (paired) |
 | `push_subscription.unsubscribed` | BE | push_subscription | active | `device_type`, `trace_id?` | Push churn vs. browser cache-clear |
