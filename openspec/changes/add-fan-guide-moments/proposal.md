@@ -36,10 +36,11 @@ The fan web has grown features that fans do not find: following by tapping a bub
 - `components/infrastructure/fan/web/global/celebration-overlay`: no post-signup celebration for a sign-up from 🔔; the new second line.
 - `components/infrastructure/fan/web/global/post-signup-dialog`: the 🔔 sign-up path and its notification step title.
 - `components/infrastructure/fan/web/global/signup-prompt-banner`: the new banner copy.
-- `components/infrastructure/fan/web/global/home-area-selector`: the HOMEエリア title and the new description.
+- `components/infrastructure/fan/web/global/home-area-selector`: the HOMEエリア title and the new description; the Concerts view opens it only for a signed-in fan without a home area.
 - `stories/find-concerts-nearby`: the story is a signed-in fan's.
 - `stories/track-ticket-journey`: a guest's 🔔 press opens the sign-up dialog before hosted sign-up.
 - `stories/complete-onboarding`: a zero-follow arrival no longer keeps a help auto-open alive.
+- `stories/sign-up-or-sign-in`: the sign-up entry points lose the Concerts view's prompt, gain the 🔔 dialog's 「Sign Up」, and read 「Sign Up」 instead of 「登録する」.
 
 No entity, entity operation or usecase changes: every moment's condition reads data the screens already load (follows with their hype levels, journeys, the onboarding state, the push state). No proto change.
 

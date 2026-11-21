@@ -20,13 +20,19 @@ While the artist bubbles are shown to a fan who follows no artist (on the device
 
 ### Requirement: The swap tile's guide moment
 
-When a signed-in fan whose onboarding is complete opens the artist bubbles and has never switched Discovery's view on this device, Discovery SHALL show a guide moment on the swap tile with the line 「すぐに行けるライブも見てみよう！」 (EN "There are concerts you can go to soon!"). A tap on the swap tile SHALL end it and count as using it. It SHALL NOT appear to a guest or to a fan in onboarding.
+When a signed-in fan whose onboarding is complete and who follows at least one artist opens the artist bubbles and has never switched Discovery's view on this device, Discovery SHALL show a guide moment on the swap tile with the line 「すぐに行けるライブも見てみよう！」 (EN "There are concerts you can go to soon!"). A tap on the swap tile SHALL end it and count as using it. It SHALL NOT appear to a guest, to a fan in onboarding, or to a fan who follows no artist; for that fan the bubble field's moment comes first, and this moment waits until the fan follows an artist.
 
 #### Scenario: First visit after onboarding
 - **WHEN** a signed-in fan whose onboarding is complete opens Discovery on the artist bubbles for the first time on this device
 - **THEN** the swap tile glows and 「すぐに行けるライブも見てみよう！」 is shown
 - **WHEN** the fan taps the swap tile
 - **THEN** Discovery shows the Concerts view and the moment does not appear again on this device
+
+#### Scenario: Fan who signed up with no follows
+- **WHEN** a fan who signed up without following any artist opens Discovery on the artist bubbles
+- **THEN** the bubble field's moment appears and the swap tile's moment does not
+- **WHEN** the fan follows an artist and later opens Discovery on the artist bubbles again
+- **THEN** the swap tile's moment appears
 
 #### Scenario: Fan in onboarding
 - **WHEN** a signed-in fan in onboarding opens Discovery

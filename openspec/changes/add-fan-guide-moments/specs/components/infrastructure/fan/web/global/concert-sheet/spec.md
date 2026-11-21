@@ -4,7 +4,7 @@
 
 ### Requirement: The ticket sale notification button's guide moment
 
-When the concert sheet opens for a concert the fan has no status for, or the status 落選 (Lost), and the fan has no journey for any event (a guest never has one), the sheet SHALL show a guide moment on the ticket sale notification button: the button glows and swings like a bell, and the line 「気になるライブは見逃しNG！」 (EN "Don't miss the concerts you care about!") is shown inside the sheet directly above the ticket section. No sound SHALL play. Pressing the button SHALL end the moment and count as using it. The concert sheet on Welcome SHALL show no guide moment.
+When the concert sheet opens for a concert the fan has no status for, and the fan has no journey for any event (a guest never has one), the sheet SHALL show a guide moment on the ticket sale notification button: the button glows and swings like a bell, and the line 「気になるライブは見逃しNG！」 (EN "Don't miss the concerts you care about!") is shown inside the sheet directly above the ticket section. No sound SHALL play. Pressing the button SHALL end the moment and count as using it. The concert sheet on Welcome SHALL show no guide moment.
 
 #### Scenario: First concert a guest opens
 - **WHEN** a guest opens a concert's detail sheet from the Timetable for the first time on this device

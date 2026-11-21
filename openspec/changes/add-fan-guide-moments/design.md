@@ -45,9 +45,9 @@ The target gets a `guide-target="<id>"` custom attribute that adds `data-guide-a
 | moment | requested when | data read | acted |
 |---|---|---|---|
 | `discovery.follow` | the bubble field's first name reveal (the `first-name` reveal mark) and `followStore.followedCount === 0` | `FollowService.List` or the guest's follows on the device | first follow from a bubble or a search result |
-| `discovery.swap` | artist bubbles attached, signed in, `onboarding.isCompleted`, and the device has never switched views | onboarding state and the view-swap mark on the device | swap tile tap (also sets the view-swap mark) |
+| `discovery.swap` | artist bubbles attached, signed in, `onboarding.isCompleted`, at least one followed artist, and the device has never switched views | onboarding state and the view-swap mark on the device | swap tile tap (also sets the view-swap mark) |
 | `concerts.filter` | the Concerts view's first load settles (list or empty state) | — | the action menu opens |
-| `sheet.notify` | the concert sheet opens, not on Welcome, status is none or Lost, and the journey map is empty | `TicketJourneyService.List` (empty for a guest without a request) | notification button press |
+| `sheet.notify` | the concert sheet opens, not on Welcome, status is none, and the journey map is empty | `TicketJourneyService.List` (empty for a guest without a request) | notification button press |
 | `myArtists.hype` | My Artists loaded, no home-area sheet open (or after `onHomeSheetHidden`), at least one follow, every hype is `nearby` | `FollowService.List` hype or the guest's follows | the first hype change |
 
 Every value comes from data the screen already loads; no new RPC.
