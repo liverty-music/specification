@@ -27,5 +27,5 @@ A failure on `main` that no pull request caused (a flaky test, a test that break
 - **`liverty-music/frontend`**, **`liverty-music/backend`** — `ci.yaml` / `ci.yml`: the `report-main-failure` job is replaced by a call to the reusable workflow that runs on every scheduled run (pass or fail); cron moved to minute 17.
 - **`liverty-music/cloud-provisioning`** — Pulumi: the Claude GitHub App's installation covers frontend, backend and `.github` (`github.AppInstallationRepository`); runbook `docs/runbooks/main-ci-auto-fix.md` (how the routine and the Slack connector are set up, paused and recreated). The routine and the Slack connector have no API Pulumi can call (design D5).
 - **claude.ai** (by hand) — one routine with GitHub triggers on frontend and backend, the Slack connector.
-- **Cost / limits** — routine runs count against the owner's Claude subscription and the routine hourly limits; at most one run per nightly failure.
+- **Cost / limits** — routine runs count against the owner's Claude subscription and the routine hourly limits; at most one run per outbreak (a failure while the Issue is still open only adds a comment, which starts no run).
 - **Unaffected** — branch protection and rulesets, the release path, the pull request CI, product code.
