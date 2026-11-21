@@ -15,18 +15,21 @@ import re
 import sys
 
 work, out, title = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), sys.argv[3]
-template = (pathlib.Path(__file__).parent.parent / "assets" / "page-template.html").read_text()
-main = (work / "main.html").read_text()
+template = (pathlib.Path(__file__).parent.parent / "assets" / "page-template.html").read_text(encoding="utf-8")
+main = (work / "main.html").read_text(encoding="utf-8")
 
 
 def diagram(m: re.Match) -> str:
-    return html.escape((work / f"{m.group(1)}.mmd").read_text().rstrip("\n"), quote=False)
+    return html.escape((work / f"{m.group(1)}.mmd").read_text(encoding="utf-8").rstrip("\n"), quote=False)
 
 
+# Check main.html itself, before the diagrams go in: Mermaid source may
+# contain "{{" (a hexagon node), which is not a leftover placeholder.
+leftover = re.search(r"\{\{(?!DIAGRAM:)[^}]*\}\}", main)
+if leftover:
+    sys.exit("main.html still has a placeholder: " + leftover.group(0))
 main = re.sub(r"\{\{DIAGRAM:([\w-]+)\}\}", diagram, main)
-if "{{" in main:
-    sys.exit("main.html still has a {{...}} placeholder: " + re.search(r"\{\{[^}]*\}\}", main).group(0))
 page = template.replace("{{TITLE}}", html.escape(title), 1)
 page = re.sub(r"<main>.*</main>", lambda _: "<main>\n" + main.strip("\n") + "\n</main>", page, flags=re.S)
-out.write_text(page)
+out.write_text(page, encoding="utf-8")
 print(f"wrote {out}")
