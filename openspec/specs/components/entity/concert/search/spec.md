@@ -162,29 +162,56 @@ Search SHALL return only the solo shows, co-headliner bills (対バン) and tour
 - **WHEN** the source lists a two-act bill organized by the Artist
 - **THEN** Search returns it as a SINGLE series
 
-### Requirement: Search reads the official site's concert pages
+### Requirement: Each external call reports its usage
 
-When the Artist has an official site, Search SHALL read the site's top page once before searching. Of the top page's links to pages of the official site's registrable domain, those whose path names a live, schedule, tour, concert or show page, and after them those whose path names a news page, SHALL be the pages Search reads first, at most 8 of them in total, each group in the order the page lists them. Links to other domains, and links whose path names none of those pages, SHALL be ignored. Search SHALL read at most the first 2 MB of the top page and take links from that part only. If the top page cannot be read — it fails to load within 5 seconds, answers with an error, redirects to a page of another registrable domain, or its host resolves to a private, loopback or link-local address — or it carries no such links, Search SHALL search as it does without them. If the site's host starts with `www.` and does not resolve, Search SHALL read the top page of the host without `www.` instead, and the registrable domain of that host SHALL be the official site's. A top page that cannot be read SHALL NOT fail Search.
+Every request Search sends to the external search model, including a retried or repeated one and one that fails, SHALL be reported once for product analytics as an LLM generation under the caller's trace, carrying: the model and its release, the release version of the backend, the Artist, its official site, the pages listed in the request and the start date; the input, output, thinking, tool-use and cached token counts as separate numbers; the latency; the web search queries the model issued, the sources it cited, and each page read with its result; the finish reason, any block reason, and the numbers of series and events parsed; and, for a failure, the kind of failure. The prompt text and the response body SHALL NOT be reported. A failure to report SHALL NOT change what Search returns.
 
-#### Scenario: Concert pages linked from the top page
-- **WHEN** the official top page `https://vaundy.jp/` links to `https://vaundy.jp/live/`, `https://member.vaundy.jp/feature/ASIAARENATOUR_2026` and `https://vaundy.jp/news/`
-- **THEN** Search reads `https://vaundy.jp/live/` and `https://member.vaundy.jp/feature/ASIAARENATOUR_2026` first, then `https://vaundy.jp/news/`
+#### Scenario: Search with a retry
+- **WHEN** the first request fails transiently and the second succeeds
+- **THEN** two generations are reported under the same trace, the first marked as a transient failure
 
-#### Scenario: News pages after concert pages
-- **WHEN** the official top page lists a news article before 8 same-domain live pages
-- **THEN** Search reads the 8 live pages first and not the news article
+#### Scenario: Grounded search
+- **WHEN** the model issues 3 web search queries and reads 2 pages
+- **THEN** the generation lists the 3 queries and the 2 pages with their results
+
+### Requirement: Search lists the official top page's links
+
+When the Artist has an official site, Search SHALL read the site's top page once before searching and SHALL list the top page's links in the request, each with its label — the link text, or else the alternative text of an image inside the link — in the order the page lists them, each link once, at most 60. The model, not Search, decides which listed pages announce shows. Links to any domain SHALL be listed except:
+
+- links to domains that never carry an artist's official show announcements: social networks, music streaming, link hubs, shops, ticket vendors, fan-club and login platforms, and lyrics sites;
+- links to pages of the official site's registrable domain whose path names a site-information, legal, artist-profile, discography or membership page (privacy, terms, contact, FAQ, profile, biography, discography, sign-in, account and the like).
+
+A link to the official site's own registrable domain SHALL be listed even when that domain is one of the excluded third-party domains (an official site on `sites.google.com`). A link to the top page itself, a link whose URL is longer than 500 bytes, and the part of a label beyond its first 100 characters SHALL be left out. Labels SHALL be read in the character set the top page declares.
+
+The official site passed in the request SHALL be the URL the top page was read from. Search SHALL read at most the first 2 MB of the top page and take links from that part only. If the top page cannot be read — it fails to load within 5 seconds, answers with an error, redirects to a page of another registrable domain, or its host resolves to a private, loopback or link-local address — or it carries no link to list, Search SHALL search as it does without them. If the site's host starts with `www.` and does not resolve, Search SHALL read the top page of the host without `www.` instead, and the registrable domain of that host SHALL be the official site's. A top page that cannot be read SHALL NOT fail Search.
+
+#### Scenario: Links listed with their labels
+- **WHEN** the official top page `https://vaundy.jp/` links to `https://vaundy.jp/live/` with the text "LIVE", to `https://member.vaundy.jp/feature/ASIAARENATOUR_2026` with an image whose alternative text is "ASIA ARENA TOUR 2026", and to `https://vaundy.jp/news/` with the text "NEWS"
+- **THEN** the request lists `LIVE: https://vaundy.jp/live/`, `ASIA ARENA TOUR 2026: https://member.vaundy.jp/feature/ASIAARENATOUR_2026` and `NEWS: https://vaundy.jp/news/`, in that order
+
+#### Scenario: Special show page without a concert word in its path
+- **WHEN** the official top page links to `https://sp.super-beaver.com/feature/budokan2027` with an image whose alternative text is "武道館2027"
+- **THEN** the request lists `武道館2027: https://sp.super-beaver.com/feature/budokan2027`
+
+#### Scenario: Official tour site on another domain
+- **WHEN** the official top page `http://gogovanillas.com/` links to `https://ggv-backhometour2027.jp`
+- **THEN** the request lists that link
 
 #### Scenario: Link to another domain ignored
-- **WHEN** the official top page links to a tour page on a ticket vendor's domain
-- **THEN** Search does not list that page among the pages it reads first
+- **WHEN** the official top page links to a tour page on a ticket vendor's domain and to the artist's account on a social network
+- **THEN** Search does not list either link
 
-#### Scenario: More than 8 concert links
-- **WHEN** the official top page links to 12 same-domain live pages
-- **THEN** Search reads the first 8 of them in page order
+#### Scenario: Site information page left out
+- **WHEN** the official top page links to its own privacy policy, terms of use and discography pages
+- **THEN** Search does not list those links
+
+#### Scenario: More than 60 links
+- **WHEN** the official top page carries 70 links that would be listed
+- **THEN** Search lists the first 60 of them in page order
 
 #### Scenario: Top page larger than 2 MB
 - **WHEN** the official top page is 3 MB long and links to `https://vaundy.jp/live/` within its first 2 MB
-- **THEN** Search reads `https://vaundy.jp/live/` first and does not fail
+- **THEN** the request lists `https://vaundy.jp/live/` and Search does not fail
 
 #### Scenario: Redirect to another domain
 - **WHEN** the official top page redirects to a page on a link-sharing service's domain
@@ -200,16 +227,4 @@ When the Artist has an official site, Search SHALL read the site's top page once
 
 #### Scenario: www host without DNS
 - **WHEN** the official site is `http://www.super-beaver.com/`, `www.super-beaver.com` does not resolve and `super-beaver.com` serves the top page
-- **THEN** Search reads the concert pages linked from `super-beaver.com`
-
-### Requirement: Each external call reports its usage
-
-Every request Search sends to the external search model, including a retried or repeated one and one that fails, SHALL be reported once for product analytics as an LLM generation under the caller's trace, carrying: the model and its release, the release version of the backend, the Artist, its official site, the pages listed in the request and the start date; the input, output, thinking, tool-use and cached token counts as separate numbers; the latency; the web search queries the model issued, the sources it cited, and each page read with its result; the finish reason, any block reason, and the numbers of series and events parsed; and, for a failure, the kind of failure. The prompt text and the response body SHALL NOT be reported. A failure to report SHALL NOT change what Search returns.
-
-#### Scenario: Search with a retry
-- **WHEN** the first request fails transiently and the second succeeds
-- **THEN** two generations are reported under the same trace, the first marked as a transient failure
-
-#### Scenario: Grounded search
-- **WHEN** the model issues 3 web search queries and reads 2 pages
-- **THEN** the generation lists the 3 queries and the 2 pages with their results
+- **THEN** Search lists the links of the top page of `super-beaver.com` and passes that page's URL as the official site
