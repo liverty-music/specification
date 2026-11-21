@@ -34,7 +34,9 @@ A new reusable workflow `liverty-music/.github/.github/workflows/report-main-ci.
 | success | yes | if a failed run in the Issue has this run's SHA, add label `flaky`; comment "passed on <sha>"; close |
 | success | none | nothing |
 
-The failed SHAs are read back from the Issue body and comments (one line `sha: <40 hex>` per report), so no state lives outside the Issue. Labels are created by the job with `gh label create --force`, as `incident-triage.yml` does, since the Pulumi GitHub token has no Issues write (archived change autonomous-incident-response, design "Dedup").
+The failed SHAs are read back from the Issue body and comments (one line `sha: <40 hex>` per report), so no state lives outside the Issue.
+
+frontend and backend are public, so anyone can open an Issue with that title or comment on the real one. The workflow therefore trusts only what its own identity wrote: "the open Issue" is an open Issue with that title, label `ci` and author `github-actions[bot]`, and failed SHAs are read only from that Issue's body and from comments by `github-actions[bot]`. An Issue someone else opens with the same title is ignored. Labels are created by the job with `gh label create --force`, as `incident-triage.yml` does, since the Pulumi GitHub token has no Issues write (archived change autonomous-incident-response, design "Dedup").
 
 Why reusable: the two jobs are copies today, and the lifecycle rules would be copied twice more. `claude-review.yml` already lives there and both repositories call it.
 
@@ -48,7 +50,7 @@ GitHub documents that the `schedule` event can be delayed at high load, that the
 
 One routine on claude.ai, owned by the owner's account:
 
-- **Triggers:** GitHub event "Issue", actions opened and reopened, on `liverty-music/frontend` and `liverty-music/backend`. Routines document no filter for Issue events, so the instructions end the run at once when the Issue title is not "CI failing on main".
+- **Triggers:** GitHub event "Issue", action opened, on `liverty-music/frontend` and `liverty-music/backend`. Routines document no filter for Issue events, so the instructions' first step ends the run, doing nothing else (no comment, no Slack message), unless the Issue's author is `github-actions[bot]`, its title is "CI failing on main" and it has the label `ci`. The repositories are public: without the author check, anyone could start a run on the owner's subscription with text of their choosing. The run reads the failed run ID only from the Issue body the workflow wrote, and checks with `gh run view` that the run is a `schedule` run of the CI workflow on `main`.
 - **Repositories:** the triggering repository and `liverty-music/.github` (for the instructions).
 - **Prompt:** one line, "Read `routines/fix-main-ci.md` in liverty-music/.github and follow it for the Issue that triggered this run." The behaviour is in that file, reviewed by pull request like code; the claude.ai settings only point at it.
 - **Connectors:** Slack (post only).
@@ -89,8 +91,9 @@ The runbook `cloud-provisioning/docs/runbooks/main-ci-auto-fix.md` records the r
 - [Routines are a research preview; settings and limits can change, and they live outside the repositories] → the behaviour is in a versioned file; the runbook records the settings; D4 is the exit.
 - [Claude "fixes" a flaky test by retrying or loosening it] → the instructions forbid it, and the owner reviews every pull request.
 - [Text in logs or Issues steers Claude (prompt injection)] → the instructions treat it as data; Claude can only push `claude/` branches and open pull requests, and `main` needs the owner's merge.
-- [An Issue opened by hand with the same title starts a run] → acceptable: it is the owner's own action.
-- [Runs share the owner's Claude subscription] → at most one run per outbreak, since a still-open Issue only gets comments.
+- [Someone outside opens an Issue with the same title, or comments on the real one] → the workflow and the routine trust only Issues and comments by `github-actions[bot]` (D1, D3); other Issues start nothing and change no state.
+- [Repeated real failures use up the routine limits] → one run per outbreak: a failure while the Issue is open only adds a comment, which is not a trigger.
+- [Runs share the owner's Claude subscription] → at most one run per outbreak (above).
 
 ## Migration Plan
 
