@@ -58,16 +58,17 @@ service LotteryEntryService {
   // - NOT_FOUND: The sale or the TicketStock does not exist, or the caller has
   //   no stored account.
   // - INVALID_ARGUMENT: The ticket_sale_id or ticket_stock_id is missing or
-  //   malformed, the ticket_count is not greater than 0 or is above the
-  //   event's per-account limit, the referral_code is given and malformed, or
-  //   the full name or phone number is missing or breaks the User's personal
-  //   details rule (the phone number must be in E.164 form).
+  //   malformed, the ticket_count is not 1 to 10, the referral_code is given
+  //   and malformed, or the full name or phone number is missing or breaks
+  //   the User's personal details rule (the phone number must be in E.164
+  //   form).
   // - FAILED_PRECONDITION: The sale is not a LOTTERY sale, does not name the
   //   stock's event or its window is not open, the sale requires verification
-  //   and the caller holds no Active IdentityVerification, the caller's
-  //   tickets for the event plus the count exceed the per-account limit, the
-  //   caller holds tickets of another SeatType for the event, or the caller
-  //   already has an entry in the sale for the stock's event.
+  //   and the caller holds no Active IdentityVerification, the ticket_count
+  //   is above the event's per-account limit, the caller's tickets for the
+  //   event plus the count exceed the per-account limit, the caller holds
+  //   tickets of another SeatType for the event, or the caller already has an
+  //   entry in the sale for the stock's event.
   // - UNAVAILABLE: Card payments are temporarily unavailable.
   rpc AuthorizeCard(AuthorizeCardRequest) returns (AuthorizeCardResponse);
 

@@ -57,13 +57,14 @@ service CheckoutService {
   // - NOT_FOUND: The TicketStock does not exist, or the caller has no stored
   //   account.
   // - INVALID_ARGUMENT: The ticket_stock_id is missing or malformed, the
-  //   ticket_count is missing, not greater than 0 or above the event's
-  //   per-account limit, or the referral_code is given and malformed.
+  //   ticket_count is missing or not 1 to 10, or the referral_code is given
+  //   and malformed.
   // - FAILED_PRECONDITION: The stock's event's concert is not published (for
   //   example cancelled), no FIRST_COME sale of the event is open, a closed
   //   LOTTERY sale of the event is not drawn yet for the stock, the sale
   //   requires verification and the caller holds no Active
-  //   IdentityVerification, the caller's tickets for the event plus the count
+  //   IdentityVerification, the ticket_count is above the event's
+  //   per-account limit, the caller's tickets for the event plus the count
   //   exceed the per-account limit, or the caller holds tickets of another
   //   SeatType for the event.
   // - RESOURCE_EXHAUSTED: Not enough tickets remain, including when every
