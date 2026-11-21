@@ -1,6 +1,6 @@
 ## 1. Evaluation harness (backend)
 
-- [x] 1.1 Re-capture the fixture of `ticket_sale_eval_integration_test.go` from current public pages (design D1): at least 4 artists and 10 sales that open after the capture time, including a lottery with a result date, a later round and a series with two or more upcoming sales, with `spEvalNow` set to the capture time; verify each expected sale against the page that announces it and record the artists, series and capture time in the harness doc comment
+- [x] 1.1 Re-capture the fixture of `ticket_sale_eval_integration_test.go` from current public pages (design D1): at least 4 artists and 10 sales that each page still states in full, including a lottery with a result date, a later round and a series with two or more upcoming sales, with `spEvalNow` frozen to a time before they open; verify each expected sale against the page that announces it and record the artists, series and capture time in the harness doc comment
 - [x] 1.2 Record per call the search queries, tokens, cost at the 2027-01-01 price (`Pricing2027`), latency and empty or failed responses, and write the results under `testdata/ab_results/` (design D2); verify with a one-case run (`GEMINI_SP_EVAL=1 GEMINI_SP_EVAL_CASES=<case> GEMINI_SP_EVAL_REPS=1`, dev ESC `pulumiConfig.geminiSearchApiKey`) that the file has every column
 
 ## 2. Evaluation runs (backend)

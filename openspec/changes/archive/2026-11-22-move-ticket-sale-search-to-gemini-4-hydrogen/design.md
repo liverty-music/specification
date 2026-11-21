@@ -38,5 +38,5 @@ Per-sale results are compared, not only totals: a total can hide a sale dropped 
 ## Risks / Trade-offs
 
 - [Few sales; a model can win by chance] → 3 repetitions and per-sale comparison (D3).
-- [Sales open between capture and evaluation] → the harness freezes the current time to the capture time, and the runs happen within a day of the capture.
+- [Sales open between capture and evaluation] → the harness freezes the current time to the chosen time before the sales open (D1), and the runs happen within a day of the capture, so the pages still list the same sales.
 - [The completion line makes the model search more] → cost per call is part of D3; at 56 searches a month the absolute change is small.
