@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provides persistent, page-specific help content via a help icon and bottom-sheet on the Discovery, Timetable, and My Artists pages. Auto-opens on first visit to each page during onboarding to deliver contextual guidance without blocking the user's flow. The help icon remains accessible after onboarding completes so users can revisit guidance at any time.
+Provides page-specific help on the Discovery, Timetable and My Artists pages: a bottom sheet the fan opens from the help item of the action menu whenever they want it. Help never opens on its own; the guide moments point to one feature at the moment it is needed, and the help sheet offers 「チュートリアル」 to show a page's moment again.
 
 ## Requirements
 
@@ -12,9 +12,9 @@ The system SHALL make page-specific help reachable at all times on the Discovery
 Timetable, and My Artists pages, for all users regardless of onboarding state, via a
 help item in the action menu (see the `fab-action-launcher` capability). The
 page header SHALL NOT host a separate `?` help trigger button; help is contributed as
-a launcher item on these pages. Auto-open on first visit (defined by the
-"Auto-open on First Page Visit" requirement) opens the same help bottom-sheet
-directly and does not depend on the presence of a header trigger.
+a launcher item on these pages. Help SHALL open only when the fan chooses that
+item; it SHALL never open on its own. Guide moments (the guide-moment surface)
+point fans to features instead.
 
 #### Scenario: Help icon is always visible
 
@@ -29,52 +29,29 @@ directly and does not depend on the presence of a header trigger.
 - **THEN** the header SHALL NOT contain a `?` help trigger button
 - **AND** help SHALL be reachable via the action menu
 
+#### Scenario: Help never opens on its own
+
+- **WHEN** a guest in onboarding opens Discovery or My Artists for the first time
+- **THEN** the help bottom-sheet does not open until the guest chooses the help item
+
 #### Scenario: Pages without page-specific help contribute no help item
 
 - **WHEN** the user is on a page that has no page-specific help content (e.g. settings)
 - **THEN** no help item SHALL be contributed to the launcher for that page
 
-### Requirement: Auto-open on First Page Visit
-
-The system SHALL automatically open the help bottom-sheet on the user's first visit to the Discovery page and to the My Artists page while the user is onboarding. The Timetable help SHALL never open on its own. Each page's help SHALL auto-open at most once until the guest's local data is reset (see "Help seen flags cleared on onboarding reset").
-
-#### Scenario: First visit to Discovery during onboarding
-
-- **WHEN** the user arrives at the Discovery page for the first time while onboarding
-- **THEN** the Discovery help bottom-sheet opens automatically
-
-#### Scenario: First visit to My Artists during onboarding
-
-- **WHEN** the user arrives at the My Artists page for the first time while onboarding
-- **THEN** the My Artists help bottom-sheet opens automatically
-
-#### Scenario: Subsequent visits do not auto-open
-
-- **WHEN** the user visits a page whose help has already auto-opened
-- **THEN** the help bottom-sheet does not open automatically
-- **AND** the user can open it from the help item of the action menu
-
-#### Scenario: No auto-open after onboarding
-
-- **WHEN** a user whose onboarding is completed visits Discovery or My Artists for the first time
-- **THEN** the help bottom-sheet does not open automatically
-
-#### Scenario: Timetable help never auto-opens
-
-- **WHEN** the user arrives at the Timetable for the first time while onboarding
-- **THEN** the Timetable help bottom-sheet does not open automatically
-
 ### Requirement: Page-specific Help Content
 
-The help bottom-sheet SHALL display page-specific guide content when opened. Only the active page's content SHALL be rendered. Each page's content SHALL be composed of one or more discrete sub-sections (see "Multi-section help sheet structure"), so the sheet can address multiple topics without conflating them. Help text SHALL describe the controls the page shows today.
+The help bottom-sheet SHALL display page-specific guide content when opened. Only the active page's content SHALL be rendered. Each page's content SHALL be composed of one or more discrete sub-sections (see "Multi-section help sheet structure"), so the sheet can address multiple topics without conflating them. Help text SHALL describe the controls the page shows today. A section whose feature has a guide moment SHALL end with a 「チュートリアル」 button that replays that moment while the moment's target is on the screen, and SHALL show no such button while it is not, as the guide-moment surface's "Help replays a guide moment" states.
 
 #### Scenario: Discovery help content
 
-- **WHEN** the help bottom-sheet opens on the Discovery page
+- **WHEN** the help bottom-sheet opens on the Discovery page for a signed-in fan
 - **THEN** the sheet renders three sub-sections:
-  - "アーティストの探し方" / "Finding Artists" — containing the description that tapping artist bubbles follows them, the inline chip demo, and the two tips (genre tabs, search bar)
-  - "ライブ" / "Concerts" — containing the description that the swap tile beside the orb opens the concerts near the chosen area within a chosen period, including artists the fan does not follow yet, and that an artist can be followed from a concert's detail
+  - "アーティストの探し方" / "Finding Artists" — containing the description that tapping artist bubbles follows them, the inline chip demo, the two tips (genre tabs, search bar), and, while the artist bubbles are shown, the 「チュートリアル」 button that replays the bubble field's guide moment
+  - "ライブ" / "Concerts" — for a signed-in fan only — containing the description that the swap tile beside the orb opens the concerts near the chosen area within a chosen period, including artists the fan does not follow yet, and that an artist can be followed from a concert's detail, and the 「チュートリアル」 button that replays the swap tile's guide moment on the artist bubbles or the Concerts view's guide moment on the Concerts view
   - "フォロー解除" / "Unfollowing" — containing the single sentence pointing users to the My Artists page for unfollow operations
+- **WHEN** the help bottom-sheet opens on the Discovery page for a guest
+- **THEN** the sheet renders "アーティストの探し方" and "フォロー解除" and no "ライブ" section
 
 #### Scenario: Timetable help content
 
@@ -90,10 +67,16 @@ The help bottom-sheet SHALL display page-specific guide content when opened. Onl
 - **THEN** the sheet renders two sub-sections, on every device:
   - "Hype（熱量） について" / "About Hype" — containing:
     - The description sentence: JA `Hype（熱量）で通知の範囲が変わります。` / EN `Hype controls how far away you get notified.` (the dots on each row explain themselves; the help does not describe them)
-    - The tier table (see "Hype tier table is a 3-column grid") explaining the four hype tier values: `Watch / 通知なし` · `Home / 居住エリアのライブを通知` · `Nearby / 近くのライブも通知` · `Away / 全てのライブを通知`
+    - The tier table (see "Hype tier table is a 3-column grid") explaining the four hype tier values: `Watch / 通知なし` · `Home / HOMEエリアのライブを通知` · `Nearby / 近くのライブも通知` · `Away / 全てのライブを通知`
     - A practical tip: JA `遠征してでも見たいアーティストは Away に設定してみましょう！` / EN `Set artists you'd travel for to Away to never miss them!`
+    - While the fan follows at least one artist (the 🔥 dots are shown), the 「チュートリアル」 button that replays the hype dots' guide moment
   - "フォロー解除" / "Unfollowing" — containing: JA `画面下中央のアクションメニューで「編集」を選ぶと、各行に削除ボタンが表示され、フォローを解除できます。` / EN `Choose Edit in the action menu at the bottom centre to show a remove button on each row and unfollow artists.`
 - **AND** the help text does not mention a slider, a header Edit control, a long-press gesture, or a menu at the bottom right (the action menu is centred in the bottom navigation bar)
+
+#### Scenario: Replay from Discovery help
+
+- **WHEN** a fan who follows 10 artists opens Discovery help on the artist bubbles and presses 「チュートリアル」 in "アーティストの探し方"
+- **THEN** help closes and the bubble field's guide moment appears
 
 ### Requirement: Multi-section help sheet structure
 
@@ -140,7 +123,7 @@ The My Artists help sheet's hype tier explanation SHALL render as a list of four
 - **WHEN** the help sheet renders the hype tier grid
 - **THEN** the four rows are (in order, top-to-bottom):
   - `👀` · `Watch` · "通知なし" (JA) / "No notifications" (EN)
-  - `🔥` · `Home` · "居住エリアのライブを通知" (JA) / "Notify for home-area concerts" (EN)
+  - `🔥` · `Home` · "HOMEエリアのライブを通知" (JA) / "Notify for home-area concerts" (EN)
   - `🔥🔥` · `Nearby` · "近くのライブも通知" (JA) / "Notify for nearby concerts too" (EN)
   - `🔥🔥🔥` · `Away` · "全てのライブを通知" (JA) / "Notify for every concert" (EN)
 - **AND** the tier labels in column 2 are the invariant English forms regardless of locale
@@ -165,15 +148,20 @@ The help bottom-sheet SHALL use design tokens that ensure clear visual distincti
 
 ### Requirement: Help seen flags cleared on onboarding reset
 
-The system SHALL clear all per-page help-seen flags, and the per-level flags that record which hype snacks My Artists has shown, when the guest's local data is reset, at sign-in and when sign-up completes, so that contextual help auto-opens and each hype snack appears again for the next session. Tapping [Get Started] on Welcome SHALL NOT clear them.
+The system SHALL clear the per-level flags that record which hype snacks My Artists has shown when the guest's local data is reset, at sign-in and when sign-up completes, so that each hype snack appears again for the next session. Tapping [Get Started] on Welcome SHALL NOT clear them. The record of seen guide moments SHALL NOT be cleared then (guide-moment surface, "Each guide moment is shown once per device and survives sign-up").
 
 #### Scenario: Help-seen flags cleared on fresh onboarding
 
 - **WHEN** the guest's local data is reset at sign-in or when sign-up completes
-- **THEN** the system SHALL clear all `onboarding.helpSeen:*` keys from localStorage
+- **THEN** the system SHALL clear the flags that record which hype snacks were shown
 - **AND** tapping [Get Started] on Welcome SHALL NOT clear them
 
 #### Scenario: Hype snack flags cleared at sign-up
 
 - **WHEN** a guest who saw the hype snack for Away completes sign-up and then sets an artist to Away
 - **THEN** the hype snack for Away appears again
+
+#### Scenario: Seen guide moments are kept at sign-up
+
+- **WHEN** a guest who saw the hype dots' guide moment completes sign-up and opens My Artists
+- **THEN** the hype dots' guide moment does not appear again

@@ -9,11 +9,11 @@ The system SHALL display a non-modal signup prompt banner to guest users after o
 #### Scenario: Banner copy — Japanese
 
 - **WHEN** the signup prompt banner is displayed to a guest user in Japanese locale
-- **THEN** the banner SHALL display: 「新着ライブを通知で受け取ろう！」
+- **THEN** the banner SHALL display: 「新着ライブ通知を受け取ろう！」
 - **AND** the banner SHALL include a [Sign Up] CTA button
 
 #### Scenario: Banner copy — English
 
 - **WHEN** the signup prompt banner is displayed to a guest user in English locale
-- **THEN** the banner SHALL display: "Get new concerts by notification!"
+- **THEN** the banner SHALL display: "Get new concert alerts!"
 - **AND** the banner SHALL include a [Sign Up] CTA button

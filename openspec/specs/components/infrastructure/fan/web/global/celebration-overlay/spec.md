@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provides an emotional payoff on the Timetable, gated on the timetable being real (region set, data loaded). Fired from a single `maybeCelebrate()` decision point in two tiers: a light (no-confetti) acknowledgement on a guest's first timetable arrival during onboarding, and a full confetti celebration on the post-signup redirect that hands off to the PostSignupDialog.
+Provides an emotional payoff on the Timetable, gated on the timetable being real (region set, data loaded). Fired from a single `maybeCelebrate()` decision point in two tiers: a light (no-confetti) acknowledgement on a guest's first timetable arrival during onboarding, and a full confetti celebration on the post-signup redirect that hands off to the PostSignupDialog. A sign-up started from a concert sheet's ticket sale notification button shows no celebration; the post-signup dialog says what follows instead.
 
 ## Requirements
 
@@ -11,7 +11,7 @@ Provides an emotional payoff on the Timetable, gated on the timetable being real
 The system SHALL present a celebration overlay at two distinct moments on the Timetable, gated on the timetable being real (home area set and data loaded). Each tier SHALL be shown at most once on the device.
 
 - **Light tier** (a fan in onboarding arriving at the Timetable): shown only when the fan follows at least 1 artist AND the timetable holds at least 1 concert. It renders without confetti and shows three lines: 「タイムテーブル完成！」, 「{{artists}}組のアーティストの{{concerts}}公演が見つかりました」 (the number of followed artists and the number of concerts on the timetable) and 「タップして見てみよう」.
-- **Post-signup tier** (the Timetable right after a sign-up): renders with confetti, headline 「ようこそ！もうライブは見逃さない」 and body 「新着ライブは、Liverty Music が追いかけます！」, and on dismissal opens the post-signup dialog.
+- **Post-signup tier** (the Timetable right after a sign-up): renders with confetti, headline 「ようこそ！もうライブは見逃さない」 and a body of two lines, 「新着ライブは」 and 「Liverty Music にお任せ！」, and on dismissal opens the post-signup dialog. A sign-up started from a concert sheet's ticket sale notification button SHALL NOT show this tier; the post-signup dialog states what follows it instead.
 
 The English locale SHALL show equivalent texts.
 
@@ -52,8 +52,13 @@ The English locale SHALL show equivalent texts.
 
 - **WHEN** a newly signed-up user is redirected to the Timetable with a pending post-signup celebration
 - **AND** the home area is set and the timetable data has loaded
-- **THEN** the system SHALL display the overlay with confetti, 「ようこそ！もうライブは見逃さない」 and 「新着ライブは、Liverty Music が追いかけます！」
+- **THEN** the system SHALL display the overlay with confetti, 「ようこそ！もうライブは見逃さない」 and the two lines 「新着ライブは」 「Liverty Music にお任せ！」
 - **AND** on dismissal the system SHALL open the post-signup dialog (per `post-signup-dialog`)
+
+#### Scenario: Sign-up from the notification button
+
+- **WHEN** a guest presses the ticket sale notification button on a concert sheet, chooses Sign Up and completes sign-up
+- **THEN** the concert's detail sheet opens on the Timetable and no celebration overlay is shown, then or later
 
 #### Scenario: Celebration does not replay
 

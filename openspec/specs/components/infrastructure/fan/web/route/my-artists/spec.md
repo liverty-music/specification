@@ -403,14 +403,14 @@ The My Artists page SHALL offer an "編集" / "Edit" action in its action menu w
 
 ### Requirement: A hype change says where new concerts are pushed
 
-When a hype level change on My Artists applies, My Artists SHALL show one snack that says, in place words, which new concerts of the artist will reach the fan by push. The place words SHALL be 「全て」 for Away, the fan's home prefecture's short name (for example 「東京」) for Home, and that name followed by 「周辺」 (for example 「東京周辺」) for Nearby; with no home area, 「居住エリア」 takes the place of the prefecture name. The snack SHALL read, on one line when it fits:
+When a hype level change on My Artists applies, My Artists SHALL show one snack that says, in place words, which new concerts of the artist will reach the fan by push. The place words SHALL be 「全て」 for Away, the fan's home prefecture's short name (for example 「東京」) for Home, and that name followed by 「周辺」 (for example 「東京周辺」) for Nearby; with no home area, 「HOMEエリア」 takes the place of the prefecture name. The snack SHALL read, on one line when it fits:
 
 | when | snack | action |
 |---|---|---|
 | push is on for this browser, Home, Nearby or Away | 「{{name}}の{{places}}の新着ライブをプッシュ通知します🔔」 | none |
 | push is on for this browser, Watch | 「{{name}}の新着ライブはプッシュ通知しません」 | none |
 | push is off for this browser, Home, Nearby or Away | 「{{name}}の{{places}}の新着ライブをプッシュ通知で受け取ろう🔔」 | the push offer (stated by the notification prompt surface) |
-| guest, Home, Nearby or Away | 「{{name}}の{{places}}の新着ライブをプッシュ通知で受け取ろう🔔」 | 「登録する」, which starts sign-up |
+| guest, Home, Nearby or Away | 「{{name}}の{{places}}の新着ライブをプッシュ通知で受け取ろう🔔」 | 「Sign Up」, which starts sign-up |
 
 The English locale SHALL show equivalent texts. Push is on for this browser when the fan allowed notifications and this browser is registered for push.
 
@@ -439,7 +439,12 @@ When push is on, and for a guest, the snack for a level SHALL appear only the fi
 #### Scenario: Guest picks Home
 
 - **WHEN** a guest with home JP-27 sets ヨルシカ to Home for the first time on this device
-- **THEN** a snack reads 「ヨルシカの大阪の新着ライブをプッシュ通知で受け取ろう🔔」 with the action 「登録する」
+- **THEN** a snack reads 「ヨルシカの大阪の新着ライブをプッシュ通知で受け取ろう🔔」 with the action 「Sign Up」
+
+#### Scenario: No home area
+
+- **WHEN** a guest with no home area sets ヨルシカ to Home for the first time on this device
+- **THEN** a snack reads 「ヨルシカのHOMEエリアの新着ライブをプッシュ通知で受け取ろう🔔」 with the action 「Sign Up」
 
 #### Scenario: Quick changes to one artist
 
@@ -458,3 +463,21 @@ My Artists SHALL be served at `/my-artists`.
 #### Scenario: The screen's address
 - **WHEN** a fan taps the My Artists tab
 - **THEN** the address bar shows `/my-artists`
+
+### Requirement: The hype dots' guide moment
+
+When My Artists lists at least one followed artist and no followed artist has a hype level other than the default Nearby, My Artists SHALL show a guide moment on the first row's 🔥 dots, for a guest and for a signed-in fan alike, with the line 「Hype（熱量）に合わせて 🔥 を変えてみよう！」 (EN "Change the 🔥 to match your Hype!"). The dots SHALL light up from left to right without changing the level. When the home-area sheet opens on My Artists, the moment SHALL wait until the sheet closes. The fan's first hype change SHALL end it and count as using it; the hype snack then says what the level does.
+
+#### Scenario: A guest opens My Artists
+- **WHEN** a guest whose follows are all at Nearby opens My Artists and has a home area
+- **THEN** the first row's 🔥 dots light up and 「Hype（熱量）に合わせて 🔥 を変えてみよう！」 is shown
+- **WHEN** the guest sets that artist to Away
+- **THEN** the moment ends and the hype snack for Away appears
+
+#### Scenario: After the home-area sheet
+- **WHEN** a guest without a home area opens My Artists
+- **THEN** the moment appears only after the guest chooses an area and the sheet closes
+
+#### Scenario: A fan who set a level before
+- **WHEN** a signed-in fan with one artist at Away opens My Artists on a new device
+- **THEN** the hype dots' moment does not appear
