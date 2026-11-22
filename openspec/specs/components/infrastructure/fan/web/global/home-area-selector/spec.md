@@ -74,13 +74,18 @@ The frontend SHALL use a unified `homeAreaSelector.*` i18n namespace for all hom
 #### Scenario: Description copy explains what the HOME lane displays and asks for residence
 
 - **WHEN** the `home-area-selector` is opened
-- **THEN** the `homeAreaSelector.description` JA value SHALL explain what the selected area controls (the HOME lane's contents) AND ask which area the user resides in, presented as a single string composed of two clearly-separated clauses
-- **AND** the copy SHALL NOT use `あなたの地元` (which inaccurately implies a known home rather than a chosen area)
-- **AND** the canonical JA form SHALL be: `HOMEのレーンには、選んだエリアのライブが並びます。あなたの居住エリアはどこですか？`
+- **THEN** the title SHALL read `HOMEエリアを選択`
+- **AND** the `homeAreaSelector.description` JA value SHALL ask which area the person lives in and say that its concerts go in the HOME lane, in the app's friend voice
+- **AND** the canonical JA form SHALL be: `住んでるエリアを教えてね！近くのライブを HOME に並べるよ`
+
+#### Scenario: One name for the home area
+
+- **WHEN** any fan screen names the home area (the selector's title, Settings, help, the hype snack, a save failure)
+- **THEN** it SHALL call it `HOMEエリア` in Japanese, and never `ホームエリア` or `居住エリア`
 
 ### Requirement: A person without a home is asked on the Timetable and My Artists
 
-When the Timetable or My Artists opens and the person has no home area (a guest who has not chosen one, or a signed-in fan whose account has none), the screen SHALL open the `home-area-selector` as a sheet. For a signed-in fan, and for a guest in onboarding, the sheet SHALL NOT close by tapping the backdrop, pressing ESC or swiping down; it SHALL close only when an area is selected. A guest who has finished onboarding MAY close it, and it SHALL open again the next time either screen opens. The selected area SHALL become the person's home: on the device for a guest, through `UserService.SetHome` for a signed-in fan. No other screen SHALL open the sheet because the home is missing. Discovery's Concerts view opens the selector as its area selector when it knows no area at all (Discovery's "Area override for unauthenticated user"); there the choice is kept as the view's area override, not as a home.
+When the Timetable or My Artists opens and the person has no home area (a guest who has not chosen one, or a signed-in fan whose account has none), the screen SHALL open the `home-area-selector` as a sheet. For a signed-in fan, and for a guest in onboarding, the sheet SHALL NOT close by tapping the backdrop, pressing ESC or swiping down; it SHALL close only when an area is selected. A guest who has finished onboarding MAY close it, and it SHALL open again the next time either screen opens. The selected area SHALL become the person's home: on the device for a guest, through `UserService.SetHome` for a signed-in fan. No other screen SHALL open the sheet because the home is missing. Discovery's Concerts view, which only signed-in fans see, opens the selector as its area selector when the fan has no home area and the device keeps no override (Discovery's "Signed-in fan without a home area"); there the choice is kept as the view's area override, not as a home.
 
 #### Scenario: New account without a home opens the Timetable
 

@@ -36,7 +36,7 @@ Seen marks are `guide.seen:<id>` in localStorage through a new `src/adapter/stor
 
 ### 2. A moment is a `guide-target` attribute plus one popover line
 
-The target gets a `guide-target="<id>"` custom attribute that adds `data-guide-active` while `current` is that id; CSS draws the glow (an inner edge for the bubble field, a ring for buttons) and the motion, which `prefers-reduced-motion` turns into a steady glow. The line is a `popover="manual"` element anchored to the target with CSS Anchor Positioning (`position-anchor`, `position-try-fallbacks: flip-block`), shown after any open top-layer element so it sits above it without `z-index`, with `role="status"`. It takes no pointer events. A document-level `pointerdown` listener in the service ends the moment on any tap outside the target; route `detaching` ends it on leave.
+The target gets a `guide-target="<id>"` custom attribute that adds `data-guide-active` while `current` is that id; CSS draws the glow (an inner edge for the bubble field, a ring for buttons) and the motion, which `prefers-reduced-motion` turns into a steady glow. The line is a `popover="manual"` element anchored to the target with CSS Anchor Positioning (`position-anchor`, `position-try-fallbacks: flip-block`), shown after any open top-layer element so it sits above it without `z-index`, with `role="status"`. It takes no pointer events. A document-level `click` listener (capture) in the service ends the moment on any tap outside the target — `click`, not `pointerdown`, because ending the in-sheet line on press would shrink the concert sheet and move the control under the finger before release; route `detaching` ends it on leave.
 
 `sheet.notify` is rendered inline instead, in the concert sheet's existing hint slot above the ticket section (`concert-sheet-hint`), because an element anchored from outside cannot sit inside the sheet's scrolling dialog. Alternative: the existing `coach-mark` — rejected; it dims the viewport and its spec keeps it Welcome-only.
 
@@ -80,7 +80,7 @@ The auth callback already knows the sign-up came from 🔔 (`resolveAuthTrackEve
 | new `guide.discoverySwap` | すぐに行けるライブも見てみよう！ |
 | new `guide.concertsFilter` | 遠征するときはココを変更！ |
 | new `guide.sheetNotify` | 気になるライブは見逃しNG！ |
-| new `guide.myArtistsHype` | Hype (熱量) に合わせて 🔥 を変えてみよう！ |
+| new `guide.myArtistsHype` | Hype（熱量）に合わせて 🔥 を変えてみよう！ |
 | new `guide.replay` | チュートリアル |
 | new `concertSheet.signUpDialog.{title,body,later,signUp}` | おっと、まだアカウントを持っていないね？ / 通知に必要なアカウントは無料ですぐに作成できるよ！ / あとで / Sign Up |
 | new `actionMenu.concertsFilter` (the Timetable keeps `actionMenu.filter`) | エリアと期間を変える |
@@ -95,13 +95,18 @@ The auth callback already knows the sign-up came from 🔔 (`resolveAuthTrackEve
 | `entity.homeArea.label`, `settings.myHomeArea` | HOMEエリア |
 | `pageHelp.timetable.homeDesc` / `pageHelp.myArtists.homeDesc` | HOMEエリアのライブ / HOMEエリアのライブを通知 |
 | `hypeReach.noHome` | HOMEエリア |
-| `myArtists.signupBanner.message` | 新着ライブを通知で受け取ろう！ |
+| `myArtists.signupBanner.message` | 新着ライブ通知を受け取ろう！ |
 
 English values follow the spec scenarios. The Japanese copy was chosen by the owner; the English is a translation of it.
 
+Two values differ from the words first written here, found while implementing:
+
+- `guide.myArtistsHype` was first written with half-width parentheses, 「Hype (熱量) に…」; the gloss takes the app's one form, Hype（熱量） with full-width parentheses (i18n "Japanese gloss is prose", checked by `test/locales/brand-expressions.node.spec.ts`), and the proposal and the my-artists delta say so.
+- `myArtists.signupBanner.message` was first 「新着ライブを通知で受け取ろう！」 / "Get new concerts by notification!". In the CI's pinned Playwright container the Japanese is 212 px at the 320 px banner's 13.44 px type, over the 204 px beside 「Sign Up」 ("Message and button fit one line"). The owner chose 「新着ライブ通知を受け取ろう！」 (197 px); the English became "Get new concert alerts!" (148 px). The proposal and the signup-prompt-banner delta say so.
+
 ### 10. Analytics
 
-`analytics-events.ts` gains `guide_shown`, `guide_acted` and `guide_dismissed` with `moment`, `is_guest`, `is_onboarding`, and `reason` (`other_tap`, `route_leave`, `blocked`) on dismissal; `blocked` means a sheet, dialog or celebration opened over a moment already shown, and a moment that waits behind a blocker sends nothing until it appears. With few users, PostHog session recordings confirm the timing.
+`analytics-events.ts` gains `guide.shown`, `guide.acted` and `guide.dismissed` (the catalogue's `<domain>.<action>` naming, `docs/analytics/event-catalog.md`) with `moment`, `is_guest`, `is_onboarding`, and `reason` (`other_tap`, `route_leave`, `blocked`) on dismissal; `blocked` means a sheet, dialog or celebration opened over a moment already shown, and a moment that waits behind a blocker sends nothing until it appears. With few users, PostHog session recordings confirm the timing.
 
 ## Risks / Trade-offs
 

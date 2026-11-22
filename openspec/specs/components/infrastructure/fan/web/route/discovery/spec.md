@@ -22,7 +22,8 @@ The system SHALL provide a gamified artist discovery interface using a "DNA Extr
 
 #### Scenario: Onboarding guidance overlay
 - **WHEN** the Discovery screen is displayed for the first time during onboarding
-- **THEN** the page-help sheet for Discovery SHALL open on its own, as the page-help surface's "Auto-open on First Page Visit" requirement states
+- **THEN** the page-help sheet for Discovery SHALL NOT open on its own
+- **AND** the bubble-field guide moment SHALL guide the fan, as "The bubble field's guide moment" states
 - **AND** the onboarding progress row SHALL be shown under the genre chips
 
 #### Scenario: Background visual depth
@@ -930,11 +931,15 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 
 ### Requirement: Swap tile switches between the Artists view and the Concerts view
 
-Discovery SHALL show a swap tile beside the orb, inside the band below the floor that bubbles never cross, so that no bubble and no part of the orb is ever drawn under the tile and the bubble field keeps the same size it has without the tile. The tile SHALL sit on the dominant-hand side of the orb, just outside the largest size the orb can grow to: on a 375 px wide screen, right-handed, its centre is between 260 px and 300 px from the left edge. In left-handed mode (the action menu's handedness setting) it SHALL be mirrored to the left of the orb.
+Discovery SHALL show a swap tile beside the orb to a signed-in fan, and no swap tile to a guest. The tile SHALL sit inside the band below the floor that bubbles never cross, so that no bubble and no part of the orb is ever drawn under the tile and the bubble field keeps the same size it has without the tile. The tile SHALL sit on the dominant-hand side of the orb, just outside the largest size the orb can grow to: on a 375 px wide screen, right-handed, its centre is between 260 px and 300 px from the left edge. In left-handed mode (the action menu's handedness setting) it SHALL be mirrored to the left of the orb.
 
 The tile's icon SHALL draw two arrows in a loop, one magenta and one cyan. The glyph of the view on screen SHALL be drawn large over the arrows, and the glyph of the other view SHALL be drawn as a small badge in the tile's bottom corner: the artist bubbles are three bubbles (purple, teal and gold) with small sparkles, and the Concerts view is a ticket marked LIVE with a white location pin. The tile SHALL show no text label. Its accessible name SHALL name the view a tap leads to: 「ライブ」 on the artist bubbles and 「アーティスト」 on the Concerts view (English: "Concerts" and "Artists").
 
 A tap SHALL switch the view. The arrows SHALL make a half turn, always in the same direction, while the two glyphs trade places and sizes with a spring motion, and the new view SHALL appear as a circle growing out of the tile; the whole motion SHALL end within 700 ms. With a reduced-motion preference the view and the icon SHALL change at once, without motion.
+
+#### Scenario: A guest sees no swap tile
+- **WHEN** a guest opens Discovery
+- **THEN** no swap tile is shown and the bubble field has the same size it has for a signed-in fan
 
 #### Scenario: The tile never covers the bubble field
 - **WHEN** Discovery shows the artist bubbles on a 375 px wide screen for a fan whose orb has reached its largest size
@@ -974,11 +979,15 @@ A tap SHALL switch the view. The arrows SHALL make a half turn, always in the sa
 
 ### Requirement: Discovery's view is addressable and remembered
 
-Discovery SHALL open on the Concerts view when its address carries `view=concerts`, at any onboarding state. Switching views SHALL rewrite the address (`/discovery?view=concerts` or `/discovery`) without adding a history entry. Without `view=concerts` in the address, Discovery SHALL open on the view the fan used last on the same device, except while the fan is onboarding, when it SHALL open on the artist bubbles. When the device cannot keep that choice, Discovery SHALL open on the artist bubbles.
+Discovery SHALL open on the Concerts view when its address carries `view=concerts` and the fan is signed in, at any onboarding state. A guest SHALL always get the artist bubbles, whatever the address carries, and the address SHALL then read `/discovery`. Switching views SHALL rewrite the address (`/discovery?view=concerts` or `/discovery`) without adding a history entry. Without `view=concerts` in the address, Discovery SHALL open on the view the fan used last on the same device, except while the fan is onboarding, when it SHALL open on the artist bubbles. When the device cannot keep that choice, Discovery SHALL open on the artist bubbles.
 
 #### Scenario: Link to the Concerts view
 - **WHEN** the fan opens `/discovery?view=concerts`
 - **THEN** Discovery shows the Concerts view
+
+#### Scenario: A guest follows a link to the Concerts view
+- **WHEN** a guest opens `/discovery?view=concerts`
+- **THEN** Discovery shows the artist bubbles and the address becomes `/discovery`
 
 #### Scenario: Switching rewrites the address
 - **WHEN** the fan switches from the artist bubbles to the Concerts view
@@ -990,7 +999,7 @@ Discovery SHALL open on the Concerts view when its address carries `view=concert
 - **THEN** Discovery shows the Concerts view
 
 #### Scenario: Onboarding opens on the artist bubbles
-- **WHEN** an onboarding guest who last used the Concerts view opens Discovery from the bottom navigation
+- **WHEN** a signed-in fan in onboarding who last used the Concerts view opens Discovery from the bottom navigation
 - **THEN** Discovery shows the artist bubbles
 
 #### Scenario: The device keeps nothing
@@ -1065,7 +1074,12 @@ The Concerts view SHALL display concerts returned by `ConcertService.ListByLocat
 
 #### Scenario: Guest with no follows
 
-- **WHEN** a guest who follows no artist opens the Concerts view
+- **WHEN** a guest who follows no artist follows a link to the Concerts view
+- **THEN** Discovery shows the artist bubbles and no concert card is rendered
+
+#### Scenario: Fan with no follows
+
+- **WHEN** a signed-in fan who follows no artist opens the Concerts view
 - **THEN** every card SHALL render as unmatched
 
 #### Scenario: Journey badge shown
@@ -1214,22 +1228,27 @@ The Concerts view SHALL present the current reference area as the area row of th
 
 #### Scenario: Signing in, signing up or signing out clears the kept filter
 
-- **WHEN** a guest who chose 大阪府 and 今週末 signs in or signs up as a fan whose home area is 東京都
+- **WHEN** a fan who chose 大阪府 and 今週末 signs out and another fan whose home area is 東京都 signs in on the same device
 - **THEN** the Concerts view SHALL use 東京都 and 7日以内, and the filter item SHALL be in its default state
 - **WHEN** a fan who chose 大阪府 signs out and another fan signs in on the same device
 - **THEN** the Concerts view SHALL use the second fan's home area
 
 #### Scenario: Area override for unauthenticated user
 
-- **WHEN** an unauthenticated user opens the Concerts view
-- **AND** no guest home and no override are stored on the device
+- **WHEN** an unauthenticated user follows a link to the Concerts view
+- **THEN** Discovery shows the artist bubbles, no area selector opens and no area override is stored on the device
+
+#### Scenario: Signed-in fan without a home area
+
+- **WHEN** a signed-in fan whose account has no home area opens the Concerts view
+- **AND** no override is stored on the device
 - **THEN** the view SHALL open the `home-area-selector` as its area selector before listing any concert
-- **AND** until an area is chosen, the area row of the filter sheet SHALL prompt the user to choose one
-- **AND** the chosen area SHALL be kept on the device as the override, not as the guest home
+- **AND** until an area is chosen, the area row of the filter sheet SHALL prompt the fan to choose one
+- **AND** the chosen area SHALL be kept on the device as the override, not as the fan's home area
 
 ### Requirement: Concerts view's filters open from the action launcher
 
-The Concerts view SHALL show no filter control above the timetable: the stage header SHALL sit directly under the page header, as on the timetable. The action menu SHALL offer a filter item while the Concerts view is shown (see the action menu Menu's per-route actions). The filter item SHALL open the Concerts view's filter sheet, which holds two rows, the area and the period, each showing its current value and opening its own selector. The filter item SHALL show its active state while the area differs from the fan's home area or the period differs from 7日以内. Changing a filter SHALL never change the timetable's height.
+The Concerts view SHALL show no filter control above the timetable: the stage header SHALL sit directly under the page header, as on the timetable. The action menu SHALL offer a filter item while the Concerts view is shown (see the action menu Menu's per-route actions), labelled 「エリアと期間を変える」 (EN "Change area and dates"); the Timetable's filter item keeps its own label. The filter item SHALL open the Concerts view's filter sheet, which holds two rows, the area and the period, each showing its current value and opening its own selector. The filter item SHALL show its active state while the area differs from the fan's home area or the period differs from 7日以内. Changing a filter SHALL never change the timetable's height.
 
 #### Scenario: Stage header under the page header
 
@@ -1238,7 +1257,7 @@ The Concerts view SHALL show no filter control above the timetable: the stage he
 
 #### Scenario: Filter item opens the filter sheet
 
-- **WHEN** the fan opens the launcher on the Concerts view and taps the filter item
+- **WHEN** the fan opens the launcher on the Concerts view and taps 「エリアと期間を変える」
 - **THEN** the filter sheet SHALL open with an area row showing the current area and a period row showing the current period
 
 #### Scenario: A row opens its selector
@@ -1282,3 +1301,57 @@ On each visit to Discovery, the fan app SHALL send one usage analytics event abo
 #### Scenario: Analytics off
 - **WHEN** the fan has turned analytics off in Settings
 - **THEN** no frame-timing event is sent
+
+### Requirement: The bubble field's guide moment
+
+While the artist bubbles are shown to a fan who follows no artist (on the device for a guest, on the account for a signed-in fan), Discovery SHALL show a guide moment once the first artist name has appeared in the bubble field: the inner edge of the bubble field glows, without singling out any bubble and without lighting the orb, with the line 「気になるアーティストをタップしてフォローしよう！」 (EN "Tap an artist you like to follow!"). The fan's first follow, from a bubble or from a search result, SHALL end it and count as using it. It SHALL NOT appear over bubbles that show no name yet, and SHALL NOT appear to a fan who follows at least one artist.
+
+#### Scenario: A new guest opens Discovery
+- **WHEN** a guest who follows no artist opens Discovery and the first artist name appears
+- **THEN** the bubble field's edge glows and 「気になるアーティストをタップしてフォローしよう！」 is shown
+
+#### Scenario: Follow from search
+- **WHEN** that guest follows an artist from a search result
+- **THEN** the moment ends and does not appear again on this device
+
+#### Scenario: A fan who already follows
+- **WHEN** a signed-in fan who follows 20 artists opens Discovery on a new device
+- **THEN** the bubble field's moment does not appear
+
+### Requirement: The swap tile's guide moment
+
+When a signed-in fan whose onboarding is complete and who follows at least one artist opens the artist bubbles and has never switched Discovery's view on this device, Discovery SHALL show a guide moment on the swap tile with the line 「すぐに行けるライブも見てみよう！」 (EN "There are concerts you can go to soon!"). A tap on the swap tile SHALL end it and count as using it. It SHALL NOT appear to a guest, to a fan in onboarding, or to a fan who follows no artist; for that fan the bubble field's moment comes first, and this moment waits until the fan follows an artist.
+
+#### Scenario: First visit after onboarding
+- **WHEN** a signed-in fan whose onboarding is complete opens Discovery on the artist bubbles for the first time on this device
+- **THEN** the swap tile glows and 「すぐに行けるライブも見てみよう！」 is shown
+- **WHEN** the fan taps the swap tile
+- **THEN** Discovery shows the Concerts view and the moment does not appear again on this device
+
+#### Scenario: Fan who signed up with no follows
+- **WHEN** a fan who signed up without following any artist opens Discovery on the artist bubbles
+- **THEN** the bubble field's moment appears and the swap tile's moment does not
+- **WHEN** the fan follows an artist and later opens Discovery on the artist bubbles again
+- **THEN** the swap tile's moment appears
+
+#### Scenario: Fan in onboarding
+- **WHEN** a signed-in fan in onboarding opens Discovery
+- **THEN** the swap tile's moment does not appear
+
+#### Scenario: Fan who switched before
+- **WHEN** a signed-in fan who has switched to the Concerts view on this device opens Discovery
+- **THEN** the swap tile's moment does not appear
+
+### Requirement: The Concerts view's guide moment
+
+The first time the Concerts view shows its list, or its empty state, on a device, Discovery SHALL show a guide moment on the action menu button with the line 「遠征するときはココを変更！」 (EN "Going somewhere? Change it here!"). Opening the action menu SHALL end it and count as using it.
+
+#### Scenario: First visit to the Concerts view
+- **WHEN** a signed-in fan opens the Concerts view for the first time on this device and its list shows
+- **THEN** the action menu button glows and 「遠征するときはココを変更！」 is shown
+- **WHEN** the fan opens the action menu
+- **THEN** the moment ends and the menu offers 「エリアと期間を変える」
+
+#### Scenario: Empty list
+- **WHEN** a signed-in fan opens the Concerts view for the first time on this device and no concert is found
+- **THEN** the moment is shown with the empty state

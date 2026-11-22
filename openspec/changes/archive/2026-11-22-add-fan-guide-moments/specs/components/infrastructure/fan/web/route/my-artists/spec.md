@@ -4,11 +4,11 @@
 
 ### Requirement: The hype dots' guide moment
 
-When My Artists lists at least one followed artist and no followed artist has a hype level other than the default Nearby, My Artists SHALL show a guide moment on the first row's 🔥 dots, for a guest and for a signed-in fan alike, with the line 「Hype (熱量) に合わせて 🔥 を変えてみよう！」 (EN "Change the 🔥 to match your Hype!"). The dots SHALL light up from left to right without changing the level. When the home-area sheet opens on My Artists, the moment SHALL wait until the sheet closes. The fan's first hype change SHALL end it and count as using it; the hype snack then says what the level does.
+When My Artists lists at least one followed artist and no followed artist has a hype level other than the default Nearby, My Artists SHALL show a guide moment on the first row's 🔥 dots, for a guest and for a signed-in fan alike, with the line 「Hype（熱量）に合わせて 🔥 を変えてみよう！」 (EN "Change the 🔥 to match your Hype!"). The dots SHALL light up from left to right without changing the level. When the home-area sheet opens on My Artists, the moment SHALL wait until the sheet closes. The fan's first hype change SHALL end it and count as using it; the hype snack then says what the level does.
 
 #### Scenario: A guest opens My Artists
 - **WHEN** a guest whose follows are all at Nearby opens My Artists and has a home area
-- **THEN** the first row's 🔥 dots light up and 「Hype (熱量) に合わせて 🔥 を変えてみよう！」 is shown
+- **THEN** the first row's 🔥 dots light up and 「Hype（熱量）に合わせて 🔥 を変えてみよう！」 is shown
 - **WHEN** the guest sets that artist to Away
 - **THEN** the moment ends and the hype snack for Away appears
 

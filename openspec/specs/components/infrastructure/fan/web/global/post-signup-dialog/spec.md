@@ -20,7 +20,7 @@ The post-signup dialog SHALL reliably open when `active` is bound to `true` at c
 All user-visible strings in the post-signup dialog SHALL come from the translation resources of the active locale. No display string is fixed in the markup.
 
 #### Scenario: Title renders in Japanese locale
-- **WHEN** the notification step is displayed
+- **WHEN** the notification step is displayed after a sign-up started anywhere other than a concert sheet's ticket sale notification button
 - **AND** the active locale is `ja`
 - **THEN** the title SHALL read 「新着ライブをいち早くお知らせ」
 
@@ -40,7 +40,7 @@ All user-visible strings in the post-signup dialog SHALL come from the translati
 
 ### Requirement: Celebration Precedes Post-Signup Dialog
 
-On the post-signup Timetable redirect, the full (confetti) celebration overlay SHALL be shown before the post-signup dialog. When the celebration overlay is dismissed, the post-signup dialog SHALL open if it has at least one step to show, sequencing the emotional payoff ahead of the setup actions; when it has no step to show, nothing opens after the celebration.
+On the post-signup Timetable redirect, the full (confetti) celebration overlay SHALL be shown before the post-signup dialog, except after a sign-up started from a concert sheet's ticket sale notification button ("Sign-up from the ticket sale notification button"). When the celebration overlay is dismissed, the post-signup dialog SHALL open if it has at least one step to show, sequencing the emotional payoff ahead of the setup actions; when it has no step to show, nothing opens after the celebration.
 
 #### Scenario: Dialog opens after celebration dismissal
 
@@ -83,7 +83,7 @@ Whether an authenticated callback is treated as a first sign-up SHALL be determi
 - **AND** the post-signup dialog has never been scheduled on this device
 - **THEN** the system SHALL schedule the post-signup celebration and dialog
 - **AND** the system SHALL navigate to `/timetable`
-- **AND** the Timetable SHALL show the celebration and then the dialog
+- **AND** the Timetable SHALL show the celebration and then the dialog, except after a sign-up started from a concert sheet's ticket sale notification button, where "Sign-up from the ticket sale notification button" applies
 
 #### Scenario: Dialog not shown on subsequent logins
 
@@ -117,7 +117,7 @@ Whether an authenticated callback is treated as a first sign-up SHALL be determi
 
 ### Requirement: Notification step says the search has started
 
-The notification step SHALL show the title 「新着ライブをいち早くお知らせ」, the body 「フォロー中の{{count}}組のライブを探し始めました。見つかったら通知で届けます。」 where count is the number of artists the fan follows (when the fan follows none, the body is 「新しいライブが見つかったら、通知で届けます。」), the primary action 「通知をオンにする」 and the text action 「あとで」. Tapping 「通知をオンにする」 SHALL open the browser permission prompt immediately, as a direct result of the tap. When the fan allows, the fan's browser SHALL be registered for push and the dialog moves on; when the fan blocks or the registration fails, the step SHALL say so in one line, telling the fan that it can be changed later in Settings, and the dialog moves on when the fan taps 「次へ」.
+Except after a sign-up started from a concert sheet's ticket sale notification button ("Sign-up from the ticket sale notification button"), the notification step SHALL show the title 「新着ライブをいち早くお知らせ」, the body 「フォロー中の{{count}}組のライブを探し始めました。見つかったら通知で届けます。」 where count is the number of artists the fan follows (when the fan follows none, the body is 「新しいライブが見つかったら、通知で届けます。」), the primary action 「通知をオンにする」 and the text action 「あとで」. Tapping 「通知をオンにする」 SHALL open the browser permission prompt immediately, as a direct result of the tap. When the fan allows, the fan's browser SHALL be registered for push and the dialog moves on; when the fan blocks or the registration fails, the step SHALL say so in one line, telling the fan that it can be changed later in Settings, and the dialog moves on when the fan taps 「次へ」.
 
 #### Scenario: Fan follows five artists
 
@@ -178,3 +178,19 @@ On iOS and iPadOS when the app is not installed, the dialog SHALL show a single 
 
 - **WHEN** the dialog opens in the app launched from the iPhone home screen
 - **THEN** the dialog SHALL show the notification step as on other platforms
+
+### Requirement: Sign-up from the ticket sale notification button
+
+After a sign-up that a guest started with a concert sheet's ticket sale notification button, the Timetable SHALL open that concert's detail sheet and SHALL NOT show the celebration overlay. The post-signup dialog SHALL open once the fan closes that sheet, when it has at least one step to show. Its notification step SHALL show the title 「あとはプッシュ通知をオンにするだけ！」 (EN "Just turn on push notifications!"), no body, the primary action 「通知をオンにする」 and the text action 「あとで」, and SHALL behave as the notification step does otherwise when the fan allows or blocks. The install step SHALL follow as it does otherwise.
+
+#### Scenario: Back from sign-up
+- **WHEN** a guest presses 「🔔 チケット販売の通知を受け取る」, chooses Sign Up and completes sign-up on a browser whose notification permission is undecided
+- **THEN** the concert's detail sheet is open, no celebration overlay is shown and the post-signup dialog is not open
+
+#### Scenario: Closing the sheet
+- **WHEN** that fan closes the concert's detail sheet
+- **THEN** the post-signup dialog opens on its notification step, titled 「あとはプッシュ通知をオンにするだけ！」 with no body
+
+#### Scenario: Notifications already allowed
+- **WHEN** the fan's notification permission was already granted and the app is installed
+- **THEN** closing the concert's detail sheet opens nothing

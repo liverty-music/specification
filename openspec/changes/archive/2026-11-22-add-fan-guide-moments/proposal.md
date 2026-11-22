@@ -9,7 +9,7 @@ The fan web has grown features that fans do not find: following by tapping a bub
   - Discovery, a signed-in fan whose onboarding is complete, first time on the artist bubbles: 「すぐに行けるライブも見てみよう！」 on the swap tile.
   - Discovery, the Concerts view, first time its list or empty state shows: 「遠征するときはココを変更！」 on the action menu.
   - Concert sheet, a concert the fan has no status for, for a fan with no journey at all, not on Welcome: 「気になるライブは見逃しNG！」 above the 🔔 button.
-  - My Artists, no followed artist moved off the default hype level, guests included: 「Hype (熱量) に合わせて 🔥 を変えてみよう！」 on the 🔥 dots.
+  - My Artists, no followed artist moved off the default hype level, guests included: 「Hype（熱量）に合わせて 🔥 を変えてみよう！」 on the 🔥 dots.
 - One guide moment at a time, none while a sheet, dialog or celebration is up; a moment blocked that way shows once after the blocker closes. Seen marks stay on the device through sign-up and sign-in. Help gets a 「チュートリアル」 button that replays the moment of its section.
 - **BREAKING (behavior)**: help no longer opens on its own on a first visit to Discovery or My Artists; the guide moments replace it.
 - Guests no longer see the swap tile or the Concerts view: Discovery's Concerts address opens the artist bubbles for a guest, and the Timetable's empty state offers 「ライブを探す」 only to signed-in fans. The Concerts view's area override is then a signed-in fan's choice only.
@@ -17,7 +17,7 @@ The fan web has grown features that fans do not find: following by tapping a bub
 - Welcome's demo concert sheet shows no 🔔 button and no push line.
 - A sign-up started from 🔔 returns to the concert sheet with no confetti celebration; the post-signup dialog opens when the fan closes the sheet, its notification step titled 「あとはプッシュ通知をオンにするだけ！」 with no body.
 - The concert sheet's follow action moves next to the artist name and reads 「Follow」 / 「Following」.
-- Copy: 「Sign Up」 replaces 「登録する」 for sign-up actions; HOMEエリア is the one name for the home area in the UI; the guest signup banner reads 「新着ライブを通知で受け取ろう！」; the post-signup celebration's second line reads 「新着ライブは / Liverty Music にお任せ！」; the Concerts view's filter item reads 「エリアと期間を変える」; the home-area sheet asks 「住んでるエリアを教えてね！近くのライブを HOME に並べるよ」.
+- Copy: 「Sign Up」 replaces 「登録する」 for sign-up actions; HOMEエリア is the one name for the home area in the UI; the guest signup banner reads 「新着ライブ通知を受け取ろう！」; the post-signup celebration's second line reads 「新着ライブは / Liverty Music にお任せ！」; the Concerts view's filter item reads 「エリアと期間を変える」; the home-area sheet asks 「住んでるエリアを教えてね！近くのライブを HOME に並べるよ」.
 
 ## Capabilities
 

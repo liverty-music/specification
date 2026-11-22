@@ -53,7 +53,7 @@ stateDiagram-v2
 
 - **WHEN** a fan in onboarding with zero followed artists lands on the timetable (e.g. via deep link, served the empty-state CTA)
 - **THEN** onboarding SHALL NOT become completed
-- **AND** the fan SHALL stay in onboarding so the Discovery progress row and the page-help auto-open still apply until the fan follows an artist or signs in
+- **AND** the fan SHALL stay in onboarding so the Discovery progress row still applies until the fan follows an artist or signs in
 
 #### Scenario: Completion latches on sign-in or sign-up
 
