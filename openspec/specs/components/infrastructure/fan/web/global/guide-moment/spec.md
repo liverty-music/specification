@@ -43,7 +43,7 @@ At most one guide moment SHALL be shown at a time. A guide moment SHALL NOT appe
 
 ### Requirement: A guide moment ends when the fan acts or moves on
 
-A guide moment SHALL end when the fan uses its target, taps anywhere outside it, or leaves the screen, and SHALL leave nothing on screen.
+A guide moment SHALL end when the fan uses its target, taps anywhere outside it, or leaves the screen, or when a bottom sheet, a dialog, the celebration overlay or the post-signup dialog opens over it, and SHALL leave nothing on screen. A moment that such a surface ended before it counted as seen SHALL appear once more after the surface closes, if the fan is still on the same screen.
 
 #### Scenario: Tap elsewhere
 - **WHEN** the fan taps outside the target of a shown moment
@@ -53,9 +53,13 @@ A guide moment SHALL end when the fan uses its target, taps anywhere outside it,
 - **WHEN** the fan leaves the screen while a moment is shown
 - **THEN** no glow or line remains on the next screen
 
+#### Scenario: A sheet opens over a shown moment
+- **WHEN** a sheet opens over a moment that has been on screen for less than 3 seconds
+- **THEN** the glow and the line disappear, and the moment appears again once the sheet closes
+
 ### Requirement: Each guide moment is shown once per device and survives sign-up
 
-Each guide moment SHALL be shown at most once on a device. It SHALL count as seen once the fan used its target, or once it stayed on screen for 3 seconds; a moment that ended sooner by a tap elsewhere or by leaving the screen SHALL NOT count as seen. Seen moments SHALL stay seen through sign-up, sign-in and the reset of a guest's local data. A screen's own condition (for example the fan's follows or journeys) SHALL keep a moment from showing to a fan who already uses the feature, on any device.
+Each guide moment SHALL be shown at most once on a device. It SHALL count as seen once the fan used its target, or once it stayed on screen for 3 seconds; a moment that ended sooner by a tap elsewhere, by leaving the screen or by a surface opening over it SHALL NOT count as seen. Seen moments SHALL stay seen through sign-up, sign-in and the reset of a guest's local data. A screen's own condition (for example the fan's follows or journeys) SHALL keep a moment from showing to a fan who already uses the feature, on any device.
 
 #### Scenario: Seen after 3 seconds
 - **WHEN** a moment stays on screen for 3 seconds and the fan then leaves the screen
