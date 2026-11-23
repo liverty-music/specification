@@ -84,11 +84,18 @@ An agent runs the reads and the smoke spec and reports; the owner promotes. No M
 
 Both workloads are put behind Rollouts on their unchanged pins before any release goes through them. `fan-web` comes first: it is stateless and static, so it proves the controller, the routes, the certificates and the Deployment-at-zero setup with the least risk. `fan-api` follows, so that `api.preview` exists whenever a preview web app is checked (the web app calls it, D3). Releases then go through `fan-web` and then `fan-api`. A release that changes both is promoted API first, then web, because a new web app must work against the API that is already serving fans.
 
+### D8. The webhook Service follows the active `fan-api` Pods only
+
+`fan-api-webhook-svc` selects Pods by `app: fan-api` alone (`k8s/namespaces/backend/base/fan-api/service-webhook.yaml`). A Rollout manages the selectors of its active and preview Services only, so during a pause this Service would also select the preview Pod, and a release nobody has checked would receive real Stripe webhooks and Zitadel action calls (`/pre-access-token`, `/account-login-event`). An aborted release would already have handled them.
+
+The `fan-api` Rollout therefore labels its Pods through `activeMetadata` (`role: active`) and `previewMetadata` (`role: preview`), and the prod overlay adds `role: active` to the webhook Service's selector (Argo Rollouts docs, "Ephemeral Metadata": the preview ReplicaSet's Pods carry the preview labels, and on promotion the Pods are relabeled in place). Dev is unchanged. The same check covers every other Service that selects `fan-api` Pods: each must be the active or the preview Service, or select `role: active`.
+
 ## Risks / Trade-offs
 
 - [The database is shared by preview and by the release fans use] → While a release waits, new-schema migrations run under the old code. Migrations stay backward compatible (expand, then contract in a later release); the runbook says so, and a paused release should not wait long.
 - [A forgotten pause leaves fans on the old release, delaying a fix] → The runbook lists `kubectl get rollout` as the first check after any pin bump. Whether to add an ArgoCD notification for a paused rollout is left open below.
 - [Argo CD shows the Application as Suspended while a release waits] → Anything that waits for the Application to be Healthy waits until the promotion; the runbook says so.
+- [The webhook Service briefly has no endpoints when the Rollout is first introduced, or while the labels change on promotion] → Production has no users beyond the owner and one tester, so a short gap is acceptable; tasks 5.2 and 6.3 read the Service's endpoints before and after each change.
 - [Preview writes real data in production] → The owner checks with their own account; the runbook names the account as the only one used on preview.
 - [Preview events enter production analytics] → Events carry the same release version as the stable Pods; the owner's identity is already marked internal by the analytics service, which keeps them out of fan metrics.
 - [Push subscriptions are per origin] → A subscription made on preview is a second, real subscription for that account; deleting it is part of the runbook's cleanup.
