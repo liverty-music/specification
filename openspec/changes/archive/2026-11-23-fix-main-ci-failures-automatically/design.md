@@ -74,7 +74,7 @@ Normal pull request, not draft: the owner asked for it; CI and the CI review run
 
 If task 1 or the first real failures show a problem (the Issue event does not fire for an Issue opened with `GITHUB_TOKEN`, the routine limits block runs, or the fixes are poor), the same `routines/fix-main-ci.md` runs from a job in `report-main-ci.yml` with `anthropics/claude-code-action` and the existing org secret `CLAUDE_CODE_OAUTH_TOKEN`, as `incident-triage.yml` does. The Slack message then needs a Slack incoming webhook. That switch is its own change.
 
-### D5. Only the App's repository selection is Pulumi-managed
+### D5. Nothing this change adds is Pulumi-managed
 
 The project rule is that persistent settings with an API live in cloud-provisioning's Pulumi program. Each setting this change needs, checked:
 
@@ -101,6 +101,6 @@ The runbook `cloud-provisioning/docs/runbooks/main-ci-auto-fix.md` records the r
 
 ## Migration Plan
 
-1. Ship `report-main-ci.yml` and the instructions file in `.github`, then switch frontend and backend to it. Until the routine exists, the Issue lifecycle works alone.
-2. Create the routine and connect Slack (runbook).
-3. Rollback: disable the routine; revert the callers to the old job if the lifecycle misbehaves.
+1. Ship `report-main-ci.yml` and the instructions file in `.github`, then switch frontend and backend to it. Until the routines exist, the Issue lifecycle works alone.
+2. Create the two routines and connect Slack (runbook).
+3. Rollback: disable both routines; revert the callers to the old job if the lifecycle misbehaves.
