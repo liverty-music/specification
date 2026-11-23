@@ -2,7 +2,7 @@
 
 ### Requirement: Material 3 type styles
 
-Text SHALL take its size, line height, weight and tracking from one of the Material 3 type styles below, or from that style's emphasized version, which is the same style one step heavier (400 becomes 500, 500 becomes 600). The sizes SHALL be fixed, apart from the exceptions named under "Text styles are not set per screen": they SHALL NOT change with the width of the window or of a container, and they SHALL scale with the text size the user sets in the browser. Sizes are stated at the browser's default text size of 16 px. The line heights in the table are the small language height, used for Latin text. Text in Japanese SHALL use the medium language height of its style, which is taller than the small value, so that Japanese characters, which fill the full height of the line, do not touch the line above and below. Where the table gives no medium value for a style, the style's small value applies until it does.
+Text SHALL take its size, line height, weight and tracking from one of the Material 3 type styles below, or from that style's emphasized version, which is the same style one step heavier (400 becomes 500, 500 becomes 600). The sizes SHALL be fixed, apart from the exceptions named under "Text styles are not set per screen": they SHALL NOT change with the width of the window or of a container, and they SHALL scale with the text size the user sets in the browser. Sizes are stated at the browser's default text size of 16 px. The line heights in the table are the small language height, used for Latin text. Text in Japanese SHALL use the medium language height of its style, which is taller than the small value, so that Japanese characters, which fill the full height of the line, do not touch the line above and below. The medium value of display-large is 73 px; the medium values of the other styles are added to the table, as a column beside the small value, before this requirement is implemented.
 
 | Style | Size / line height (px) | Weight | Tracking (px) |
 |---|---|---|---|
@@ -42,8 +42,3 @@ Text SHALL take its size, line height, weight and tracking from one of the Mater
 - **WHEN** a heading in the display-large style is set in Japanese and another in Latin letters
 - **THEN** the Latin one is on a 64 px line and the Japanese one on a 73 px line
 - **AND** the two have the same size, weight and tracking
-
-#### Scenario: A Japanese paragraph does not look cramped
-
-- **WHEN** a paragraph in the body-large style wraps over three lines in Japanese
-- **THEN** the distance between its lines is the medium line height of body-large, not 24 px

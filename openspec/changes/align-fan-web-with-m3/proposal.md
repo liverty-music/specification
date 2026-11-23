@@ -26,10 +26,11 @@ None.
 - `components/infrastructure/fan/web/global/snack-bar`: a snack's display time pauses while the fan hovers over it or focuses it.
 - `components/infrastructure/fan/web/global/design-tokens`: Japanese text takes the medium language height.
 - `components/infrastructure/fan/web/route/settings`: the toggle switch size and press behaviour.
+- `components/infrastructure/organizer/web/global/design-tokens`: the type styles are shared with the fan app, so the organizer console takes the same medium line height for Japanese text.
 
 ## Impact
 
-- **Code:** frontend only (`src/` styles, route and component templates, the router transition hooks, the shared state-layer and token stylesheets). No backend, proto, database or infrastructure change.
+- **Code:** frontend only, including the organizer console it hosts (`src/` styles, route and component templates, the router transition hooks, the shared state-layer and token stylesheets). No backend, proto, database or infrastructure change.
 - **Specs:** the five capabilities above. Findings whose spec states the current behaviour for a reason not yet checked (listed in design.md "Findings that need the spec's reason first") are amended through `/opsx:update` when apply reaches them.
 - **Verification:** unit and component tests, visual baselines for changed components, Playwright flows against a local build and, after merge, the prod app. The dev environment is stopped, so no task needs it.
 - **Source data:** `audit-items.md` in this change lists every finding by `ref` and theme.

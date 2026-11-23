@@ -2,18 +2,13 @@
 
 ### Requirement: Content that loads shows a skeleton and fades in
 
-While a screen or a section of it waits for data to show, it SHALL show grey placeholder shapes in the positions, and with the sizes, of the content that will replace them (a skeleton), instead of only a line of loading text or an empty area. The skeleton SHALL take the same space as the loaded content so that the layout does not move when the content arrives. When the content arrives it SHALL fade in over the skeleton's place, and lists and grids SHALL fade in row by row rather than all at once. A skeleton SHALL NOT be shown for a wait shorter than 100 ms. A skeleton SHALL NOT be used for a wait the fan started on purpose and for which a progress indicator already exists (a payment being confirmed, a file being sent). Under reduced motion the skeleton SHALL be still, and the content SHALL replace it through a fade of 100 ms or less.
+While a screen or a section of it waits for data to show, it SHALL show grey placeholder shapes in the positions, and with the sizes, of the content that will replace them (a skeleton), instead of only a line of loading text or an empty area. The skeleton SHALL take the same space as the loaded content so that the layout does not move when the content arrives. When the content arrives it SHALL fade in over the skeleton's place, and lists and grids SHALL fade in row by row rather than all at once. A skeleton SHALL NOT be used for a wait the fan started on purpose and for which a progress indicator already exists (a payment being confirmed, a file being sent). Under reduced motion the skeleton SHALL be still, and the content SHALL replace it through a fade of 100 ms or less.
 
 #### Scenario: List loads
 
 - **WHEN** the fan opens a list screen whose data takes 600 ms to arrive
-- **THEN** placeholder rows of the same height as the loaded rows are shown from the start
+- **THEN** placeholder rows of the same height as the loaded rows are shown while the data is pending
 - **AND** the loaded rows fade in row by row, with no movement of the rows below or above them
-
-#### Scenario: Fast load shows no skeleton
-
-- **WHEN** the data arrives within 100 ms
-- **THEN** the content is shown without a skeleton having been shown
 
 #### Scenario: Reduced motion
 
