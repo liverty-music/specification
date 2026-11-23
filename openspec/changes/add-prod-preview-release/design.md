@@ -32,18 +32,21 @@ See proposal.md for why. What exists today, checked in the code:
 
 ### D1. Argo Rollouts `blueGreen` through `workloadRef`, in the prod overlay only
 
-A `Rollout` in the prod overlay references the existing base `Deployment` with `workloadRef`, so the base manifests, the dev overlays and the existing prod patches (image tag, version label, the `TELEMETRY_SERVICE_VERSION` env) stay as they are. `autoPromotionEnabled: false` pauses the rollout once the new ReplicaSet is ready; the `previewService` points at the new Pods and the `activeService` at the current ones. `previewReplicaCount: 1` keeps the preview at one Pod.
+A `Rollout` in the prod overlay references the existing base `Deployment` with `workloadRef`. The Rollout takes its Pod template from the Deployment, so the base manifests, the dev overlays and the existing prod patches (image tag, version label, the `TELEMETRY_SERVICE_VERSION` env) stay as they are, and a release is still a change to the Deployment's Pod template (Argo Rollouts docs, "Migrating to Rollouts").
+
+The documented setup scales the referenced Deployment down to zero, so the prod overlay sets the Deployment to `replicas: 0` and gives the production replica count (1) to the Rollout. Written in git, this leaves nothing for ArgoCD to report as drift; the `workloadRef.scaleDown` option would instead let the controller change the replicas at run time.
+
+`autoPromotionEnabled: false` pauses the rollout once the new ReplicaSet is ready; the `previewService` points at the new Pods and the `activeService` at the current ones. While no update is in progress both Services point at the same ReplicaSet, so the preview address serves the release fans are served (Argo Rollouts docs, "BlueGreen", sequence of events). `previewReplicaCount: 1` keeps the preview at one Pod.
 
 Alternatives:
 
-- **Header or cookie canary** (Argo Rollouts Gateway API plugin, Flagger): rejected. A browser cannot send a header, and a cookie loses to the fan web app's Service Worker, which serves the cached shell without reaching the Gateway. The Gateway API plugin also supports only canary (as documented by the plugin), and it is an alpha plugin mechanism.
-- **Flagger**: built for metric-gated automatic canaries and copies the Deployment into primary and canary, which collides with ArgoCD ownership.
+- **Header or cookie canary** (Argo Rollouts Gateway API plugin, Flagger): rejected. A browser cannot send a header, and a cookie loses to the fan web app's Service Worker, which serves the cached shell without reaching the Gateway.- **Flagger**: built for metric-gated automatic canaries and copies the Deployment into primary and canary, which collides with ArgoCD ownership.
 - **Google Cloud Deploy**: would replace the ArgoCD delivery path.
 - **Kargo**: promotes between environments; with dev stopped there is no upstream stage.
 - **A hand-made second Deployment per workload**: re-implements scale-up, the pause, the switch and the scale-down that Rollouts already does.
 - **Feature flags** (PostHog, already wired): switch code paths, so they cannot check a global stylesheet, a dependency update or startup code. They stay the tool for hiding one new screen.
 
-`blueGreen` only swaps Service selectors, so no traffic-router plugin is installed.
+`blueGreen` only swaps Service selectors (the controller injects the ReplicaSet hash into the selectors of the active and preview Services; Argo Rollouts docs, "BlueGreen"), so no traffic-router plugin is installed.
 
 ### D2. Preview is a subdomain pair: `preview.liverty-music.app` and `api.preview.liverty-music.app`
 
@@ -69,37 +72,38 @@ Values the web app reads are unchanged; no RPC response field is added.
 
 ### D5. ArgoCD and Rollouts agree on who owns the Service selectors
 
-Rollouts writes a pod-template-hash into the selector of the active and preview Services. ArgoCD would report that as drift. Task 5.3 observes whether it does with the cluster's server-side diff; if it does, the Services get an `ignoreDifferences` entry for `/spec/selector`. The fix is added only if the drift is seen.
+Rollouts injects a hash of the ReplicaSet into the selector of the active and preview Services. The Argo Rollouts docs do not say whether Argo CD reports that as drift. The only documented Argo CD pattern for a field a Rollout changes (shown for Istio route weights) is `ignoreDifferences` on the Application together with the sync option `RespectIgnoreDifferences=true`. Task 6.2 observes whether the Services show OutOfSync during a pause; if they do, that pattern is applied to `/spec/selector` of the two Services. Applying it to the selector is an inference from the documented pattern, which the task confirms.
 
 ### D6. The check is the existing smoke spec plus read-only commands
 
-Run `SMOKE_BASE_URL=https://preview.liverty-music.app` through the existing `post-deploy.spec.ts` (it catches blank pages and lost styles). API checks are `curl` calls against `https://api.preview.liverty-music.app`. State is read with `kubectl get rollout -o json`, `kubectl describe rollout` and `argocd app get`. Promoting is `kubectl argo rollouts promote <name>` or the Argo CD resource action; task 5.2 settles which one works and adds the plugin to the cloud-provisioning mise config only if needed. Aborting is `kubectl argo rollouts abort <name>` followed by a `git revert` of the pin commit.
+Run `SMOKE_BASE_URL=https://preview.liverty-music.app` through the existing `post-deploy.spec.ts` (it catches blank pages and lost styles). API checks are `curl` calls against `https://api.preview.liverty-music.app`. State is read with `kubectl get rollout -o json`, `kubectl describe rollout` and `argocd app get`. Promoting is `kubectl argo rollouts promote <name>` or the Argo CD resource action `resume` (the Rollout actions Argo CD bundles are `resume` and `restart`; Argo Rollouts docs, "FAQ"); task 6.1 records which one works for a blueGreen pause. Argo CD has no abort action, so aborting is `kubectl argo rollouts abort <name>` followed by a `git revert` of the pin commit, and the kubectl plugin is added to the cloud-provisioning mise config. While a rollout is paused, Argo CD shows the Application as Suspended (same FAQ).
 
 An agent runs the reads and the smoke spec and reports; the owner promotes. No MCP server is added.
 
-### D7. Order of rollout: `fan-web` first, then `fan-api`
+### D7. Order of rollout: both behind Rollouts first, `fan-web` before `fan-api`, then the releases
 
-`fan-web` is stateless and static, so it proves the install, the routes, the certificates and the selector question with the least risk. `fan-api` follows once those hold. A release that changes both is promoted API first, then web, because a new web app must work against the API that is already serving fans.
+Both workloads are put behind Rollouts on their unchanged pins before any release goes through them. `fan-web` comes first: it is stateless and static, so it proves the controller, the routes, the certificates and the Deployment-at-zero setup with the least risk. `fan-api` follows, so that `api.preview` exists whenever a preview web app is checked (the web app calls it, D3). Releases then go through `fan-web` and then `fan-api`. A release that changes both is promoted API first, then web, because a new web app must work against the API that is already serving fans.
 
 ## Risks / Trade-offs
 
 - [The database is shared by preview and by the release fans use] → While a release waits, new-schema migrations run under the old code. Migrations stay backward compatible (expand, then contract in a later release); the runbook says so, and a paused release should not wait long.
 - [A forgotten pause leaves fans on the old release, delaying a fix] → The runbook lists `kubectl get rollout` as the first check after any pin bump. Whether to add an ArgoCD notification for a paused rollout is left open below.
+- [Argo CD shows the Application as Suspended while a release waits] → Anything that waits for the Application to be Healthy waits until the promotion; the runbook says so.
 - [Preview writes real data in production] → The owner checks with their own account; the runbook names the account as the only one used on preview.
 - [Preview events enter production analytics] → Events carry the same release version as the stable Pods; the owner's identity is already marked internal by the analytics service, which keeps them out of fan metrics.
 - [Push subscriptions are per origin] → A subscription made on preview is a second, real subscription for that account; deleting it is part of the runbook's cleanup.
-- [Selector switch lag behind the load balancer] → `scaleDownDelaySeconds` keeps the old Pods up after the switch; task 6.2 measures failed requests across a promote.
+- [Selector switch lag behind the load balancer] → `scaleDownDelaySeconds` keeps the old Pods up after the switch; task 6.3 measures failed requests across a promote.
 - [Autopilot cost of a second Pod during a pause] → One extra small Pod per workload, only while a release waits.
-- [The Rollouts controller is a new cluster component] → Argo CD ships a built-in health check for `Rollout`, the chart is pinned like the other charts, and removing the `Rollout` and restoring the `Deployment` returns to today's behavior.
+- [The Rollouts controller is a new cluster component] → Argo CD understands the health of a `Rollout` through its bundled Lua health check (Argo Rollouts docs, "FAQ"), the chart is pinned like the other charts, and reverting the commit that added the `Rollout` returns to today's behavior (it restores the Deployment's replicas too).
 
 ## Migration Plan
 
 1. Release the frontend loader change (it is inert on every address but the preview one).
 2. Install the Rollouts controller; provision the two hostnames, the Zitadel redirect addresses and the CORS origin.
-3. Put `fan-web` behind a `Rollout`; run a no-op release through it to prove pause, preview, promote and abort.
-4. Do the same for `fan-api`.
+3. Put `fan-web`, then `fan-api`, behind a `Rollout` on their unchanged pins; confirm both are Healthy and their Applications Synced.
+4. Run a no-op release through `fan-web`, then through `fan-api`, to prove pause, preview, promote and abort.
 
-Rollback: abort a pending release; or delete the `Rollout` and the preview Services and routes, which makes the `Deployment` serve again. Nothing in the base or dev changes, so no other rollback is needed.
+Rollback: abort a pending release; or revert the commit that added the `Rollout`, the preview Services and the routes, which also restores the Deployment's replica count so it serves again. Nothing in the base or dev changes, so no other rollback is needed.
 
 ## Open Questions
 
