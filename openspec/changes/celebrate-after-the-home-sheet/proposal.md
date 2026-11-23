@@ -17,5 +17,5 @@ A guest who chooses the home area on arrival at the Timetable never sees the cel
 
 ## Impact
 
-- **frontend**: `TimetableRoute.onTimetableReady` waits on `IBottomSheetTracker`; one unit test and one e2e test.
+- **frontend**: `TimetableRoute.onTimetableReady` waits on `IBottomSheetTracker`; two unit tests (the wait, and leaving the route while waiting) and one e2e test.
 - No RPC, storage or proto change. A fan who leaves a sheet open sees the celebration, and the onboarding completion, after it closes instead of at once.
