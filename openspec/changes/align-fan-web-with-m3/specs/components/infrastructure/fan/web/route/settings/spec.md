@@ -2,7 +2,7 @@
 
 ### Requirement: The toggle switch is 52 × 32 px and its handle grows while pressed
 
-Each Settings toggle switch SHALL have a track 52 px wide and 32 px high. Its handle SHALL be 16 px across when the switch is off, 24 px across when the switch is on and 28 px across while the switch is pressed, and SHALL move between the two ends over the app's short motion duration. The grown handle SHALL stay inside the track. The switch SHALL keep a touch target of at least 48 × 48 px. Under reduced motion the handle SHALL change size and position without movement between the states.
+Each Settings toggle switch SHALL have a track 52 px wide and 32 px high. Its handle SHALL be 16 px across when the switch is off, 24 px across when the switch is on and 28 px across while the switch is pressed, and SHALL move between the two ends over the app's short motion duration. The grown handle SHALL stay inside the track. The switch's activation target stays at least 24 px on both axes, as "Switch remains operable and accessibly separate" states, and the 52 × 32 px track already meets it. Under reduced motion the handle SHALL change size and position without movement between the states.
 
 #### Scenario: Switch is turned on
 

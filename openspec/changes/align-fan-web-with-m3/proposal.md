@@ -22,7 +22,7 @@ None.
 ### Modified Capabilities
 
 - `components/infrastructure/fan/web/global/app-shell`: tab switches use the top-level motion; screens opened from inside a page and the way back move; reduced motion keeps a subtle fade; a switch handle may grow while pressed.
-- `components/infrastructure/fan/web/global/ui-primitives`: loading content shows a skeleton and fades in; confirmation dialogs and disclosures keep a subtle fade under reduced motion.
+- `components/infrastructure/fan/web/global/ui-primitives`: loading content shows a skeleton and fades in; confirmation dialogs keep a subtle fade under reduced motion, and disclosures still open at once.
 - `components/infrastructure/fan/web/global/snack-bar`: a snack's display time pauses while the fan hovers over it or focuses it.
 - `components/infrastructure/fan/web/global/design-tokens`: Japanese text takes the medium language height.
 - `components/infrastructure/fan/web/route/settings`: the toggle switch size and press behaviour.
