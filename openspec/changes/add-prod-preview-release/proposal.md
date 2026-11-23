@@ -18,7 +18,7 @@ Other workloads (admin, organizer and reception web apps and APIs, the event con
 
 ### New Capabilities
 
-None. Releasing is operations tooling; the spec tree describes product behavior, and the behavior this change adds to the product is the two requirements below.
+None. Releasing is operations tooling; the spec tree describes product behavior, and the behavior this change adds to the product is the one requirement below.
 
 ### Modified Capabilities
 

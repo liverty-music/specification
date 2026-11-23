@@ -72,7 +72,9 @@ Values the web app reads are unchanged; no RPC response field is added.
 
 ### D5. ArgoCD and Rollouts agree on who owns the Service selectors
 
-Rollouts injects a hash of the ReplicaSet into the selector of the active and preview Services. The Argo Rollouts docs do not say whether Argo CD reports that as drift. The only documented Argo CD pattern for a field a Rollout changes (shown for Istio route weights) is `ignoreDifferences` on the Application together with the sync option `RespectIgnoreDifferences=true`. Task 6.2 observes whether the Services show OutOfSync during a pause; if they do, that pattern is applied to `/spec/selector` of the two Services. Applying it to the selector is an inference from the documented pattern, which the task confirms.
+Rollouts injects a hash of the ReplicaSet into the selector of the active and preview Services. The Argo Rollouts docs do not say whether Argo CD reports that as drift, and both prod Applications (`backend`, `frontend`) run with `selfHeal: true` (`k8s/argocd-apps/prod/backend.yaml`, `frontend.yaml`): a selector Argo CD treats as drift would be reverted, which removes the hash and lets the active Service select both ReplicaSets while a release waits.
+
+So the change does not wait to observe drift. When a Rollout is added (tasks 5.1 and 5.2), its Application gets `ignoreDifferences` for `/spec/selector` of that Rollout's active and preview Services (the mechanism `backend.yaml` already uses for the KEDA-driven replicas of `event-consumer`) and the sync option `RespectIgnoreDifferences=true`, the documented Argo CD pattern for a field a Rollout changes (shown in the Argo Rollouts docs for Istio route weights). Applying it to the selector is an inference from that pattern; task 6.2 confirms it holds during a pause. `fan-api-webhook-svc` is not managed by the Rollout (D8) and keeps its selector in git.
 
 ### D6. The check is the existing smoke spec plus read-only commands
 
