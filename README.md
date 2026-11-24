@@ -86,7 +86,7 @@ openspec workset create <change> --tool code \
 openspec workset open <change>
 ```
 
-Clean up after archive: remove each worktree (`git -C <repo> worktree remove .claude/worktrees/<change>`), then `openspec workset remove <change> --yes`.
+Clean up after archive: remove each worktree (`git -C "$L/<repo>" worktree remove .claude/worktrees/<change>`, and for proto `git -C "$L/specification" worktree remove .claude/worktrees/<change>-proto`), then `openspec workset remove <change> --yes`.
 
 ### Cloud: Claude Code on the web
 
