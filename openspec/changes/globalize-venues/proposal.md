@@ -87,7 +87,7 @@ Times:
 - `components/entity/event/get-event-start-time`: returns the start time with the local date and the Venue's time zone.
 - `components/entity/concert/list-upcoming-by-artist`: each Venue carries its time zone, and "today" is read in it.
 - `components/entity/concert-candidate` (Purpose and requirements): times of day at the venue; it keeps only the resolved place id, with its discovered area and time zone.
-- `components/entity/discovered-series`, `components/entity/rejected-concert` (Purpose): start and open times are times of day at the venue, with a time zone.
+- `components/entity/discovered-series`, `components/entity/rejected-concert` (Purpose): start and open times are times of day at the venue, with a time zone; a rejected concert keeps only the resolved place id, not a resolved name or admin area.
 - `components/usecase/concert/list-followed`, `components/infrastructure/fan/web/route/timetable`: without a from-date, each concert's Venue's current date is the boundary; the Timetable no longer sends the device's date.
 - `components/entity/ticket-sale` (Purpose and "result date"): a sale has a time zone, and its start and end are local date-times in it.
 - `components/entity/ticket-sale/set-window`, `components/usecase/ticket-sale/set-window`, `components/usecase/ticket-sale/create`: a window carries its time zone, which is one of the sale's events' Venues' zones; a Lottery's length is counted on local date-times.
