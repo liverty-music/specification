@@ -15,6 +15,7 @@ import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/series_image.proto";
+import "liverty_music/entity/v1/user.proto";
 import "liverty_music/entity/v1/venue.proto";
 
 // SeriesService is the organizer-facing authoring surface: an authenticated
@@ -204,15 +205,16 @@ service SeriesService {
 // liverty_music.rpc.organizer.venue.v1.VenueService.Search; a typed name alone
 // is never saved.
 message EventDraft {
-  // Required. The venue name as the member saw it for the picked place, kept
-  // as the event's listed venue name.
+  // Required. The venue name as the member confirmed it for the picked place,
+  // kept as the event's listed venue name and, for a new Venue, as its name.
   entity.v1.VenueName venue_name = 1 [(buf.validate.field).required = true];
 
   // The place id of the candidate the member picked from
   // VenueService.Search; the member never types it. Required for a new date
   // and for a DRAFT Event: the Venue holding this place id is used, or a new
-  // Venue is created from the map catalog's place (name, coordinates and admin
-  // area), and there is no resolution by name; Create and Update fail with
+  // Venue is created for the place from the venue_name, admin_area and
+  // time_zone the member confirmed and the place's coordinates, and there is no
+  // resolution by name; Create and Update fail with
   // INVALID_ARGUMENT without it. Optional for a PUBLISHED or CANCELLED Event,
   // whose venue cannot change: it counts as unchanged when venue_name equals
   // the event's listed venue name and, when given, this equals the Venue's
@@ -242,6 +244,21 @@ message EventDraft {
     gte: 1
     lte: 10
   }];
+
+  // The first-level Area of the venue as the member confirmed it from
+  // VenueService.ResolvePlace and the area list. Required for a new date and
+  // for a DRAFT Event, where it is stored on a Venue created for the picked
+  // place; Create and Update fail with INVALID_ARGUMENT when it is missing or
+  // is no first-level Area. Optional for a PUBLISHED or CANCELLED Event, whose
+  // venue cannot change.
+  entity.v1.AdminArea admin_area = 8;
+
+  // The IANA time zone of the venue as the member confirmed it. Required for a
+  // new date and for a DRAFT Event, and it must be one of the venue's
+  // country's zones and equal the Area's zone when the Area has one; Create
+  // and Update fail with INVALID_ARGUMENT otherwise. Optional for a PUBLISHED
+  // or CANCELLED Event. The date's start and open times are read in this zone.
+  entity.v1.TimeZone time_zone = 9;
 }
 
 // SeriesDraft is the authoring payload for a first-party series, shared by

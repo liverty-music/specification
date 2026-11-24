@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.area.v1 provides the admin-only AreaService
+// for the approval queue of the developer admin console: resolving the area an
+// admin typed to its first-level Area, and listing the time zones of its
+// country. It is served by the admin Connect server behind the admin-role gate.
+package liverty_music.rpc.admin.area.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/area.proto";
+
+// AreaService is the admin surface over Areas. A name the admin types
+// ("California") yields its Area, and so its country, before the time zone of
+// a venue that has none is chosen from that country's zones.
+//
+// All RPCs require a signed-in caller holding the admin role: a caller who is
+// not signed in is rejected with UNAUTHENTICATED, and one outside the admin
+// organization with PERMISSION_DENIED, before the request is validated.
+service AreaService {
+  // Resolve returns the one first-level Area that an entered code or name
+  // stands for. A lower-level or replaced code resolves to the first-level Area
+  // that contains or replaces it (e.g., "FR-33" to "FR-NAQ"). A name is matched
+  // in English or Japanese, within the country when one is given.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The area text is missing or longer than 100
+  //   characters, or the country code is not exactly two uppercase letters.
+  // - NOT_FOUND: The text stands for no first-level Area, or for more than one
+  //   (e.g., "Victoria" without a country).
+  rpc Resolve(ResolveRequest) returns (ResolveResponse);
+
+  // ListByCountry returns the first-level Areas of a country, the regions that
+  // group them and the time zones its venues can have. The approval queue reads
+  // the zones for the country of the area the admin entered. A country without
+  // Areas yields empty lists.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The country code is missing or is not exactly two
+  //   uppercase letters.
+  rpc ListByCountry(ListByCountryRequest) returns (ListByCountryResponse);
+}
+
+// ResolveRequest carries the text an admin entered for an area.
+message ResolveRequest {
+  // Required. The typed code or name.
+  entity.v1.AreaQuery area = 1 [(buf.validate.field).required = true];
+
+  // Optional. Restricts a name match to one country. Omitted when the admin
+  // has not chosen a country.
+  optional entity.v1.CountryCode country_code = 2;
+}
+
+// ResolveResponse carries the Area the text resolved to.
+message ResolveResponse {
+  // The first-level Area, with its country and, when the whole Area has one,
+  // its time zone.
+  entity.v1.Area area = 1 [(buf.validate.field).required = true];
+}
+
+// ListByCountryRequest names the country whose Areas and time zones are read.
+message ListByCountryRequest {
+  // Required. The country or territory, e.g., "US".
+  entity.v1.CountryCode country_code = 1 [(buf.validate.field).required = true];
+}
+
+// ListByCountryResponse carries what a venue in the country is confirmed from.
+message ListByCountryResponse {
+  // Every first-level Area of the country, each with the codes of the regions
+  // that contain it and its time zone when the whole Area has one.
+  repeated entity.v1.Area areas = 1;
+
+  // Every region of the country, as Areas of kind region. Empty for a country
+  // without regions.
+  repeated entity.v1.Area regions = 2;
+
+  // Every time zone a venue in the country can have.
+  repeated entity.v1.TimeZoneOption time_zones = 3;
+}

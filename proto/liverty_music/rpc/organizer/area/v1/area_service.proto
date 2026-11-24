@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.area.v1 provides the organizer-facing
+// AreaService, which a member uses from the organizer console to choose the
+// country, area and time zone of a venue while authoring a series.
+package liverty_music.rpc.organizer.area.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/area.proto";
+
+// AreaService lists the reference data a member confirms a venue from. Every
+// call passes the same organizer-console sign-in checks as the organizer
+// OrganizerService and then resolves the caller's own Organizer from the
+// caller's Organization: a caller with no Organization, an Organization with
+// no linked Organizer and a provisioning Organizer fail with PERMISSION_DENIED,
+// and a deactivated Organizer fails with FAILED_PRECONDITION, before any Area
+// is read. Failures that would concern another Organizer never reveal whether
+// it exists.
+service AreaService {
+  // ListCountries returns every country or territory that has first-level
+  // Areas, with its names, for the country select.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller lacks the organizer-console role, or no
+  //   Organizer is linked to the caller's Organization or it is provisioning.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc ListCountries(ListCountriesRequest) returns (ListCountriesResponse);
+
+  // ListByCountry returns the first-level Areas of a country, the regions that
+  // group them and the time zones its venues can have, so a member picks the
+  // area and the time zone of a new venue. A country without Areas yields
+  // empty lists.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The country code is missing or is not exactly two
+  //   uppercase letters.
+  // - PERMISSION_DENIED: The caller lacks the organizer-console role, or no
+  //   Organizer is linked to the caller's Organization or it is provisioning.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc ListByCountry(ListByCountryRequest) returns (ListByCountryResponse);
+}
+
+// ListCountriesRequest takes no parameters; every country is returned.
+message ListCountriesRequest {}
+
+// ListCountriesResponse carries the countries of the country select.
+message ListCountriesResponse {
+  // Every country or territory that has first-level Areas, in no particular
+  // order.
+  repeated entity.v1.Country countries = 1;
+}
+
+// ListByCountryRequest names the country whose Areas and time zones are read.
+message ListByCountryRequest {
+  // Required. The country or territory, e.g., "JP".
+  entity.v1.CountryCode country_code = 1 [(buf.validate.field).required = true];
+}
+
+// ListByCountryResponse carries what a venue in the country is confirmed from.
+message ListByCountryResponse {
+  // Every first-level Area of the country, each with the codes of the regions
+  // that contain it and its time zone when the whole Area has one.
+  repeated entity.v1.Area areas = 1;
+
+  // Every region of the country, as Areas of kind region, for grouping the
+  // list. Empty for a country without regions.
+  repeated entity.v1.Area regions = 2;
+
+  // Every time zone a venue in the country can have.
+  repeated entity.v1.TimeZoneOption time_zones = 3;
+}
