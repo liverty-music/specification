@@ -595,6 +595,11 @@ artifacts:
       - Group related tasks under ## numbered headings
       - Each task MUST be a checkbox: `- [ ] X.Y Task description`
       - Tasks should be small enough to complete in one session
+      - A task only a person can do (an owner's review of data, a decision
+        that needs the owner's accounts) starts with `[owner]` after its
+        number: `- [ ] 12.3 [owner] Review the CSV ...`. Apply stops at it and
+        only at it. Do not mark a task `[owner]` because it is large, touches
+        production or spans repositories: those are the agent's to do.
       - Order tasks by dependency (what must be done first?)
       - Derive tasks from the spec paths: an entity spec yields the data
         schemas, the entity code and one unit test per scenario; an entity
@@ -653,7 +658,17 @@ apply:
   tracks: tasks.md
   instruction: |
     Read context files, work through pending tasks, mark complete as you go.
-    Pause if you hit blockers or need clarification.
+    Keep going through every pending task, across every repository of the
+    workset, until all are done. Size, the number of repositories and
+    production-facing steps (migrations, releases, deploying merges) are not
+    reasons to stop or ask: the user's global instructions authorize commits,
+    pushes, PRs and merges, and runbooks are run by the agent. Wait for CI,
+    BSR and rollouts with Monitor or a scheduled wakeup and continue.
+    Stop only when: the next task is marked `[owner]`; a Critical review
+    finding is accepted and cannot be fixed; three fix rounds on one finding
+    or CI check have failed; a login has expired (ask the user to run it);
+    the task is unclear or the spec contradicts the code; or a design issue
+    needs the artifacts updated. Say which condition applies, then wait.
     Each component scenario is a unit or contract test and each story scenario
     an E2E test - write the test with the code it verifies, and mark it with
     `@spec <capability-path> "<scenario name>"` in a comment or in the test's

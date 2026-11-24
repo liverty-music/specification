@@ -29,8 +29,16 @@
        However the plan PR was opened (plan-change, pull-request skill, by
        hand), after it merges continue with the plan-change skill from step
        5.3 (sync the store) through step 6 (worktrees and workset).
-    2. Implement one Claude session per affected repository (only that repo's
-       AGENTS.md is loaded): /opsx:apply <change>. Locally, isolate with
+    2. Implement with /opsx:apply <change>. With the workset open, ONE apply
+       session works through every affected repository's worktree in task
+       order and does not stop for the size of the change: it reads a repo's
+       AGENTS.md when it first works there, commits, pushes, opens and merges
+       PRs, waits for CI and BSR, and cuts releases as the tasks require. It
+       stops only at the conditions listed in the schema's `apply` instruction
+       (a task marked `[owner]`, an unresolved Critical review finding, three
+       failed fix rounds on one finding, an expired login). Without a workset,
+       use one session per repository (only that repo's AGENTS.md is loaded).
+       Locally, isolate with
        `claude --worktree <change>` (<repo>/.claude/worktrees/<change>, branch
        worktree-<change>); gitignored files come in via .worktreeinclude.
        Optionally view all worktrees + the store with `openspec workset`
