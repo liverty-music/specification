@@ -1,0 +1,35 @@
+## MODIFIED Requirements
+
+### Requirement: Delete removes the user and what it owns
+
+Delete SHALL remove the User with the given id, including its full name, phone number and Home, together with its follows, ticket journeys, push subscriptions, notifications, ticket sale reminder records and IdentityVerification records. The User's orders, tickets and lottery entries SHALL remain. It SHALL fail with NotFound when no User has that id, and with InvalidArgument when the id is empty.
+
+#### Scenario: Existing user
+
+- **WHEN** Delete runs for a stored User who follows an artist
+- **THEN** the User and that follow no longer exist
+
+#### Scenario: Purchases outlive the user
+
+- **WHEN** Delete runs for a User who holds a ticket
+- **THEN** the ticket and its order remain
+
+#### Scenario: Unknown id
+
+- **WHEN** no User has the given id
+- **THEN** Delete fails with NotFound
+
+#### Scenario: Empty id
+
+- **WHEN** the id is empty
+- **THEN** Delete fails with InvalidArgument
+
+#### Scenario: Reminder records go with the user
+
+- **WHEN** Delete runs for a User who was sent a ticket sale reminder
+- **THEN** that reminder record no longer exists
+
+#### Scenario: Home goes with the user
+
+- **WHEN** Delete runs for a User whose Home is `JP-40`, and another User's Home is also `JP-40`
+- **THEN** no Home of the deleted User remains, and the other User's Home is still `JP-40`
