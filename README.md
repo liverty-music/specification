@@ -9,7 +9,7 @@ This repository is also the **OpenSpec store** `openspec-store`: every spec and 
 ### Lifecycle of a change
 
 1. **Plan** in this repository: `/opsx:propose <change>` writes `openspec/changes/<change>/` (proposal, design, delta specs, tasks). Split `tasks.md` by repository. Open the PR from a worktree (see [Branch work in this repository](#branch-work-in-this-repository)), review it as a normal PR and merge it; the `openspec-checks` job of the *CI* workflow validates it (merging waits for it), and a change that modifies existing requirements carries `openspec show <change> --diff` in the PR body.
-2. **Implement** in each affected repository, one Claude session per repository (each session only loads its own repository's `AGENTS.md`). Start with `/opsx:apply <change>`; it reads the change from the store. Task check-offs and spike results land directly in the `specification` checkout's working tree (on `main`, uncommitted) through the store pointer; nothing in that checkout is committed until close-out.
+2. **Implement** with `/opsx:apply <change>` in one session that holds the change's worktree in every affected repository (locally an OpenSpec workset, in the cloud a thread with all four repositories). It carries every task, in task order, through merge, Release and the production check, reading a repository's `AGENTS.md` before working there. `/opsx:apply` reads the change from the store. Task check-offs and spike results land directly in the `specification` checkout's working tree (on `main`, uncommitted) through the store pointer; nothing in that checkout is committed until close-out.
 3. **Proto first** when the contract changes: the `specification` PR merges, a GitHub Release (`vX.Y.Z`) triggers BSR generation, then `backend` / `frontend` consume the generated types. Downstream work starts early against placeholder types; see [AGENTS.md](AGENTS.md) for the rules.
 4. **Open the implementation PRs.** Every PR fills the *OpenSpec Traceability* section of its template (`OpenSpec-Change`, store commit). Merge order: `specification` → Release/BSR → `backend` / `frontend`; `cloud-provisioning` is independent.
 5. **Close out** here once the implementation PRs have merged and the release is confirmed in production: `/opsx:verify <change>`, then archive in a worktree that carries the change's latest progress, committing only that change's paths:
@@ -73,26 +73,20 @@ Keep this checkout of `specification` on `main` and update it with `git fetch or
 
 ### Local: parallel work with worktrees
 
-Worktrees are for the implementation repositories only. `specification` stays a single checkout on `main`: every change writes to its own `openspec/changes/<change>/` folder, so parallel changes share the working tree without touching each other's files. Branch only at close-out (see *Lifecycle of a change*, step 5), and never run `git stash`, `git reset --hard`, `git restore .` or `git clean` there: they discard other changes' progress.
+The `specification` main checkout is the store and stays on `main`: every change writes to its own `openspec/changes/<change>/` folder, so parallel changes share the working tree without touching each other's files. Branch work there (plan PR, proto PR, archive) happens in a worktree (see [Branch work in this repository](#branch-work-in-this-repository)), and never run `git stash`, `git reset --hard`, `git restore .` or `git clean` there: they discard other changes' progress.
 
-Use Claude Code's built-in worktrees, one per implementation repository you touch. Each lands in `<repo>/.claude/worktrees/<change>/` on branch `worktree-<change>` (rename it before pushing if you like):
-
-```bash
-cd "$L/backend"  && claude --worktree <change>    # one terminal per repository
-cd "$L/frontend" && claude --worktree <change>
-```
-
-Gitignored files a worktree needs (e.g. the Playwright auth session in `frontend`) are copied in automatically via each repository's `.worktreeinclude`. To see all the worktrees together with the store in one VS Code window, compose an OpenSpec workset. The first member is where VS Code's terminal and the Claude panel start, so list an implementation worktree first:
+The `plan-change` skill (step 6) creates one worktree per affected repository, each cut from `origin/main`: `<repo>/.claude/worktrees/<change>/` on branch `worktree-<change>`, and `specification/.claude/worktrees/<change>-proto/` for proto work. Gitignored files a worktree needs (e.g. the Playwright auth session in `frontend`) are copied in from each repository's `.worktreeinclude`. It then opens them with the store as one OpenSpec workset, a single VS Code window whose Claude session works through every repository. The first member is where the terminal and the Claude panel start (the proto worktree when the change has proto tasks); the store is the last:
 
 ```bash
 openspec workset create <change> --tool code \
-  --member frontend="$L/frontend/.claude/worktrees/<change>" \
+  --member specification-proto="$L/specification/.claude/worktrees/<change>-proto" \
   --member backend="$L/backend/.claude/worktrees/<change>" \
-  --member specification="$L/specification"
+  --member frontend="$L/frontend/.claude/worktrees/<change>" \
+  --member store="$L/specification"
 openspec workset open <change>
 ```
 
-Clean up by exiting each Claude session (it offers to remove a clean worktree and warns about uncommitted or unpushed work), then `openspec workset remove <change> --yes`.
+Clean up after archive: remove each worktree (`git -C "$L/<repo>" worktree remove .claude/worktrees/<change>`, and for proto `git -C "$L/specification" worktree remove .claude/worktrees/<change>-proto`), then `openspec workset remove <change> --yes`.
 
 ### Cloud: Claude Code on the web
 
