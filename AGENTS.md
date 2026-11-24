@@ -29,15 +29,18 @@
        However the plan PR was opened (plan-change, pull-request skill, by
        hand), after it merges continue with the plan-change skill from step
        5.3 (sync the store) through step 6 (worktrees and workset).
-    2. Implement one Claude session per affected repository (only that repo's
-       AGENTS.md is loaded): /opsx:apply <change>. Locally, isolate with
-       `claude --worktree <change>` (<repo>/.claude/worktrees/<change>, branch
-       worktree-<change>); gitignored files come in via .worktreeinclude.
-       Optionally view all worktrees + the store with `openspec workset`
-       (implementation worktree as the first member). In specification the
-       main checkout is the store: it stays on main, and branch work here (plan
-       PR, proto PR, archive) happens in a worktree cut from origin/main
-       (README "Branch work in this repository").
+    2. Implement with /opsx:apply <change> in ONE session that holds the
+       change's worktree in every affected repository and carries every task,
+       in task order, through merge, Release and the production check. Read a
+       repository's AGENTS.md before working there (a session loads only the
+       one it started in). Locally, plan-change step 6 creates the worktrees
+       (<repo>/.claude/worktrees/<change>, branch worktree-<change>; the proto
+       worktree is <change>-proto) and opens them with the store as an
+       OpenSpec workset; in the cloud a thread already holds all four
+       repositories. In specification the main checkout is the store: it
+       stays on main, and branch work here (plan PR, proto PR, archive)
+       happens in a worktree cut from origin/main (README "Branch work in
+       this repository").
     3. Proto first when the contract changes (see dependency-order below).
     4. Each PR cites the change in its OpenSpec Traceability section.
     5. After the implementation PRs merge and production is confirmed:
