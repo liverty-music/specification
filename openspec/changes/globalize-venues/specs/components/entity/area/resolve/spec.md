@@ -58,6 +58,11 @@ Resolve SHALL take a text and an optional country code and return one first-leve
 - **WHEN** Resolve is called with `JP-99`
 - **THEN** it fails with NotFound
 
+#### Scenario: Country that has subdivisions of its own
+
+- **WHEN** Resolve is called with `CN-TW` or with `Taiwan`, and Taiwan's Areas are its subdivisions such as `TW-TPE`
+- **THEN** it fails with NotFound
+
 #### Scenario: Name without its diacritics
 
 - **WHEN** Resolve is called with `Cordoba` and the Area's English name is `Córdoba`
