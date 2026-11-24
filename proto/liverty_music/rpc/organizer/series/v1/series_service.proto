@@ -246,18 +246,19 @@ message EventDraft {
   }];
 
   // The first-level Area of the venue as the member confirmed it from
-  // VenueService.ResolvePlace and the area list. Required for a new date and
-  // for a DRAFT Event, where it is stored on a Venue created for the picked
-  // place; Create and Update fail with INVALID_ARGUMENT when it is missing or
-  // is no first-level Area. Optional for a PUBLISHED or CANCELLED Event, whose
-  // venue cannot change.
+  // VenueService.ResolvePlace and the area list. Required only when no Venue
+  // holds place_id (a new place, which gets a Venue created with it); Create
+  // and Update fail with INVALID_ARGUMENT when it is then missing or is no
+  // first-level Area. Ignored when a Venue holds the place, and for a
+  // PUBLISHED or CANCELLED Event, whose venue cannot change.
   entity.v1.AdminArea admin_area = 8;
 
-  // The IANA time zone of the venue as the member confirmed it. Required for a
-  // new date and for a DRAFT Event, and it must be one of the venue's
-  // country's zones and equal the Area's zone when the Area has one; Create
-  // and Update fail with INVALID_ARGUMENT otherwise. Optional for a PUBLISHED
-  // or CANCELLED Event. The date's start and open times are read in this zone.
+  // The IANA time zone of the venue as the member confirmed it. Required only
+  // when no Venue holds place_id; it must then be one of the venue's country's
+  // zones and equal the Area's zone when the Area has one, otherwise Create and
+  // Update fail with INVALID_ARGUMENT. Ignored when a Venue holds the place,
+  // and for a PUBLISHED or CANCELLED Event. The date's start and open times
+  // are read in the venue's zone.
   entity.v1.TimeZone time_zone = 9;
 }
 
