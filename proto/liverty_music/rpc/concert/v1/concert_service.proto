@@ -7,9 +7,9 @@ import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/concert.proto";
 import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/event.proto";
-import "liverty_music/entity/v1/geo_location.proto";
 import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/user.proto";
+import "liverty_music/entity/v1/venue.proto";
 
 // ConcertService provides operations for managing the catalog of musical concerts.
 // It acts as the primary data source for upcoming live music events.
@@ -72,13 +72,14 @@ service ConcertService {
   rpc ListByArtists(ListByArtistsRequest) returns (ListByArtistsResponse);
 
   // ListByLocation retrieves all concerts in the catalog whose venues are HOME or NEARBY
-  // relative to a geographic reference point, within a date range, grouped by date and
+  // relative to a first-level Area, within a date range, grouped by date and
   // proximity. Authentication is not required. AWAY-tier concerts (beyond 200 km with a
   // different admin_area) are excluded from the response.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: The request is missing required fields, the location is invalid,
-  //   from is after to, or the date range exceeds 30 days.
+  // - INVALID_ARGUMENT: The request is missing required fields, the area is
+  //   malformed or is no first-level Area, from is after to, or the date range
+  //   exceeds 30 days.
   rpc ListByLocation(ListByLocationRequest) returns (ListByLocationResponse);
 }
 
@@ -223,8 +224,8 @@ message ListByArtistsResponse {
   repeated entity.v1.Artist artists = 3;
 }
 
-// ListByLocationRequest specifies a geographic reference point and a date range for
-// discovering all concerts in the catalog near that point. Used by the Dashboard
+// ListByLocationRequest specifies a reference Area and a date range for
+// discovering all concerts in the catalog in or near that Area. Used by the Dashboard
 // "All Nearby" mode; no authentication is required.
 //
 // The from <= to ordering is enforced here via a message-level CEL constraint. The
@@ -244,8 +245,16 @@ message ListByLocationRequest {
       "            && this.from.value.day <= this.to.value.day)))"
   };
 
-  // Required. The geographic reference point for proximity classification.
-  entity.v1.GeoLocation location = 1 [(buf.validate.field).required = true];
+  // Required. What the proximity classification is measured from. The server
+  // resolves it to a reference point; the client never sends coordinates.
+  oneof reference {
+    option (buf.validate.oneof).required = true;
+
+    // The first-level Area whose code is a HOME-tier match and whose reference
+    // point is the centre of the 200 km NEARBY radius. An Area with no
+    // reference point returns only its HOME concerts.
+    entity.v1.AdminArea admin_area = 4;
+  }
 
   // Required. The inclusive start of the date range (venue-local calendar date).
   entity.v1.LocalDate from = 2 [(buf.validate.field).required = true];
@@ -253,6 +262,11 @@ message ListByLocationRequest {
   // Required. The inclusive end of the date range (venue-local calendar date).
   // Must not be earlier than from, and the span must not exceed 30 days.
   entity.v1.LocalDate to = 3 [(buf.validate.field).required = true];
+
+  // Field 1 was a GeoLocation carrying coordinates and an area; the server now
+  // resolves coordinates from the area.
+  reserved 1;
+  reserved "location";
 }
 
 // ListByLocationResponse contains all concerts near the reference point in the given

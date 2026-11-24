@@ -5,7 +5,6 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
-import "liverty_music/entity/v1/coordinates.proto";
 import "liverty_music/entity/v1/entity.proto";
 
 // UserId is a globally unique identifier for a platform user.
@@ -127,74 +126,45 @@ message User {
   reserved "holder_identity", "external_id", "verification_level";
 }
 
-// Home represents the user's home area as a structured geographic location,
-// expressed through a hierarchy of internationally standardized codes.
+// Home is the first-level Area where a user regularly attends live events
+// without considering it a trip (遠征). It anchors the proximity
+// classification (see the Proximity enum):
+//   - HOME:   the event's venue is in the user's home Area.
+//   - NEARBY: the event is within 200km of the home Area's reference point.
+//   - AWAY:   the event is beyond 200km, has no known area, or the user has no
+//     home set.
 //
-// A user's home area is the geographic region where they regularly attend
-// live events without considering it a trip (遠征). This concept anchors the
-// proximity classification system (see Proximity enum):
-//   - HOME:   the event's venue falls within the user's home area.
-//   - NEARBY: the event is within 200km of the user's home centroid.
-//   - AWAY:   the event is beyond 200km, has no known area, or the user has no home set.
-//
-// Proximity assignment granularity:
-//   - When level_2 is set, admin_area comparison uses level_2 (finer granularity).
-//   - When level_2 is absent, admin_area comparison uses level_1 (coarser granularity).
-//
-// The centroid (a Coordinates value) is resolved automatically at write time
-// from the level_1 (or level_2) code. It serves as the reference point for
-// NEARBY distance calculations.
-//
-// Code system contract:
-//   - level_1 is always an ISO 3166-2 subdivision code, worldwide, without exception.
-//   - level_2 uses a country-specific standard determined by country_code:
-//       "JP" -> future use (not yet defined; Phase 1 always omits level_2)
-//       "US" -> FIPS county code (e.g., "06037" for Los Angeles County)
-//       "DE" -> AGS (Amtlicher Gemeindeschluessel, e.g., "09162" for Munich)
-//     Additional country mappings will be documented here as they are introduced.
-//
-// Phase 1 note: The initial release supports Japan only. All Japanese home areas
-// are expressed as a country_code of "JP" and a level_1 prefecture code (e.g.,
-// "JP-13" for Tokyo). The level_2 field will always be absent in Phase 1.
-//
-// Redundancy rationale: country_code can be derived from the level_1 prefix, but
-// is stored as a dedicated field to enable efficient country-level queries and to
-// make the country unambiguous at a glance without parsing the subdivision code.
+// An Area is identified by its code, the one vocabulary every stored area
+// shares: an ISO 3166-2 code for a first-level subdivision ("JP-13" for Tokyo,
+// "US-CA" for California), or the ISO 3166-1 code of a country or territory
+// that has no subdivision of its own ("HK" for Hong Kong). A lower-level
+// subdivision, a withdrawn code and a region are not Areas a Home can name.
+// The server reads the Area's reference point from its own reference data, so
+// a client sends and receives only the codes below.
 message Home {
-  // The ISO 3166-1 alpha-2 country code identifying the user's home country
-  // (e.g., "JP" for Japan, "US" for the United States, "DE" for Germany).
-  // Always required. Exactly two uppercase Latin letters.
+  // The ISO 3166-1 alpha-2 country code of the home Area (e.g., "JP" for
+  // Japan, "US" for the United States). Always required. Exactly two uppercase
+  // Latin letters.
   string country_code = 1 [
     (buf.validate.field).required = true,
     (buf.validate.field).string.pattern = "^[A-Z]{2}$"
   ];
 
-  // The ISO 3166-2 subdivision code identifying the user's home region at the
-  // first-order administrative division level — prefecture in Japan, state in
-  // the US, Land in Germany, and so on (e.g., "JP-13", "US-NY", "DE-BY").
-  // Always required. Format: two-letter country code, hyphen, one-to-three
-  // character subdivision identifier (total length 4-6 characters).
+  // The code of the first-level Area of the home: an ISO 3166-2 subdivision
+  // code such as "JP-13", "US-NY" or "DE-BY", or the country code of a
+  // territory with no subdivision, such as "HK". Always required. Format: two
+  // uppercase letters, optionally followed by a hyphen and one to three
+  // uppercase letters or digits. A well-formed code that is no first-level Area
+  // (e.g., "JP-99") is rejected by the server.
   string level_1 = 2 [
     (buf.validate.field).required = true,
-    (buf.validate.field).string.pattern = "^[A-Z]{2}-[A-Z0-9]{1,3}$"
+    (buf.validate.field).string.pattern = "^[A-Z]{2}(-[A-Z0-9]{1,3})?$"
   ];
 
-  // An optional finer-grained area code within the level_1 subdivision.
-  // The code system is determined by country_code (see message-level comment).
-  // Absent when the user's home is defined at level_1 granularity only.
-  // Phase 1 (Japan-only) always omits this field.
-  optional string level_2 = 3 [
-    (buf.validate.field).string.min_len = 1,
-    (buf.validate.field).string.max_len = 20
-  ];
-
-  // The approximate geographic centroid of this home area.
-  // Populated automatically at write time by resolving the level_1 (or level_2)
-  // code to its centroid coordinates. Used as the reference point for proximity
-  // calculations (e.g., Concert.ProximityTo). Absent when the centroid cannot
-  // be resolved (unsupported country).
-  optional Coordinates centroid = 4;
-
-  reserved 5;
-  reserved "centroid_latitude", "centroid_longitude";
+  // Field 3 was a finer-grained area code and field 4 the home area's
+  // centroid. Homes name a first-level Area only, and the server resolves its
+  // reference point itself. Field 5 was the centroid's latitude and longitude
+  // before they were one Coordinates value.
+  reserved 3, 4, 5;
+  reserved "level_2", "centroid", "centroid_latitude", "centroid_longitude";
 }

@@ -4,6 +4,7 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/coordinates.proto";
+import "liverty_music/entity/v1/user.proto";
 
 // Venue represents a physical location where concert events are hosted.
 // It contains geographical and descriptive information to help fans find the event.
@@ -14,8 +15,9 @@ message Venue {
   // The official name or title of the music venue.
   VenueName name = 2 [(buf.validate.field).required = true];
 
-  // The administrative area (prefecture, state, province) where the venue is located,
-  // expressed as an ISO 3166-2 subdivision code (e.g., "JP-13" for Tokyo, "JP-40" for Fukuoka).
+  // The first-level Area (prefecture, state, province, or a territory with no
+  // subdivision) where the venue is located, expressed as its code (e.g.,
+  // "JP-13" for Tokyo, "JP-40" for Fukuoka, "HK" for Hong Kong).
   // Populated only when the area is determinable with confidence from the source data.
   // Absent when the area cannot be determined — an incorrect value is strictly worse
   // than an absent one.
@@ -27,6 +29,13 @@ message Venue {
 
   // The WGS 84 position of the venue. Absent until resolved.
   optional Coordinates coordinates = 5;
+
+  // The IANA time zone of the venue (e.g., "Asia/Seoul"), in which the
+  // wall-clock times of its events are read. Set when the venue is created
+  // from the zone the organizer or admin confirmed, or from the Area when the
+  // whole Area has one zone; it always belongs to the venue's country. Absent
+  // only for a venue stored before time zones were recorded.
+  TimeZone time_zone = 6;
 }
 
 // VenueId is a globally unique identifier for a concert venue.
@@ -51,15 +60,21 @@ message PlaceId {
   string value = 1 [(buf.validate.field).string.min_len = 1];
 }
 
-// AdminArea represents the administrative division where a venue is located
-// as an ISO 3166-2 subdivision code (e.g., "JP-13" for Tokyo, "US-CA" for California).
+// AdminArea is the code of the first-level Area where a venue is located: an
+// ISO 3166-2 subdivision code for a country's first-level subdivision (e.g.,
+// "JP-13" for Tokyo, "US-CA" for California), or the ISO 3166-1 country code
+// of a country or territory that has no subdivision of its own (e.g., "HK" for
+// Hong Kong).
 //
-// The code consists of a two-letter country prefix, a hyphen, and a one-to-three
-// character subdivision identifier. The backend normalizes free-text area names
-// (e.g., "東京都", "Tokyo") into this code before persistence.
+// The pattern checks the form only. A lower-level subdivision, a withdrawn code
+// or a region has the same form and is rejected by the server, which resolves
+// the code against its reference data. A client that holds free text (e.g.,
+// "東京都", "Tokyo") sends it as an AreaQuery for the server to resolve.
 //
 // Present only when the area is determinable with confidence from the source data.
 message AdminArea {
-  // The ISO 3166-2 subdivision code (e.g., "JP-13", "US-NY").
-  string value = 1 [(buf.validate.field).string.pattern = "^[A-Z]{2}-[A-Z0-9]{1,3}$"];
+  // The first-level Area code (e.g., "JP-13", "US-NY", "HK"): two uppercase
+  // letters, optionally followed by a hyphen and one to three uppercase
+  // letters or digits.
+  string value = 1 [(buf.validate.field).string.pattern = "^[A-Z]{2}(-[A-Z0-9]{1,3})?$"];
 }

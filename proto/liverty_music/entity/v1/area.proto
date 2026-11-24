@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/user.proto";
+
+// AreaKind is what an Area stands for.
+enum AreaKind {
+  // Default: the kind was not set. Never returned by the server.
+  AREA_KIND_UNSPECIFIED = 0;
+
+  // A subdivision of a country (prefecture, state, province) listed in
+  // ISO 3166-2, with a code such as "JP-13".
+  AREA_KIND_SUBDIVISION = 1;
+
+  // A country or territory with no subdivision of its own, with its ISO 3166-1
+  // code (e.g., "HK" for Hong Kong). It is its own first-level Area.
+  AREA_KIND_COUNTRY = 2;
+
+  // A named group of first-level Areas inside one country, used only to group
+  // a list (e.g., "JP-KANTO" for Japan's Kantō). A region is never stored on a
+  // venue or a home and is never a first-level Area.
+  AREA_KIND_REGION = 3;
+}
+
+// AreaCode is the code of any Area: a first-level or lower-level Area, or a
+// region. A venue's or a home's area is the narrower AdminArea, which names a
+// first-level Area only.
+message AreaCode {
+  // Two uppercase letters, then optionally a hyphen and either one to three
+  // uppercase letters or digits (an ISO 3166-2 suffix, e.g., "JP-13") or four
+  // or more uppercase letters (a region, e.g., "JP-KANTO").
+  string value = 1 [(buf.validate.field).string.pattern = "^[A-Z]{2}(-[A-Z0-9]{1,3}|-[A-Z]{4,})?$"];
+}
+
+// CountryCode is an ISO 3166-1 alpha-2 country or territory code (e.g., "JP").
+message CountryCode {
+  // Exactly two uppercase Latin letters.
+  string value = 1 [(buf.validate.field).string.pattern = "^[A-Z]{2}$"];
+}
+
+// AreaQuery is the text a person typed to name an Area: a code in any case
+// ("jp-13", "FR-33") or a name in English or Japanese ("California", "東京").
+// The server resolves it to exactly one first-level Area, or fails.
+message AreaQuery {
+  // The typed code or name, 1 to 100 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }];
+}
+
+// Area is a place on the map that the product names by a standard code: a
+// first-level subdivision of a country, a country or territory without
+// subdivisions, or a region that groups first-level Areas. Venues and homes
+// refer to first-level Areas only. The server holds the Areas as reference data
+// generated from public releases; no client creates one.
+message Area {
+  // The code that identifies the Area (e.g., "JP-13", "HK", "JP-KANTO").
+  AreaCode code = 1 [(buf.validate.field).required = true];
+
+  // What the Area stands for.
+  AreaKind kind = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // The country or territory the Area belongs to; the code's first two
+  // letters.
+  CountryCode country_code = 3 [(buf.validate.field).required = true];
+
+  // The English name (e.g., "Tokyo").
+  string name_en = 4 [(buf.validate.field).string.min_len = 1];
+
+  // The Japanese name (e.g., "東京都"). Absent when the reference data has no
+  // Japanese name.
+  optional string name_ja = 5 [(buf.validate.field).string.min_len = 1];
+
+  // The codes of the regions that contain this first-level Area, so a list
+  // can be grouped. Empty for a region and for an Area no region contains.
+  repeated AreaCode region_codes = 6;
+
+  // The IANA time zone of the whole Area. Absent when the Area spans several
+  // zones (e.g., "US-TX") or the reference data names none; a venue there is
+  // confirmed with its own zone.
+  optional TimeZone time_zone = 7;
+}
+
+// TimeZoneOption is a time zone that venues of one country can have, with the
+// names a screen shows for it.
+message TimeZoneOption {
+  // The IANA name (e.g., "Asia/Seoul").
+  TimeZone time_zone = 1 [(buf.validate.field).required = true];
+
+  // The English display name, the zone's exemplar city (e.g., "Seoul").
+  string name_en = 2 [(buf.validate.field).string.min_len = 1];
+
+  // The Japanese display name (e.g., "ソウル", or "日本" for Asia/Tokyo).
+  // Absent when the reference data has none.
+  optional string name_ja = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+// Country is a country or territory that has first-level Areas, as offered in
+// a country select.
+message Country {
+  // The ISO 3166-1 alpha-2 code (e.g., "KR").
+  CountryCode code = 1 [(buf.validate.field).required = true];
+
+  // The English territory name (e.g., "South Korea").
+  string name_en = 2 [(buf.validate.field).string.min_len = 1];
+
+  // The Japanese territory name (e.g., "韓国"). Absent when the reference
+  // data has none.
+  optional string name_ja = 3 [(buf.validate.field).string.min_len = 1];
+}
