@@ -272,3 +272,10 @@ Names stay `admin_area` and `level_1` (decided with the user): renaming would br
 9. Backend release 3: migration E drops the old time columns, `users.home_id` and `homes`.
 
 Rollback: each release rolls back by image. Migrations A to D are not undone: the old code accepts first-level codes, reads names as text, and ignores the added columns; the old time columns stay until step 9, so a rollback of release 2 reads them, losing only times entered between release 2 and the rollback. `homes` survives until step 9.
+
+## Scenarios verified by hand
+
+Whether the search model leaves a show out depends on its judgement of a live page, so a unit test can only check that the instruction asks for it (`searcher_test.go` asserts the instruction text). The behaviour is read from the discovery results.
+
+@spec-manual components/entity/concert/search "Private event left out" -- the searcher's instruction excludes private events; a show listed as PRIVATE that still gets through is skipped by the venue name normalization (`venue_normalize_test.go`, "Venue not yet announced is missing"); the next discovery run's candidates are read for any.
+@spec-manual components/entity/concert/search "Show on a cruise ship left out" -- the searcher's instruction excludes shows on a ship or at sea; the next discovery run's candidates and new Venues are read for a ship.
