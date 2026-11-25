@@ -36,6 +36,30 @@ Search SHALL return the Artist's concerts whose local date is on or after the cu
 - **WHEN** the Artist has no official site
 - **THEN** Search still searches by the Artist's name
 
+### Requirement: Search covers the artist's own shows
+
+Search SHALL return only the solo shows, co-headliner bills (対バン) and tours organized by the Artist. Music festivals and other multi-artist events at which the Artist is one of many performers SHALL be left out, and so SHALL shows announced as 中止 (cancelled), private events that are not open to the public, and shows held on a ship or at sea (a cruise), which have no fixed place and no ticket sold apart from the voyage.
+
+#### Scenario: Festival left out
+- **WHEN** the source lists the Artist among the lineup of a multi-artist music festival
+- **THEN** Search does not return the festival
+
+#### Scenario: Cancelled show left out
+- **WHEN** the source lists a show of the Artist as 中止 (cancelled)
+- **THEN** Search does not return it
+
+#### Scenario: Co-headliner bill organized by the artist
+- **WHEN** the source lists a two-act bill organized by the Artist
+- **THEN** Search returns it as a SINGLE series
+
+#### Scenario: Private event left out
+- **WHEN** the source lists a show of the Artist with the venue "PRIVATE"
+- **THEN** Search does not return it
+
+#### Scenario: Show on a cruise ship left out
+- **WHEN** the source lists a show of the Artist on the pool deck of a cruise ship during a voyage
+- **THEN** Search does not return it
+
 ### Requirement: Admin area is an ISO code or absent
 
 Search SHALL return a venue's admin area only when the source states it or the venue makes it unambiguous, for a venue in any country, and only as the code of the first-level Area that the area resolves to without a country (see Area.Resolve): a code of any level or letter case, or an English or Japanese name. An area that does not resolve SHALL be returned as no admin area.
