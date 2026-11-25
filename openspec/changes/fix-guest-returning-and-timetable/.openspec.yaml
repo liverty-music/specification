@@ -1,0 +1,4 @@
+schema: liverty-clean-arch
+created: 2026-11-25
+goal: A returning guest lands on the timetable, and the guest timetable hides
+  past concerts
