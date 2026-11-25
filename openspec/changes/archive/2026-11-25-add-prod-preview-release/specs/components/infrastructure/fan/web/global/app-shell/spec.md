@@ -2,7 +2,7 @@
 
 ### Requirement: The fan web app served from the preview address calls the preview API
 
-Production serves a release to the owner on a preview address before fans receive it: the fan web app at `https://preview.liverty-music.app` and the fan API at `https://api.preview.liverty-music.app`. When the fan web app is loaded from the preview address, it SHALL send every request to the preview API address, whatever `apiBaseUrl` in `/config.json` says, so that a new web app is always checked together with the new API it will run beside. The same files serve the production address after the release is promoted, so the choice SHALL be made from the address the page was loaded from and not from a value fixed in `/config.json`.
+Production serves a release the owner holds (a GitHub pre-release) on a preview address before fans receive it: the fan web app at `https://preview.liverty-music.app` and the fan API at `https://api.preview.liverty-music.app`. A release that is not held goes live at once, and the preview address then shows the same release. When the fan web app is loaded from the preview address, it SHALL send every request to the preview API address, whatever `apiBaseUrl` in `/config.json` says, so that a held web app is always checked together with the held API it will run beside. The same files serve the production address after the release is promoted, so the choice SHALL be made from the address the page was loaded from and not from a value fixed in `/config.json`.
 
 When the page is loaded from any other address, `apiBaseUrl` from `/config.json` SHALL be used as before.
 
