@@ -149,9 +149,10 @@ message ListFollowedRequest {
   // Optional. The inclusive start of the date range (venue-local calendar date).
   // When provided, only concerts whose local event date is on or after this date
   // are returned, including dates in the past when it precedes the current date.
-  // When omitted, the result defaults to concerts on or after the current date
-  // (today onward). Dashboard callers should send the client's local date to
-  // anchor the "today" boundary to the caller's timezone.
+  // When omitted, each concert is returned when its local event date is on or
+  // after the current date at its own Venue (in the Venue's time zone), so a
+  // show abroad stays listed while it is still that day there. Callers omit it
+  // for the default view instead of sending the device's date.
   entity.v1.LocalDate from = 1;
 }
 

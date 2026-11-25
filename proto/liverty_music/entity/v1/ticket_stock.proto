@@ -98,7 +98,7 @@ message TicketStock {
 
   // True when official resale of the stock is open at the time it was read:
   // the stock is SOLD_OUT and its event's resale deadline, the last resale
-  // draw (12:00 Japan time on the event's day, or 3 hours before the start
+  // draw (12:00 at its Venue on the event's day, or 3 hours before the start
   // time if that is earlier), has not passed. A fan may then list a ticket of
   // the stock or apply for one. Server-owned.
   bool resale_open = 9 [(google.api.field_behavior) = OUTPUT_ONLY];

@@ -16,8 +16,8 @@ message DeletionBlocker {
     // carries a concrete kind.
     KIND_UNSPECIFIED = 0;
 
-    // An Issued Ticket for an Event whose local date is today or later in
-    // Japan time.
+    // An Issued Ticket for an Event whose local date is today or later at
+    // its Venue (in the Venue's time zone).
     KIND_UPCOMING_TICKET = 1;
 
     // An open ResaleListing: Listed and before its close time.

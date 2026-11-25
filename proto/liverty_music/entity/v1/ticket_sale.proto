@@ -5,7 +5,7 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
-import "google/protobuf/timestamp.proto";
+import "google/type/datetime.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/series.proto";
 
@@ -83,23 +83,13 @@ enum VerificationRequirement {
 // A closed LOTTERY sale is drawn once none of its entries is ENTERED; there is
 // no stored draw time.
 message TicketSale {
-  // The sale window must end after it starts.
+  // Both times of a window are read in one time zone. The order of the two
+  // times and a lottery's 1 to 14 days are checked server-side on the
+  // date-times (CEL cannot compare google.type.DateTime).
   option (buf.validate.message).cel = {
-    id: "ticket_sale.window"
-    message: "sale_end_time must be after sale_start_time"
-    expression: "this.sale_end_time > this.sale_start_time"
-  };
-
-  // A lottery window lasts 1 to 14 days inclusive. CEL has no day unit, so 1
-  // day is 24h and 14 days are 336h; CEL sees enums as integers, so 2 is
-  // TICKET_SALE_METHOD_LOTTERY.
-  option (buf.validate.message).cel = {
-    id: "ticket_sale.lottery_window"
-    message: "a lottery window must last 1 to 14 days"
-    expression:
-      "this.method != 2"
-      "|| (this.sale_end_time - this.sale_start_time >= duration('24h')"
-      "&& this.sale_end_time - this.sale_start_time <= duration('336h'))"
+    id: "ticket_sale.window_zone"
+    message: "sale_start_time and sale_end_time must name the same time zone"
+    expression: "this.sale_end_time.time_zone.id == this.sale_start_time.time_zone.id"
   };
 
   // A sale names each event at most once.
@@ -124,19 +114,34 @@ message TicketSale {
     }
   ];
 
-  // When the sale opens. Entered and shown in Japan time.
-  google.protobuf.Timestamp sale_start_time = 4 [
+  // When the sale opens: a civil date-time with the sale's IANA time zone
+  // (`time_zone` set, never `utc_offset`). Both times of a sale share one
+  // zone, which is one of the zones of its events' Venues for an Organizer's
+  // sale. A fan screen shows it in the viewer's zone; the organizer console in
+  // the sale's zone.
+  google.type.DateTime sale_start_time = 4 [
     (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).required = true
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "sale_time.time_zone"
+      message: "a sale time must name its IANA time zone"
+      expression: "this.time_zone.id != ''"
+    }
   ];
 
   // When the sale closes. After the sale start; for a lottery, 1 to 14 days
   // after it. For a lottery, before the start of every event the sale names;
   // for a first-come sale, no later than the start of any of them (checked
-  // server-side). Entered and shown in Japan time.
-  google.protobuf.Timestamp sale_end_time = 5 [
+  // server-side). A civil date-time in the same time zone as
+  // sale_start_time.
+  google.type.DateTime sale_end_time = 5 [
     (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).required = true
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "sale_time.time_zone"
+      message: "a sale time must name its IANA time zone"
+      expression: "this.time_zone.id != ''"
+    }
   ];
 
   // The Series whose events the sale offers.
