@@ -18,3 +18,13 @@ The system SHALL redirect an unauthenticated guest whose onboarding is complete 
 
 - **WHEN** an unauthenticated user whose onboarding is complete but who follows no artist (a signed-out fan, or a guest who tapped `[Log In]` and came back without signing in) navigates to `/`
 - **THEN** the system SHALL load the landing page
+
+## MODIFIED Requirements
+
+### Requirement: The screen's address
+
+The welcome page SHALL be served at `/welcome`, and `/` SHALL lead to it, except that `/` leads a returning guest, as "Returning Guest Redirect" defines, to the Timetable.
+
+#### Scenario: The page's address
+- **WHEN** a guest who is not a returning guest opens `/`
+- **THEN** the app shows the welcome page at `/welcome`
