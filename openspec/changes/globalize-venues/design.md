@@ -245,6 +245,12 @@ Release 2 (times):
 
 Names stay `admin_area` and `level_1` (decided with the user): renaming would break the frontend and the recorded wire contract for a vocabulary gain only.
 
+### Decision 18: a show with no place a fan can go to is not stored
+
+A discovered show listed as `PRIVATE`, or held on a cruise ship, has no public place, no fixed first-level Area and no time zone. It cannot become a Venue, because an Event needs one (`events.venue_id` is NOT NULL) and its wall-clock time is read in the Venue's zone.
+
+Rejected: letting `admin_area` and `time_zone` stay NULL for such a Venue (it would undo migration C and leave the times of release 2 without a zone), and a new kind of Venue (a concept with no value for a fan). Instead the case joins the one discovery already has for a venue that is not announced: "private" and "private event" normalize to an empty venue name, and the searcher's instruction leaves private events and shows on a ship or at sea out. The three Events already stored from such listings are deleted with their Venues in migration B (Decision 16, step 2), after a read-only check that nothing refers to them.
+
 ## Risks / Trade-offs
 
 - [Counsel later finds the prefill of Decision 6 not allowed] → The editor stops prefilling: 会場名 starts with the member's search text, 地域 and タイムゾーン with the Area's zone or no selection. Only the screen scenarios of the prefill change; stored Venues stay, since members saved their values.
