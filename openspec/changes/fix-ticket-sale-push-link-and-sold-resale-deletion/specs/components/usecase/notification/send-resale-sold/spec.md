@@ -1,0 +1,36 @@
+## MODIFIED Requirements
+
+### Requirement: Sold email after every refunded listing
+
+SendResaleSold SHALL run for each ResaleListing announced as refunded, with its user, its Order and its event. It SHALL read:
+- the listing with ResaleListing.Get;
+- the listing's user with User.Get;
+- the Order with Order.Get;
+- the event's concert with Concert.ListByIDs.
+
+It SHALL send, with ResaleListing.SendSoldEmail to the user's email address and in the user's preferred language (Japanese when none), a message stating:
+- the concert's title, date and venue;
+- that one ticket was resold through official resale;
+- the price, the resale fee and the refund amount, 税込 (tax-inclusive);
+- that the refund goes to the card with the Order's card brand and last four digits, and that when it appears on the statement depends on the card issuer;
+- that the resold ticket is no longer valid for entry.
+
+When reading or sending fails, SendResaleSold SHALL fail with that error and is run again; it SHALL send the email only while none has been sent for the listing (ResaleListing.SoldEmailDue) and then record the send (ResaleListing.MarkSoldEmailSent), so a run again after the email was sent sends no second email. When the listing's user no longer exists (User.Get fails with NotFound), because the user deleted their account after the sale, it SHALL send nothing and succeed: the refund does not depend on the user, and there is no one left to tell.
+
+#### Scenario: Sold email
+- **WHEN** a listing priced 5000 yen is announced as refunded
+- **THEN** its user receives one email with the concert, the price 5000 yen, the fee 500 yen and the refund 4500 yen
+
+#### Scenario: Listing announced twice
+- **WHEN** the same announcement is delivered twice
+- **THEN** the user receives one email
+
+#### Scenario: Mail unavailable
+- **WHEN** ResaleListing.SendSoldEmail fails with Unavailable
+- **THEN** SendResaleSold fails and the email is sent when it runs again
+
+#### Scenario: Listing's user deleted
+
+- **WHEN** a listing is announced as refunded and its user no longer exists
+- **THEN** SendResaleSold sends no email and returns without an error, so the announcement is not delivered again
+
