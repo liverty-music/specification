@@ -24,6 +24,9 @@ None.
 - `components/usecase/user/delete`: MODIFIED requirement "Delete removes the user" gains the scenario "User with a resold listing awaiting its refund".
 - `components/usecase/user/list-deletion-blockers`: MODIFIED requirement "Four kinds of blocker" gains the scenario "Resold listing awaiting its refund".
 - `components/usecase/notification/send-resale-sold`: MODIFIED requirement "Sold email after every refunded listing" gains the scenario "Listing's user deleted".
+- `components/usecase/notification/send-resale-sold` (Purpose): the sequence diagram gets a `break` after `User.Get` for a user that no longer exists (nothing sent, success). A Purpose is edited in the main spec, not through a delta, so this edit lands with the archive.
+
+The entity operations these usecases rely on are unchanged: `User.Get` (NotFound for an unknown user), `User.Delete`, `ResaleListing.Get`, `ResaleListing.ListByUser`, the Sold status and the refund time of a ResaleListing, and `ResaleListing.RecordRefund`. Only what a caller does with `User.Get`'s NotFound changes.
 
 ## Impact
 
