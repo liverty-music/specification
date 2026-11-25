@@ -4,8 +4,8 @@ Every release is served to all fans the moment it is pinned: `bump-prod-pin` pus
 
 ## What Changes
 
-- A new release of the fan API (`fan-api`) and the fan web app (`fan-web`) is first served on a preview address of its own and checked automatically there. By default it then goes live by itself, so the pin bump is still the deploy; a release that fails the check is aborted and fans never see it.
-- A risky release, or one the owner asks to look at, is held on the preview address until the owner promotes it.
+- By default a new release of the fan API (`fan-api`) and the fan web app (`fan-web`) goes live by itself, so the pin bump is still the deploy. There is no automatic check before fans get it: the first implementation (Argo Rollouts `blueGreen` with a smoke Job, which aborted a failing release) was replaced in task 8.6, and the replacement has no such gate.
+- A risky release, or one the owner asks to look at, is held on a preview address of its own (a GitHub pre-release moves only the candidate pin) until the owner promotes or aborts it; the owner looks at it by hand there.
 - The settlement payout sweeper moves out of the fan API process into a scheduled workflow in the workflow worker, so no preview, candidate or API rollout carries a payout job (design D10).
 - Switching fans to a new release causes no failed request: the mechanism is chosen by measurement (design D1), after the first implementation (Argo Rollouts `blueGreen`) answered 503 for 17 to 25 seconds at promotion.
 - The fan web app served from the preview address calls the preview API address, so one preview check covers a new web app together with a new API.

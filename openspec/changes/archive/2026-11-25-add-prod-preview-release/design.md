@@ -17,7 +17,7 @@ See proposal.md for why. What exists today, checked in the code:
 **Goals:**
 
 - **Fans see zero failed requests whenever a release goes live.** User experience is not traded for anything else in this change.
-- By default a release goes live by itself, as soon as its automatic check on the preview address passes: the pin bump is still the deploy.
+- By default a release goes live by itself: the pin bump is still the deploy. (The first implementation also ran an automatic check on the preview address first; task 8.6 removed it with the Rollouts, so a release that is not held reaches fans with no gate.)
 - When a release is risky, or the owner asks, the owner can use it in production on addresses fans do not use before any fan is served it, and then promote or abort it with one explicit action each.
 - A check can be run by a person or by an agent with commands that only read.
 
@@ -62,7 +62,7 @@ So the readiness gate cannot be relied on for GKE Gateway NEGs in this cluster, 
 
 **Measurement criterion (both candidates).** A request about every 0.1 seconds, sent from a Pod in the cluster to the public hostname, across at least five releases: zero responses with status 500 or above. A client-side timeout counts only when the same loop against an untouched hostname shows none: from the maintainer's WSL machine an untouched host timed out on about a fifth of the requests, so timeouts measured there are not evidence.
 
-**The default and the hold.** By default a release goes live by itself after the automatic check passes. A release is held for the owner only when it is risky or the owner asks. Under B, a GitHub pre-release bumps only the candidate tag, and promotion is a workflow that copies the candidate tag to the stable pin. Under A', a held release sets `autoPromotionEnabled: false` before it is cut. The first implementation already runs this way (automatic check, then promotion), and that behavior stays the target.
+**The default and the hold.** By default a release goes live by itself. A release is held for the owner only when it is risky or the owner asks. Under B, a GitHub pre-release bumps only the candidate tag, and promotion is a workflow that copies the candidate tag to the stable pin. Under A', a held release sets `autoPromotionEnabled: false` before it is cut. The first implementation ran an automatic check (a smoke Job) before it switched fans; that gate was superseded by task 8.6 and is not part of the shipped system, where only a held release is looked at, by hand.
 
 ### D2. Preview is a subdomain pair: `preview.liverty-music.app` and `api.preview.liverty-music.app`
 
@@ -98,7 +98,7 @@ So the change does not wait to observe drift. When a Rollout is added (tasks 5.1
 
 Run `SMOKE_BASE_URL=https://preview.liverty-music.app` through the existing `post-deploy.spec.ts` (it catches blank pages and lost styles). API checks are `curl` calls against `https://api.preview.liverty-music.app`. State is read with `kubectl get rollout -o json`, `kubectl describe rollout` and `argocd app get`. Argo CD bundles resource actions for `Rollout`: its documentation lists `abort`, `pause`, `promote-full`, `restart`, `resume` and `retry` for version 3.4 (Argo CD docs, "Resource Actions"). The Argo Rollouts FAQ lists only `resume` and `restart` and is out of date. The list differs between Argo CD versions, so task 6.1 lists the actions the pinned Argo CD offers (`argocd app actions list`) and records which one promotes a blueGreen pause and which one aborts. Both run through `argocd`, which is already installed. The `kubectl argo rollouts` plugin (`promote`, `abort`) is the fallback, added to the cloud-provisioning mise config only if an action is missing. An abort is followed by a `git revert` of the pin commit. While a rollout is paused, Argo CD shows the Application as Suspended (Argo Rollouts docs, "FAQ").
 
-An agent runs the reads and the smoke spec and reports. By default the automatic check promotes; for a held release the owner says when to promote. No MCP server is added.
+An agent runs the reads and the smoke spec and reports. A release that is not held goes live on the pin bump with no gate; for a held release the owner says when to promote or abort. No MCP server is added.
 
 ### D7. Order of rollout: both behind Rollouts first, `fan-web` before `fan-api`, then the releases
 
