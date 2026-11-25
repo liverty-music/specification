@@ -126,6 +126,11 @@ service TicketSaleService {
 // CreateRequest carries the Series, the sale's settings and its events.
 message CreateRequest {
   option (buf.validate.message).cel = {
+    id: "create_request.window_zone"
+    message: "sale_start_time and sale_end_time must name the same time zone"
+    expression: "this.sale_end_time.time_zone.id == this.sale_start_time.time_zone.id"
+  };
+  option (buf.validate.message).cel = {
     id: "create_request.distinct_events"
     message: "event_ids must not repeat an event"
     expression: "this.event_ids.map(e, e.value).unique()"
@@ -267,6 +272,12 @@ message ListByEventResponse {
 
 // SetWindowRequest names the sale and its new window.
 message SetWindowRequest {
+  option (buf.validate.message).cel = {
+    id: "set_window_request.window_zone"
+    message: "sale_start_time and sale_end_time must name the same time zone"
+    expression: "this.sale_end_time.time_zone.id == this.sale_start_time.time_zone.id"
+  };
+
   // Required. The sale to change. Its Series MUST be owned by the caller's
   // Organizer.
   entity.v1.TicketSaleId ticket_sale_id = 1 [(buf.validate.field).required = true];
