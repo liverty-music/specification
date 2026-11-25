@@ -4,6 +4,6 @@
 - [ ] 1.2 In `concert-store.ts`, cut the guest `listFollowed` and `revalidateFollower` result to the dates on or after `from`; verify one unit test per scenario of `route/timetable` "Guest timetable follows the same date lower bound"
 - [ ] 1.3 Read-only production check after the release: the pinned frontend version is the merged one and the rollout is complete
 
-## 2. specification
+## 2. Dependency on globalize-venues (not a task of this change)
 
-- [ ] 2.1 When `globalize-venues` lands, give the guest read a Venue-local default lower bound so the guest timetable still hides past concerts without a device date (see proposal, Impact)
+`ListByArtists` has no `from`, and `globalize-venues` makes the default timetable send none. Its owner must add the guest read's Venue-local lower bound (a `ListByArtists` delta and a proto task) before its time release; until then the client cut of this change is the guest rule. Recorded in the proposal's Impact and in the pull request of this change.
