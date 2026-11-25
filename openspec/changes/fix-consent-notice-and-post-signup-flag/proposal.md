@@ -16,6 +16,7 @@ None.
 ### Modified Capabilities
 
 - `components/infrastructure/fan/web/route/settings`: MODIFIED requirement "Consent toggles invite the fan to help, in plain words" gains a scenario saying the onboarding consent notice makes no anonymity claim either.
+- `components/infrastructure/fan/web/global/celebration-overlay`: MODIFIED requirement "Two-Tier Celebration Overlay" says when the post-signup tier counts as shown, and its scenario "Celebration does not replay" follows that.
 - `components/infrastructure/fan/web/global/post-signup-dialog`: ADDED requirement "The post-signup sequence survives closing the app", with scenarios for the celebration and for the concert sheet.
 
 ## Impact
