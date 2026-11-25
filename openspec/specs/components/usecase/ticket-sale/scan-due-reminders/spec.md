@@ -66,7 +66,7 @@ ScanDueReminders SHALL NOT send a reminder in the fan's quiet window, 22:00 to 0
 
 ### Requirement: A reminder's message names the sale and the tour
 
-Each reminder's message SHALL be the one the Notification entity renders for a sales_reminder of the sale, the stage and the fan's linked event, in the fan's preferred language: it names the stage, the start or end time, the artist in its title and the series title on its last line. The same message SHALL be used for a discovered sale and for an Organizer's sale. The link SHALL be the concert page of the fan's linked event as returned by TicketJourney.ListUserIDsTrackingSeries or TicketJourney.ListUserIDsTrackingEvents.
+Each reminder's message SHALL be the one the Notification entity renders for a sales_reminder of the sale, the stage and the fan's linked event, in the fan's preferred language: it names the stage, the start or end time, the artist in its title and the series title on its last line. The same message SHALL be used for a discovered sale and for an Organizer's sale. The link SHALL be the one the Notification entity renders for the fan's linked event, as returned by TicketJourney.ListUserIDsTrackingSeries or TicketJourney.ListUserIDsTrackingEvents: the concert page when the event's Series is first-party, and the event's entry on the timetable when it is a discovered concert, which has no concert page.
 
 #### Scenario: Lottery closing in Japanese
 - **WHEN** an `APPLY_CLOSE_24H` reminder is built in Japanese for the series King Gnu 10th Anniversary Opening Live “KICKOFF” by King Gnu, whose lottery closes on 22 October 23:59 Asia/Tokyo
@@ -78,7 +78,7 @@ Each reminder's message SHALL be the one the Notification entity renders for a s
 
 #### Scenario: Link to the tracked event
 - **WHEN** a fan's linked event in the series is its 1 November event
-- **THEN** the reminder links to the concert page of the 1 November event
+- **THEN** the reminder links to the 1 November event as the Notification entity renders it: its concert page for a first-party Series, its entry on the timetable for a discovered concert
 
 ### Requirement: A stage is requested while it is due
 

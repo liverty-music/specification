@@ -59,3 +59,8 @@ Delete SHALL load the User through User.Get, failing with NotFound for an unknow
 
 - **WHEN** Delete removed the identity but User.Delete failed, and Delete is called again
 - **THEN** the User is removed
+
+#### Scenario: User with a resold listing awaiting its refund
+
+- **WHEN** the User's only ResaleListing is Sold and has no refund time
+- **THEN** the User is removed, the listing remains, and the refund of the listing still runs without the User
