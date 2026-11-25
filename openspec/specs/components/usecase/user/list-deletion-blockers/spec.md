@@ -106,3 +106,8 @@ It SHALL return an empty list when the User has none. A Voided Ticket, an Issued
 
 - **WHEN** no User has the given id
 - **THEN** ListDeletionBlockers fails with NotFound
+
+#### Scenario: Resold listing awaiting its refund
+
+- **WHEN** the User's only ResaleListing is Sold and has no refund time
+- **THEN** ListDeletionBlockers returns an empty list
