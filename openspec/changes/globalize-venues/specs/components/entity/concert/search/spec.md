@@ -38,7 +38,7 @@ Search SHALL return the Artist's concerts whose local date is on or after the cu
 
 ### Requirement: Search covers the artist's own shows
 
-Search SHALL return only the solo shows, co-headliner bills (対バン) and tours organized by the Artist. Music festivals and other multi-artist events at which the Artist is one of many performers SHALL be left out, and so SHALL shows announced as 中止 (cancelled), private events that are not open to the public, and shows held on a ship or at sea (a cruise), which have no fixed place and no ticket sold apart from the voyage.
+Search SHALL return only the solo shows, co-headliner bills (対バン) and tours organized by the Artist. Music festivals and other multi-artist events at which the Artist is one of many performers SHALL be left out, and so SHALL shows announced as 中止 (cancelled), and any show a fan cannot go to at one fixed, named place, because a show is listed under the city and time zone of its venue: a private or invited-guests-only event, an online-only show, or a show held on a ship or an aircraft.
 
 #### Scenario: Festival left out
 - **WHEN** the source lists the Artist among the lineup of a multi-artist music festival
@@ -54,6 +54,10 @@ Search SHALL return only the solo shows, co-headliner bills (対バン) and tour
 
 #### Scenario: Private event left out
 - **WHEN** the source lists a show of the Artist with the venue "PRIVATE"
+- **THEN** Search does not return it
+
+#### Scenario: Online-only show left out
+- **WHEN** the source lists a show of the Artist that is streamed and has no venue
 - **THEN** Search does not return it
 
 #### Scenario: Show on a cruise ship left out
