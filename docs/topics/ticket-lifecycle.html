@@ -648,7 +648,7 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
     <p>当選者に請求したあと、発券する前に、出品した fan の Order が返金される (中止か Dispute) ことがあります。このときは何も発券せず、<b>請求した全額を当選者に返金</b>してから、ResaleEntry を Lost (listing cancelled)、Order を Void にして、当選者に知らせます。返金が終わるまで Lost にしないので、チケットが無いまま請求だけが残ることはありません。</p>
 
     <h3>発券のあと: 精算と Dispute</h3>
-    <p>課金と同時に、Organizer への支払い予定 <code>Settlement</code> が Held で作られます。支払われるのは、公演の開始時刻から 7 日を過ぎ、Organizer の <code>PayoutAccount</code> が Active のときです。開始時刻が未定の公演や、口座の準備が終わっていない間は Held のままです。</p>
+    <p>課金と同時に、Organizer への支払い予定 <code>Settlement</code> が Held で作られます。支払われるのは、公演が中止 (CANCELLED) でなく、開始時刻から 7 日を過ぎ、Organizer の <code>PayoutAccount</code> が Active のときです。中止した公演、開始時刻が未定の公演や、口座の準備が終わっていない間は Held のままです。</p>
     <p>カード会社が Dispute を開くと、公演がどの状態でも Order は Refunded になり、Ticket はすべて Voided になります。お金はカード会社が引き戻すので、返金額は 0 円で、fan への返金の連絡はしません。Settlement は Reversed になり、支払い済みなら Organizer から取り戻します。</p>
   </section>
 
@@ -826,6 +826,7 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
           <tr><th scope="row"><code>LotteryEntry</code> <span class="pill wait">Won</span></th><td>まだ請求していなければ Lost にして請求しない。請求済みなら Order は Paid になり、他の Paid の Order と一緒に返金</td><td>請求を試みるとき</td></tr>
           <tr><th scope="row"><code>ResaleEntry</code> <span class="pill wait">Entered</span></th><td>Lost (公演中止)、仮押さえ解放、通知</td><td>次の抽選時刻</td></tr>
           <tr><th scope="row"><span class="pill ok">Paid</span> の <code>Order</code></th><td><b>自動では返金しない。</b> admin が Artist concerts 画面の <code>Refund all</code> で返金すると Refunded になり、Ticket はすべて Voided、出品中の ResaleListing は Cancelled</td><td>admin の操作</td></tr>
+          <tr><th scope="row"><code>Settlement</code> <span class="pill wait">Held</span></th><td>Organizer に振り込まず Held のまま。Order を返金すると Reversed になる。振込の処理が公演の状態を読んだ直後に中止された場合は、その回の振込が実行され、返金で取り戻す</td><td>中止の後は毎回</td></tr>
           <tr><th scope="row">fan への通知</th><td>Issued の Ticket を持つ Paid の Order の fan に、中止の連絡 (メールと push)。返金したときに金額とカードを載せた返金の連絡。全 Ticket をリセールで売った fan には送らない</td><td>中止時と返金時に各 1 回</td></tr>
           <tr><th scope="row">Event の削除</th><td>Paid か Pending の Order が残る間は失敗する。Void と Refunded だけになれば、Event と一緒に消える (最後の Event なら Series も)</td><td>返金の後</td></tr>
         </tbody>
