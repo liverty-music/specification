@@ -60,10 +60,10 @@ The system SHALL provide Passkey authentication through hosted login. Sign-up an
 
 #### Scenario: Registration Callback API Failure
 
-- **WHEN** the `Create` RPC call fails during the registration callback, including `ALREADY_EXISTS` because the email belongs to another identity
+- **WHEN** the `Create` RPC call fails during the registration callback, including `ALREADY_EXISTS` because the email belongs to another identity and `FAILED_PRECONDITION` because the identity's account was removed
 - **THEN** the system SHALL log the error
 - **AND** the system SHALL still complete the authentication flow (user can use the app)
-- **AND** the local user record will be created on a subsequent provisioning attempt
+- **AND** the app SHALL call `Create` again on a later start, which creates the local user record once nothing prevents it, and never for the identity of a removed account
 
 #### Scenario: Registration Callback for an already registered identity
 
