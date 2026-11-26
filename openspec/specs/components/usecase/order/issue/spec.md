@@ -81,6 +81,10 @@ else a Won ResaleEntry
   break event is not PUBLISHED
     UC->>ResaleEntry: RevertWin "concert cancelled"
   end
+  UC->>TicketSale: ListByEvent
+  opt any sale of the event requires verification
+    UC->>IdentityVerification: GetByUserID
+  end
   UC->>CardAuthorization: Capture
   alt capture fails with FailedPrecondition
     UC->>ResaleEntry: RevertWin "card could not be charged"
