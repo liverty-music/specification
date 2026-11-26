@@ -87,7 +87,7 @@ Text SHALL use the fixed Material 3 type styles shared with the fan app, which d
 
 ### Requirement: Material 3 type styles shared with the fan app
 
-Text SHALL take its size, line height, weight and tracking from one of the Material 3 type styles below, or from that style's emphasized version, which is the same style one step heavier (400 becomes 500, 500 becomes 600). The sizes SHALL be fixed: they SHALL NOT change with the width of the window or of a container, and they SHALL scale with the text size the user sets in the browser. Sizes are stated at the browser's default text size of 16 px. The line heights in the "Size / line height" column are the small language height, used for Latin text. Text in Japanese SHALL use the medium language height of its style, given in the "Medium line height" column, as in the fan app.
+Text SHALL take its size, line height, weight and tracking from one of the Material 3 type styles below, or from that style's emphasized version, which is the same style one step heavier (400 becomes 500, 500 becomes 600). The sizes SHALL be fixed: they SHALL NOT change with the width of the window or of a container, and they SHALL scale with the text size the user sets in the browser. Sizes are stated at the browser's default text size of 16 px. The line heights in the "Size / line height" column are the small language height, used for Latin text. While the console's language is Japanese, text SHALL use the medium language height of its style, given in the "Medium line height" column, as in the fan app.
 
 | Style | Size / line height (px) | Medium line height (px) | Weight | Tracking (px) |
 |---|---|---|---|---|
@@ -124,8 +124,8 @@ Text SHALL take its size, line height, weight and tracking from one of the Mater
 
 #### Scenario: Japanese text takes the medium line height
 
-- **WHEN** a heading in the display-large style is set in Japanese and another in Latin letters
-- **THEN** the Latin one is on a 64 px line and the Japanese one on a 73 px line
+- **WHEN** a heading in the display-large style is shown with the console language set to Japanese, and again with it set to English
+- **THEN** it is on a 73 px line in Japanese and on a 64 px line in English
 
 ### Requirement: A fixed spacing scale
 

@@ -77,7 +77,7 @@ When a member has changed a form and not saved it, leaving the page through navi
 
 ### Requirement: Small motions confirm what happened
 
-Copying a value SHALL turn the copy icon into a check mark for 2 seconds and announce コピーしました to screen readers. Changing tabs SHALL slide the tab indicator to the selected tab. A newly issued scanner link SHALL enter its list by fading in and sliding into place. Moving between pages SHALL use a short shared-axis transition. Every motion SHALL take at most 500 ms, and under the system's reduce-motion setting every motion SHALL be replaced by an instant change.
+Copying a value SHALL turn the copy icon into a check mark for 2 seconds and announce コピーしました to screen readers. Changing tabs SHALL slide the tab indicator to the selected tab. A newly issued scanner link SHALL enter its list by fading in and sliding into place. Moving between pages SHALL use a short shared-axis transition. Every motion SHALL take at most 500 ms, and under the system's reduce-motion setting every motion SHALL be replaced by an instant change, except a menu's fade of at most 100 ms with no movement.
 
 #### Scenario: Copy a link
 
