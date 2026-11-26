@@ -4,7 +4,7 @@
 
 ### Requirement: Delete removes the user
 
-Delete SHALL load the User through User.Get, failing with NotFound for an unknown User. It SHALL fail with FailedPrecondition, removing nothing, while UserUseCase.ListDeletionBlockers returns any blocker for the User. Otherwise it SHALL start the removal of the User and wait up to 10 seconds for it. The removal SHALL check the blockers again, then remove the User's sign-in identity through User.DeleteIdentity and then the User through User.Delete; the User's Orders, Tickets, LotteryEntries and ResaleListings remain. Delete SHALL succeed when the removal removed the User, fail with FailedPrecondition when the removal found a blocker, and fail with Unavailable when the removal has not ended within the wait. Delete serves the fan removing their own account and an admin removing a fan's account alike.
+Delete SHALL load the User through User.Get, failing with NotFound for an unknown User. It SHALL fail with FailedPrecondition, removing nothing, while UserUseCase.ListDeletionBlockers returns any blocker for the User. Otherwise it SHALL start the removal of the User and wait up to 10 seconds for it. The removal SHALL check the blockers again and remove the User's sign-in identity through User.DeleteIdentity, then check the blockers once more and remove the User through User.Delete; the User's Orders, Tickets, LotteryEntries and ResaleListings remain. Delete SHALL succeed when the removal removed the User, and also when it has not ended within the wait, because it then runs to its end on its own. When the removal ends without removing the User within the wait, Delete SHALL fail with the removal's failure: FailedPrecondition for a blocker, otherwise the code of the failed step. Delete serves the fan removing their own account and an admin removing a fan's account alike.
 
 #### Scenario: Existing user
 
@@ -65,7 +65,7 @@ Delete SHALL load the User through User.Get, failing with NotFound for an unknow
 
 ### Requirement: A started removal runs to its end
 
-Once started, a removal SHALL continue whether or not its caller still waits, and SHALL resume after a restart of the platform. A step that fails with Unavailable or DeadlineExceeded SHALL be tried again until 24 hours after the removal started. A User or an identity already gone SHALL count as removed. A removal that ends with another failure, or has not ended after those 24 hours, SHALL be reported to an admin. A removal that finds a blocker SHALL remove nothing and end.
+Once started, a removal SHALL continue whether or not its caller still waits, and SHALL resume after a restart of the platform. A step that fails with Unavailable or DeadlineExceeded SHALL be tried again until 24 hours after the removal started. A User already gone SHALL count as removed, checked before the blockers, and an identity already gone SHALL count as removed. A removal that finds a blocker SHALL remove nothing further and end. A removal that ends without removing the User, for a blocker, another failure or after those 24 hours, SHALL be reported to an admin.
 
 #### Scenario: Record removal fails once
 
@@ -75,7 +75,7 @@ Once started, a removal SHALL continue whether or not its caller still waits, an
 #### Scenario: Identity provider down for a minute
 
 - **WHEN** User.DeleteIdentity fails with Unavailable for 1 minute and then succeeds
-- **THEN** Delete fails with Unavailable and the User and its identity are removed afterwards
+- **THEN** Delete succeeds after 10 seconds and the User and its identity are removed afterwards
 
 #### Scenario: Restart in the middle
 
@@ -84,8 +84,8 @@ Once started, a removal SHALL continue whether or not its caller still waits, an
 
 #### Scenario: Failure that a retry cannot fix
 
-- **WHEN** User.Delete fails with Internal
-- **THEN** the removal ends and an admin is told
+- **WHEN** User.Delete fails with Internal within the wait
+- **THEN** Delete fails with Internal and an admin is told
 
 #### Scenario: Still failing after 24 hours
 
@@ -94,10 +94,15 @@ Once started, a removal SHALL continue whether or not its caller still waits, an
 
 #### Scenario: Blocker appears before the removal
 
-- **WHEN** the User gains a blocker after Delete's check and before the removal's check
-- **THEN** Delete fails with FailedPrecondition and the User and its identity remain
+- **WHEN** the User gains a blocker after Delete's check and before the removal's first check
+- **THEN** Delete fails with FailedPrecondition, the User and its identity remain and an admin is told
 
-#### Scenario: Two deletions of one User
+#### Scenario: Blocker appears after the identity is removed
+
+- **WHEN** User.Delete failed with Unavailable and the User gains a blocker before the next try
+- **THEN** the User remains and an admin is told
+
+#### Scenario: Two removals of one User
 
 - **WHEN** two removals of the same User run
 - **THEN** the User is removed once and neither is reported to an admin

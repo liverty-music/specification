@@ -12,8 +12,3 @@
 - [ ] 3.1 Add the `delete-user` workflow, make `Delete` start and await it, and wire the worker's `UserUseCase` with the identity remover and the blocker reads; verify one unit test per scenario of both requirements of `usecase/user/delete`
 - [ ] 3.2 Add the story test for "A started deletion completes" with a failing record removal and verify it passes
 - [ ] 3.3 Open the backend PR, merge, release; confirm read-only in prod that the release is rolled out, the worker registered `delete-user` and no `workflow.needs_admin` is raised for it
-
-## 4. frontend: the withdrawal screen (components/infrastructure/fan/web/route/delete-account)
-
-- [ ] 4.1 Treat NotFound from UserService.Delete as a completed deletion; verify one test per scenario of "After deletion the fan leaves signed out", and run the flow with Playwright on a local build with a mocked service returning Unavailable then NotFound
-- [ ] 4.2 Open the frontend PR, merge, release; confirm read-only in prod that the release is rolled out
