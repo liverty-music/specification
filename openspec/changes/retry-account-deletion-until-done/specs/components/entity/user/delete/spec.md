@@ -4,7 +4,7 @@
 
 ### Requirement: Delete removes the user and what it owns
 
-Delete SHALL remove the User with the given id, including its full name and phone number, together with its follows, ticket journeys, push subscriptions, notifications, ticket sale reminder records and IdentityVerification records. The User's orders, tickets and lottery entries SHALL remain. It SHALL fail with NotFound when no User has that id, and with InvalidArgument when the id is empty. It SHALL fail with Unavailable, removing nothing or leaving the removal complete, when the store cannot be reached.
+Delete SHALL remove the User with the given id, including its full name and phone number, together with its follows, ticket journeys, push subscriptions, notifications, ticket sale reminder records and IdentityVerification records. The User's orders, tickets and lottery entries SHALL remain. It SHALL record the User's provider user ID as removed together with the removal: both happen or neither does, and User.Create refuses that provider user ID from then on. It SHALL fail with NotFound when no User has that id, and with InvalidArgument when the id is empty. It SHALL fail with Unavailable, removing nothing or leaving the removal complete, when the store cannot be reached.
 
 #### Scenario: Existing user
 
@@ -35,3 +35,8 @@ Delete SHALL remove the User with the given id, including its full name and phon
 
 - **WHEN** the store cannot be reached
 - **THEN** Delete fails with Unavailable
+
+#### Scenario: Identity recorded as removed
+
+- **WHEN** Delete runs for a User with provider user ID `abc`
+- **THEN** a later User.Create for provider user ID `abc` fails with FailedPrecondition

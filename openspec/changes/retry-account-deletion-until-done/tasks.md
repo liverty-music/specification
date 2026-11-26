@@ -1,6 +1,7 @@
 ## 1. specification: caller list
 
 - [ ] 1.1 Update the service comment of `rpc/backend/user/v1/user_service.proto` to name the workflow worker as the caller of the code, link and `DeleteIdentity` procedures; verify `buf lint` and `buf breaking` pass, open the PR and merge it (comment only, no release)
+- [ ] 1.2 Add FAILED_PRECONDITION (the identity of a removed User) to the errors of `rpc/user/v1/user_service.proto` `UserService.Create`; verify `buf lint` and `buf breaking` pass, open the PR and merge it (comment only, no release)
 
 ## 2. backend: identity (components/entity/user/delete-identity, identity-provider-credentials)
 
@@ -9,12 +10,14 @@
 
 - [ ] 2.3 Map a failed database connection to Unavailable in `rdb.toAppErr`; verify a test for every scenario of `entity/user/delete`, with the database stopped for "Store unreachable"
 
+- [ ] 2.4 Add the `deleted_user_identities` migration with its grants, make `User.Delete` record the provider user id and `User.Create` refuse a recorded one; verify one test per added or modified scenario of `entity/user/delete` and `entity/user/create`, including a Create that runs while the removal commits, `scripts/check-migration-drift.sh` and `make lint-schema`
+
 ## 3. backend: usecase and story (components/usecase/user/delete)
 
 - [ ] 3.1 Keep the apperr code of a failed run through `Workflows.Await` in `internal/infrastructure/workflow`; verify an integration test where a client other than the worker awaits a run that failed with FailedPrecondition and reads that code, and that the run is still reported for an admin, and a passkey test where an addition's run that failed with Aborted still lets the removal continue
-- [ ] 3.2 Add the `delete-user` workflow, make `Delete` start and await it, and wire the worker's `UserUseCase` with the identity remover and the blocker reads; verify one unit test per scenario of both requirements of `usecase/user/delete`
-- [ ] 3.3 Add the story test for "A started deletion completes" with a failing record removal and verify it passes
-- [ ] 3.4 Open the backend PR, merge, release; confirm read-only in prod that the release is rolled out, the worker registered `delete-user` and no `workflow.needs_admin` is raised for it
+- [ ] 3.2 Add the `delete-user` workflow (User first, then the identity), make `Delete` start and await it, wire the worker's `UserUseCase` with the identity remover and the blocker reads, and cover `usecase/user/create`; verify one unit test per scenario of both requirements of `usecase/user/delete` and of the modified requirement of `usecase/user/create`
+- [ ] 3.3 Add the story tests for "A started deletion completes" with a failing identity removal and verify they pass
+- [ ] 3.4 Open the backend PR, merge, release; confirm read-only in prod that the migration is applied, the release is rolled out, the worker registered `delete-user` and no `workflow.needs_admin` is raised for it
 
 ## 4. specification: Purpose
 
