@@ -183,7 +183,8 @@ service UserService {
   // - NOT_FOUND: No user record exists for the authenticated identity.
   // - FAILED_PRECONDITION: The User has a deletion blocker.
   // - UNAVAILABLE: The removal could not be started, or the wait for it could
-  //   not be read; a started removal goes on.
+  //   not be read; a started removal goes on. NOT_FOUND from a later call then
+  //   means the removal went ahead.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 }

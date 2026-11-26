@@ -49,7 +49,8 @@ service UserService {
   // - NOT_FOUND: The user does not exist.
   // - FAILED_PRECONDITION: The user has a deletion blocker.
   // - UNAVAILABLE: The removal could not be started, or the wait for it could
-  //   not be read; a started removal goes on.
+  //   not be read; a started removal goes on. NOT_FOUND from a later call then
+  //   means the removal went ahead.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
 
