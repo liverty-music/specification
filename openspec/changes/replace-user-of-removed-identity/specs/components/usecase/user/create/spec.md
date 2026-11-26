@@ -25,7 +25,7 @@ When User.Create fails with AlreadyExists, Create SHALL look the identity up wit
 
 ### Requirement: A user whose identity is gone is replaced
 
-When the email belongs to another User, Create SHALL read that User with User.GetByEmail and ask User.HasIdentity about its provider user ID. When the identity exists, Create SHALL fail with AlreadyExists. When it does not, Create SHALL remove that User with UserUseCase.Delete and then store the new User with User.Create. A Delete that fails with NotFound means the User is already removed and Create SHALL go on. A Delete that fails with FailedPrecondition, because the User still has a deletion blocker, SHALL make Create fail with AlreadyExists, removing nothing. When the second User.Create fails with AlreadyExists, Create SHALL return the User that has the caller's provider user ID, and fail with AlreadyExists when there is none. Any other failure of User.GetByEmail, User.HasIdentity, UserUseCase.Delete or User.Create SHALL be returned with its own code; when User.GetByEmail fails with NotFound, Create SHALL fail with AlreadyExists. The new User SHALL receive nothing from the removed one.
+When the email belongs to another User, Create SHALL read that User with User.GetByEmail. When User.GetByEmail fails with NotFound, because the User was removed in the meantime, Create SHALL go on to store the new User. When the User read has the caller's provider user ID, because another call stored it in the meantime, Create SHALL return it. Otherwise Create SHALL ask User.HasIdentity about its provider user ID. When the identity exists, Create SHALL fail with AlreadyExists. When it does not, Create SHALL remove that User with UserUseCase.Delete and then store the new User with User.Create. A Delete that fails with NotFound means the User is already removed and Create SHALL go on. A Delete that fails with FailedPrecondition, because the User still has a deletion blocker, SHALL make Create fail with AlreadyExists, removing nothing. When the second User.Create fails with AlreadyExists, Create SHALL return the User that has the caller's provider user ID, and fail with AlreadyExists when there is none. Any other failure of User.GetByEmail, User.HasIdentity, UserUseCase.Delete or User.Create SHALL be returned with its own code. The new User SHALL receive nothing from the removed one.
 
 #### Scenario: Account left behind by a deletion
 
@@ -46,3 +46,13 @@ When the email belongs to another User, Create SHALL read that User with User.Ge
 
 - **WHEN** two calls of Create by the same new identity both find the old User, and the other call removes it and stores the new User first
 - **THEN** the call returns the new User
+
+#### Scenario: Old user removed before it is read
+
+- **WHEN** User.GetByEmail fails with NotFound after the email conflict
+- **THEN** Create stores the new User and returns it
+
+#### Scenario: Already repaired before the read
+
+- **WHEN** User.GetByEmail returns a User with the caller's provider user ID
+- **THEN** Create returns that User and removes nothing
