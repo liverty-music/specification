@@ -18,7 +18,7 @@ and this document in the same change (frontend `AGENTS.md`).
 | Actor | Role in the stories |
 |---|---|
 | Member | A person of a partner Organizer who signs in to the console with the owner role. The reader of the guide. |
-| Liverty Music | Vets the Organizer, creates it with its short name, registers its business details and its represented Artists, and re-invites a member who lost their passkey. |
+| Liverty Music | Vets the Organizer, creates it with its short name, registers its business details and its represented Artists, and sends a passkey registration link to a member who lost their passkey, after verifying them. |
 | Stripe | The payment provider. Hosts the payout account onboarding page. |
 | Venue staff | Open a reception link on a phone at the door and scan the fans' entry QR codes. They have their own guide (`reception/public/guide.html`). |
 | Fan | Opens the fan event page, enters a lottery or buys first come, and shows the entry QR code at the door. |
@@ -83,7 +83,8 @@ journey
 - The other way in is `https://organizer.liverty-music.app/?org=<short name>`.
   The console never shows the short name, so a member learns it only from
   Liverty Music.
-- A lost passkey is recovered by Liverty Music re-inviting the member.
+- A lost passkey is recovered by Liverty Music: after verifying the member, it
+  removes the lost passkey and sends a passkey registration link.
 
 ### Read Home (guide chapter `home`)
 

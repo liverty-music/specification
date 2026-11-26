@@ -41,7 +41,7 @@ the Organizer domain, its surfaces, and the resolved audit gaps.
   (federate to an Organizer's own workspace IdP when it has one),
   `ignoreUnknownUsernames=true` — explicitly set at provisioning (never
   inherit the admin default). A **recovery path is mandatory** (admin
-  re-invite via re-issued passkey init link; optional step-up-protected
+  sends a passkey registration link after removing the lost passkeys; optional step-up-protected
   magic-link/OTP); passkey-only-with-no-recovery is prohibited (synced
   passkeys reduce but do not remove single-credential risk; Zitadel hard
   passkey-only lockdown is fragile — #11682/#8996). **Org resolution is
@@ -113,8 +113,8 @@ Ordered, idempotent, compensating — keyed on `OrganizerId`:
    `request_passwordless_registration=true` + User Grant `owner`; deliver the
    returned Zitadel **passkey-registration init link**
    (`requestPlatformType=platform`) → the owner enrolls a passkey on first
-   sign-in. Recovery = admin re-invite (re-issue the init link after
-   out-of-band verification). Author the provisioner root-key **rotation
+   sign-in. Recovery = after out-of-band verification, an admin removes
+   the lost passkeys and sends a passkey registration link. Author the provisioner root-key **rotation
    runbook** here (the key created in `organizer-tenancy` is first consumed at
    this step).
 6. Set `provisioning_state = active`.
