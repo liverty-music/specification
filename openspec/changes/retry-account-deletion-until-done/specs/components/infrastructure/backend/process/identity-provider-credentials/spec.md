@@ -4,24 +4,24 @@
 
 ### Requirement: Only the identity service holds an identity-provider credential
 
-The identity service SHALL be the only backend process that holds a credential for the identity provider's management API. No other process SHALL have such a credential mounted or readable, including through a shared secret; this includes the fan, organizer, reception and admin console API servers and the event consumer.
+The identity service SHALL be the only backend process that holds a credential for the identity provider's management API. No other process SHALL have such a credential mounted or readable, including through a shared secret; this includes the fan, organizer, reception and admin console API servers, the event consumer and the workflow worker.
 
-Every change the platform makes to an identity at the identity provider, and every lookup it makes with a management credential, SHALL be made by the identity service, on a request from another process:
-- from the event consumer: verification codes and passkey registration links;
-- from the fan API: confirming an email address with the code from a verification email, deleting the identity of a fan who deletes their own account, and asking whether the identity of an account that holds a new sign-up's email still exists, and nothing else;
-- from the admin console API: deleting a fan identity, and creating, provisioning, deactivating and deleting an Organizer's Organization.
+Every change the platform makes to an identity at the identity provider SHALL be made by the identity service, on a request from another process:
+- from the workflow worker: verification codes, passkey registration links, and deleting the identity of a fan whose account is being removed;
+- from the fan API: confirming an email address with the code from a verification email, and nothing else;
+- from the admin console API: creating, provisioning, deactivating and deleting an Organizer's Organization.
 
 The identity service SHALL take no requests from outside the cluster. Each calling process SHALL reach only the identity-service operations it uses, and every other process SHALL reach none. A request for an operation outside the caller's set SHALL be refused and SHALL change nothing. Each API server SHALL keep validating sign-in tokens with the identity provider's public keys, which are not a credential.
 
 #### Scenario: API server deployment
 
-- **WHEN** the fan, organizer, reception or admin console API or the event consumer is deployed
+- **WHEN** the fan, organizer, reception or admin console API, the event consumer or the workflow worker is deployed
 - **THEN** no identity-provider management credential is mounted in it or readable by it
 
 #### Scenario: Fan requests a verification resend
 
 - **WHEN** a signed-in fan requests a verification resend through the fan API
-- **THEN** the fan API announces the request, the event consumer asks the identity service for a new code, and the event consumer emails the code to the address
+- **THEN** the fan API starts the request, the workflow worker asks the identity service for a new code, and the workflow worker emails the code to the address
 
 #### Scenario: Fan confirms an email address
 
@@ -31,21 +31,16 @@ The identity service SHALL take no requests from outside the cluster. Each calli
 #### Scenario: Fan deletes their account
 
 - **WHEN** a fan deletes their own account through the fan API
-- **THEN** the fan API asks the identity service to delete that fan's identity, and the identity service deletes it
-
-#### Scenario: Sign-up with the email of a left-behind account
-
-- **WHEN** a signed-in person registers with an email an account already holds
-- **THEN** the fan API asks the identity service whether that account's identity exists, and the identity service answers
+- **THEN** the workflow worker asks the identity service to delete that fan's identity, and the identity service deletes it
 
 #### Scenario: Admin deletes a fan
 
 - **WHEN** an admin deletes a fan through the admin console API
-- **THEN** the admin console API asks the identity service to delete the fan's identity
+- **THEN** the workflow worker asks the identity service to delete the fan's identity
 
 #### Scenario: Operation outside the caller's set
 
-- **WHEN** the event consumer asks the identity service to delete a fan identity
+- **WHEN** the fan API or the admin console API asks the identity service to delete a fan identity
 - **THEN** the request is refused and the identity is unchanged
 
 #### Scenario: Fan API asks for another operation
@@ -55,7 +50,7 @@ The identity service SHALL take no requests from outside the cluster. Each calli
 
 #### Scenario: Process with no access
 
-- **WHEN** any process other than the event consumer, the admin console API and the fan API sends a request to the identity service
+- **WHEN** any process other than the workflow worker, the admin console API and the fan API sends a request to the identity service
 - **THEN** the request does not reach the identity service
 
 #### Scenario: Request from outside the cluster
