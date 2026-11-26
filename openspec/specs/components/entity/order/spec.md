@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An Order is one fan account's application for tickets of one TicketStock and, once its payment is captured, the purchase record: the ticket count, the referral code, the card authorization, the payment provider's ID for the captured payment, the amount and its own status. It is created Pending when the fan applies through a LotteryEntry, a Checkout or a ResaleEntry, becomes Paid when the payment is captured and its Tickets are issued, or Void when it will never be paid. Void Orders hold no tickets. One Order covers all tickets of its application.
+An Order is one fan account's application for tickets of one TicketStock and, once its payment is captured, the purchase record: the ticket count, the referral code, the card authorization, the payment provider's ID for the captured payment, the amount and its own status. It is created Pending when the fan applies through a LotteryEntry, a Checkout or a ResaleEntry, becomes Paid when the payment is captured and its Tickets are issued, or Void when it will never become Paid. Void Orders hold no tickets. One Order covers all tickets of its application.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -163,7 +163,7 @@ An Order SHALL be Paid only with its card authorization, its provider payment ID
 
 ### Requirement: Void only from Pending
 
-An Order SHALL become Void only from Pending, when its source ends without it ever being paid.
+An Order SHALL become Void only from Pending, when its source ends without it ever becoming Paid. An Order whose charge was refunded because a ResaleListing allocated to its ResaleEntry was cancelled before its Tickets were issued is Void too; it records neither that charge nor that refund.
 
 #### Scenario: Pending order
 - **WHEN** the status is Pending

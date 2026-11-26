@@ -45,7 +45,7 @@ stateDiagram-v2
 
 ### Requirement: Accepted card brands
 
-A card brand SHALL be accepted for a Checkout whatever it is, American Express included. A card brand SHALL be accepted for a LotteryEntry unless it is American Express; an unknown brand is accepted for both.
+A card brand SHALL be accepted for a Checkout or a ResaleEntry whatever it is, American Express included. A card brand SHALL be accepted for a LotteryEntry unless it is American Express; an unknown brand is accepted for all three.
 
 #### Scenario: American Express on a lottery entry
 - **WHEN** the card brand is American Express and the purchase is a LotteryEntry
@@ -55,13 +55,18 @@ A card brand SHALL be accepted for a Checkout whatever it is, American Express i
 - **WHEN** the card brand is American Express and the purchase is a Checkout
 - **THEN** the card is accepted
 
+#### Scenario: American Express on a resale entry
+
+- **WHEN** the card brand is American Express and the purchase is a ResaleEntry
+- **THEN** the card is accepted
+
 #### Scenario: Other or unknown brand
 - **WHEN** the card brand is Visa, Mastercard, JCB, Diners, Discover or unknown
-- **THEN** the card is accepted for a LotteryEntry and for a Checkout
+- **THEN** the card is accepted for a LotteryEntry, a Checkout and a ResaleEntry
 
 ### Requirement: A card authorization confirms a purchase only when authorized for its amount
 
-A CardAuthorization SHALL confirm a purchase, a LotteryEntry or a Checkout, only when its status is Authorized, its amount equals the purchase's expected amount, and its card brand is accepted for that purchase.
+A CardAuthorization SHALL confirm a purchase, a LotteryEntry, a Checkout or a ResaleEntry, only when its status is Authorized, its amount equals the purchase's expected amount, and its card brand is accepted for that purchase.
 
 #### Scenario: Matching card authorization
 - **WHEN** an Authorized 16000 yen card authorization on a Visa card is checked against a LotteryEntry expecting 16000 yen

@@ -1,7 +1,7 @@
 # components/entity/card-authorization/create Specification
 
 ## Purpose
-Opens a CardAuthorization in yen for the amount of one purchase, a LotteryEntry or a Checkout, at most once per purchase, and returns it with the secret the fan's browser uses to complete card authentication; nothing is charged.
+Opens a CardAuthorization in yen for the amount of one purchase, a LotteryEntry, a Checkout or a ResaleEntry, at most once per purchase, and returns it with the secret the fan's browser uses to complete card authentication; nothing is charged.
 
 ## Requirements
 

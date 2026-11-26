@@ -1,7 +1,7 @@
 # components/usecase/resale-listing/create Specification
 
 ## Purpose
-ResaleListingUseCase.Create lets a fan who cannot attend offer one of their tickets for official resale (公式リセール) at face value, once the ticket's first-come sale has sold out and until admission opens.
+ResaleListingUseCase.Create lets a fan who cannot attend offer one of their tickets for official resale (公式リセール) at face value, once the ticket's TicketStock has sold out and until the event's resale deadline.
 
 ```mermaid
 sequenceDiagram

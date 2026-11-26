@@ -269,7 +269,7 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
   <h2 style="font-size:18px;margin-top:8px">まず知っておく 3 つのこと</h2>
   <ol class="three">
     <li><b>申込み → Order → Ticket の 3 段で進む</b><span>申込みの形は取得方法ごとに違います (<code>Checkout</code> / <code>LotteryEntry</code> / <code>ResaleEntry</code>)。どれも Pending の Order を 1 つだけ持ち、Order が Paid になった瞬間に Ticket が発行されます。</span></li>
-    <li><b>カードは先に仮押さえ、請求は Ticket を渡す直前だけ</b><span>外れた・期限が切れた・取り下げた申込みの Order は Void になり、仮押さえは請求せずに解放されます。Ticket を受け取らない fan が請求されることはありません。</span></li>
+    <li><b>カードは先に仮押さえ、請求は Ticket を渡す直前だけ</b><span>外れた・期限が切れた・取り下げた申込みの Order は Void になり、仮押さえは請求せずに解放されます。Ticket を受け取らない fan に請求が残ることはありません (公式リセールで、請求の直後に出品が取り消されたときは全額を返金します)。</span></li>
     <li><b>Ticket の状態は Issued と Voided の 2 つだけ</b><span>入場済みかどうかは状態ではなく admit time で表します。リセールは名義変更ではなく、旧 Ticket を Voided にして買った fan に新しい Ticket を発行します。</span></li>
   </ol>
 
@@ -458,6 +458,8 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
           <tr><td>1 公演で持つ・申し込む SeatType は 1 種類だけ</td><td>先行で S席に当選した fan は、一般で A席を申し込めない</td></tr>
           <tr><td>1 つの抽選 TicketSale に、1 公演につき 1 回だけ申し込める</td><td>2 回目の申込みは拒否され、仮押さえは解放される</td></tr>
           <tr><td>二重タップ・リトライ・再読み込み・別タブでも、hold・請求・発行は 1 回</td><td>fan が二重に請求されない</td></tr>
+          <tr><td>本人確認が必要な TicketSale では、Active な IdentityVerification が無いと hold も申込みもできない。公式リセールは、その公演のどれか 1 つの TicketSale が本人確認を必須にしていれば必要</td><td>拒否され、何も押さえない。発券する Ticket はその IdentityVerification に紐付く</td></tr>
+          <tr><td>受付が終わった抽選に、その在庫の Entered の申込みが残っている間は、先着の hold を始められない</td><td>抽選がまだ当選分を在庫から引いていないので、先着で売ると当選者の分まで売ってしまう</td></tr>
         </tbody>
       </table>
     </div>
@@ -560,7 +562,7 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
           <text class="s2" x="400" y="194">仮押さえの期限が抽選の 24 時間後より前。</text>
           <text class="s2" x="400" y="212">メールと push で再申込みを案内</text>
           <text class="s2" x="400" y="274">fan が抽選前に取り下げた (通知なし)</text>
-          <text class="s" x="20" y="316">Won 以外の終わり方では Order は Void になり、仮押さえは請求せず解放される。</text>
+          <text class="s" x="20" y="316">当選して発券される以外の終わり方では Order は Void になり、請求前の仮押さえは解放される。</text>
 
           <line class="grid" x1="20" y1="338" x2="700" y2="338"/>
           <text class="lane" x="20" y="366">出品 ResaleListing (売る側)</text>
@@ -626,22 +628,28 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
           <text class="s2" x="584" y="308">請求せず返した</text>
         </svg>
       </div>
-      <figcaption>Order が Paid になるときは、請求済みの支払い情報・人数分の Ticket・Organizer への支払い記録 (Settlement、Held) をまとめて保存し、どれか 1 つでも失敗したら何も保存しません。Paid にならずに終わった Order は Void になり、その仮押さえは請求せずに解放されます。</figcaption>
+      <figcaption>Order が Paid になるときは、請求済みの支払い情報・人数分の Ticket・Organizer への支払い記録 (Settlement、Held) をまとめて保存し、どれか 1 つでも失敗したら何も保存しません。Paid にならずに終わった Order は Void になり、請求前の仮押さえは解放されます。例外は、公式リセールで請求した直後に出品が取り消されたときで、全額を返金してから Void にします (請求も返金も Order には記録しません)。</figcaption>
     </figure>
 
     <div class="tbl-wrap">
       <table>
         <thead><tr><th scope="col">ルール</th><th scope="col">理由・破ると何が起きるか</th></tr></thead>
         <tbody>
-          <tr><td>Void になれるのは Pending からだけ</td><td>一度請求した Order を「払われなかった」扱いにしない</td></tr>
+          <tr><td>Void になれるのは Pending からだけ</td><td>一度 Paid になった Order を「払われなかった」扱いにしない</td></tr>
           <tr><td>返金できるのは Paid の Order だけ。理由は中止 (Cancellation) か Dispute (カード会社による払い戻し)</td><td>中止の返金は、公演が CANCELLED のときしか通らない</td></tr>
           <tr><td>中止の返金額は「まだ Issued の Ticket の分」</td><td>リセールで売れた Ticket は手数料を引いて返金済みなので、二重に返さない</td></tr>
           <tr><td>請求の処理は止まっても途中から再開し、カードを二度請求しない。24 時間たっても終わらなければ admin に知らせる</td><td>決済代行が落ちていても、復旧後に 1 回だけ請求される</td></tr>
           <tr><td>仮押さえの解放は、決済代行に届くまで 24 時間リトライし、失敗したら admin に知らせる</td><td>Void の Order の仮押さえが黙って残り続けない</td></tr>
-          <tr><td>抽選では American Express のカードを受け付けない (先着は受け付ける)</td><td>抽選の申込みは成立せず、仮押さえは解放される</td></tr>
+          <tr><td>抽選では American Express のカードを受け付けない (先着と公式リセールは受け付ける)</td><td>抽選の申込みは成立せず、仮押さえは解放される</td></tr>
         </tbody>
       </table>
     </div>
+    <h3>公式リセール: 請求の直後に出品が取り消されたとき</h3>
+    <p>当選者に請求したあと、発券する前に、出品した fan の Order が返金される (中止か Dispute) ことがあります。このときは何も発券せず、<b>請求した全額を当選者に返金</b>してから、ResaleEntry を Lost (listing cancelled)、Order を Void にして、当選者に知らせます。返金が終わるまで Lost にしないので、チケットが無いまま請求だけが残ることはありません。</p>
+
+    <h3>発券のあと: 精算と Dispute</h3>
+    <p>課金と同時に、Organizer への支払い予定 <code>Settlement</code> が Held で作られます。支払われるのは、公演の開始時刻から 7 日を過ぎ、Organizer の <code>PayoutAccount</code> が Active のときです。開始時刻が未定の公演や、口座の準備が終わっていない間は Held のままです。</p>
+    <p>カード会社が Dispute を開くと、公演がどの状態でも Order は Refunded になり、Ticket はすべて Voided になります。お金はカード会社が引き戻すので、返金額は 0 円で、fan への返金の連絡はしません。Settlement は Reversed になり、支払い済みなら Organizer から取り戻します。</p>
   </section>
 
   <!-- 5. TICKET -->
@@ -858,7 +866,7 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
       <table class="pit">
         <thead><tr><th scope="col">取り違え</th><th scope="col">正しくは</th><th scope="col">取り違えると</th></tr></thead>
         <tbody>
-          <tr><td>Order の Void と Ticket の Voided は同じ</td><td>Void は「一度も払われずに終わった Order」。Voided は「無効になった Ticket」で、その Order は Paid か Refunded のまま</td><td>リセールで売れた Ticket の Order を未払い扱いにし、返金額や支払いを誤る</td></tr>
+          <tr><td>Order の Void と Ticket の Voided は同じ</td><td>Void は「一度も Paid にならずに終わった Order」。Voided は「無効になった Ticket」で、その Order は Paid か Refunded のまま</td><td>リセールで売れた Ticket の Order を未払い扱いにし、返金額や支払いを誤る</td></tr>
           <tr><td>入場済みは Ticket の状態の 1 つ</td><td>状態は Issued と Voided だけ。入場は admit time と Admission で表し、Voided にしても消えない</td><td>返金で来場の証拠を消し、chargeback に反論できなくなる</td></tr>
           <tr><td>リセールは Ticket の名義変更</td><td>旧 Ticket を Voided にし、買った fan に新しい Ticket を発行する。Ticket の user は変わらない</td><td>出品者のコードで入場できてしまう、または買った fan が入場できない</td></tr>
           <tr><td>公演を中止すれば返金される</td><td>Paid の Order は admin が <code>Refund all</code> するまで Paid のまま</td><td>fan に返金されないまま Event を削除しようとして失敗する</td></tr>

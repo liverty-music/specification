@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The developer admin console frontend foundation: a dedicated Vite MPA entry in the `frontend` repo, bundle-isolated from the consumer SPA, authenticated via Zitadel OIDC (admin org + Google Workspace IDP), with an authenticated route guard and a post-login welcome placeholder. Business features land in later changes; this establishes the access-controlled shell.
+The developer admin console frontend foundation: a dedicated Vite MPA entry in the `frontend` repo, bundle-isolated from the consumer SPA, authenticated via Zitadel OIDC (admin org + Google Workspace IDP), with an authenticated route guard and a post-login welcome page that links to the console's screens.
 
 ## Requirements
 
@@ -18,9 +18,9 @@ SHALL require authentication by default: an unauthenticated visitor MUST be
 redirected into the sign-in flow before any admin content renders, with the
 OIDC callback route as the only exception, where the console completes the
 OIDC code exchange and establishes the authenticated session. After successful
-authentication the admin console SHALL display a welcome placeholder page and
-SHALL NOT expose any business feature, confirming only that the authenticated
-foundation is in place.
+authentication the admin console SHALL open a welcome page that links to the
+approval queue, approved concerts, Organizers and users screens. Admin APIs
+additionally require the admin role.
 
 #### Scenario: Internal developer signs in
 
@@ -58,4 +58,4 @@ foundation is in place.
 #### Scenario: Welcome page after login
 
 - **WHEN** an authenticated developer lands on the admin console root
-- **THEN** a welcome placeholder is shown with no admin business functionality
+- **THEN** a welcome page is shown with links to the approval queue, approved concerts, Organizers and users screens

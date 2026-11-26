@@ -122,7 +122,7 @@ Every console address below sign-in SHALL start with the member's Organizer (`/o
 
 ### Requirement: Without a known Organization the console asks for the email
 
-When an unauthenticated visitor opens any console address and the console knows no Organization - none in the address and none remembered on the device - the console SHALL open the find-organizer screen instead of starting a sign-in, and SHALL return the visitor to the address they opened once they sign in through a link. When the console knows an Organization, the guard sends the visitor to sign-in for that Organization as before.
+When an unauthenticated visitor opens any console address and the console knows no Organization - none in the address and none remembered on the device - the console SHALL open the find-organizer screen instead of starting a sign-in, and SHALL remember on the device, for 24 hours, the address they opened and return them to it when they sign in through a link within that time; after it they land on Home. The link itself is not limited by this time. When the console knows an Organization, the guard sends the visitor to sign-in for that Organization as before.
 
 #### Scenario: New device
 

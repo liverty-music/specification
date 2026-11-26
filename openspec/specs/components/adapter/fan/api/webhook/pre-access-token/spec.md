@@ -21,7 +21,7 @@ The backend SHALL expose an HTTP endpoint at `POST /pre-access-token` that Zitad
 - **WHEN** Zitadel POSTs a `preaccesstoken` payload to `/pre-access-token` with a valid `PAYLOAD_TYPE_JWT` body
 - **THEN** the endpoint SHALL return HTTP 200
 - **AND** the response body SHALL be a JSON object with an `append_claims` array
-- **AND** the `append_claims` array SHALL contain `{"key":"email","value":<user.human.email>}` when the user has a verified email address
+- **AND** the `append_claims` array SHALL contain `{"key":"email","value":<user.human.email>}` when the user has an email address, verified or not
 - **AND** the response content type SHALL be `application/json`
 
 #### Scenario: Machine user request is passed through without email

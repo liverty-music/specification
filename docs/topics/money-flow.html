@@ -513,7 +513,7 @@ svg text { font-family: var(--sans); }
           <tr><th scope="row">与信を置く</th><td>15 分の確保の中で</td><td>受付期間中。カード認証が終わった時点で応募になる</td><td>完売した席種に申し込むとき</td></tr>
           <tr><th scope="row">課金する</th><td>注文確定のとき</td><td>受付終了後の抽選で当選したとき</td><td>毎日の抽選で当選したとき</td></tr>
           <tr><th scope="row">外れた与信</th><td>確保切れから 2 分以内に解放</td><td>落選したら解放</td><td>最終抽選まで持ち越し、終われば解放</td></tr>
-          <tr><th scope="row">American Express</th><td>使える</td><td>使えない (認証後に解放され、応募にならない)</td><td>仕様に記載なし</td></tr>
+          <tr><th scope="row">American Express</th><td>使える</td><td>使えない (認証後に解放され、応募にならない)</td><td>使える</td></tr>
           <tr><th scope="row">課金に失敗したら</th><td>確保を戻し Order は Void</td><td>Lost。枚数は繰り上げない</td><td>Lost。出品は次の抽選に回る</td></tr>
         </tbody>
       </table>
@@ -539,7 +539,7 @@ svg text { font-family: var(--sans); }
         </tbody>
       </table>
     </div>
-    <p class="prose">Order は Pending から必ず Paid か Void のどちらかへ進みます。Void は「一度も課金されなかった」、Refunded は「課金した後に返した」という意味で、返金できるのは Paid の Order だけです。Event を削除できるのは、その Event の Order がすべて Void か Refunded になってからです。</p>
+    <p class="prose">Order は Pending から必ず Paid か Void のどちらかへ進みます。Void は「Paid にならなかった」、Refunded は「Paid になった後に返した」という意味で、返金できるのは Paid の Order だけです。公式リセールで請求した直後に出品が取り消されたときは、全額を返金したうえで Void になります (この請求と返金は Order に記録しません)。Event を削除できるのは、その Event の Order がすべて Void か Refunded になってからです。</p>
   </div>
 </section>
 
@@ -770,11 +770,13 @@ svg text { font-family: var(--sans); }
           <tr><td>抽選の当選者が払えなければ、次点を繰り上げる</td><td>抽選は繰上げなし。その枚数は割り当てないまま。リセールは出品が次の抽選に回る</td><td>販売数の超過や、抽選の公平性の崩れ</td></tr>
           <tr><td>在庫の販売数にはリセールも含む</td><td>TicketStock の販売数にリセールは数えない。返金済み (Refunded) の Order は数えたまま</td><td>完売判定が崩れ、リセールが開かない・売り過ぎる</td></tr>
           <tr><td>紹介コード (ReferralCode) で報酬を払う</td><td>コードは購入を数えるためだけ。報酬もアクセス権も生まない。Order の作成時に固定</td><td>払う約束のない報酬を計上する</td></tr>
-          <tr><td>American Express はどこでも使える</td><td>先着は使える。抽選は使えない (カード認証の後で解放され、応募にならない)</td><td>抽選で AmEx の応募を受け付けてしまう</td></tr>
+          <tr><td>American Express はどこでも使える</td><td>先着と公式リセールは使える。抽選は使えない (カード認証の後で解放され、応募にならない)</td><td>抽選で AmEx の応募を受け付けてしまう</td></tr>
                 <tr><td>Dispute の返金は、通常の返金と同じ</td><td>返金額は 0 円です (お金はカード会社がプラットフォームから取り戻す)。公演がどの状態でも受け付け、Ticket は Voided になります。精算がまだ Held なら Reversed にして二度と払わず、Released なら払った分を Organizer から取り戻します</td><td>返金額を二重に払う。あるいは、公演前の Dispute で精算が残り、Organizer に払ってしまう</td></tr>
         <tr><td>決済の通知は課金の結果も受け取る</td><td>決済の webhook が処理するのは、カード与信の完了と Dispute だけです。課金の完了、返金の反映、振込の取り消しなど、ほかの通知は受け取っても何もしません。署名が無効、または 300 秒より古い通知は拒否します</td><td>通知を待って状態が進むと考える。実際の課金と返金は、バックエンドが自分で呼んで進める</td></tr>
         <tr><td>同じ公演で席種を選び分けられる</td><td>1 人のアカウントが 1 つの公演で持てる、または申し込める席種は 1 つだけです。先着・抽選・リセールのどれを通しても同じ数え方です</td><td>S 席を押さえたまま A 席も取ろうとして、弾かれる</td></tr>
 
+        <tr><td>先着は、受付期間内で残りがあれば、いつでも始められる</td><td>受付が終わった抽選に、その在庫の Entered の申込みが残っている間は、先着の hold を始められません (<code>FailedPrecondition</code>)</td><td>抽選の当選分まで先着で売ってしまう</td></tr>
+        <tr><td>リセールの当選者に請求できたら、必ず発券される</td><td>発券の前に出品者の Order が返金 (中止か Dispute) されると、発券せず、請求した全額を当選者に返金して Order を Void にします</td><td>当選者に請求だけが残る</td></tr>
 </tbody>
       </table>
     </div>

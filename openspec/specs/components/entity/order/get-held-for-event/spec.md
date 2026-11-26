@@ -7,7 +7,7 @@ Reads the tickets an account holds for one event and their SeatType, so an appli
 
 ### Requirement: Tickets an account holds for an event
 
-GetHeldForEvent SHALL take a user, an event and optionally one Order to leave out, and return the number of tickets the user holds for the event: the Issued Tickets of the user's Paid Orders for the event plus the ticket counts of the user's Pending Orders for the event that still hold or may still receive tickets: a Pending Order whose Checkout is holding or Committed, or whose LotteryEntry is Entered or Won, and, when that number is above 0, the SeatType of the Orders counted. The Order to leave out, when given, SHALL NOT be counted; it is the Order of the user's own holding Checkout that the new application resumes or replaces. It SHALL return a count of 0 and no SeatType when nothing is counted, also when the user's only Paid Order has every Ticket Voided by a resale. Void and Refunded Orders, Pending Orders whose Checkout's hold has lapsed, and Tickets that are Voided, SHALL NOT be counted.
+GetHeldForEvent SHALL take a user, an event and optionally one Order to leave out, and return the number of tickets the user holds for the event: the Issued Tickets of the user's Paid Orders for the event plus the ticket counts of the user's Pending Orders for the event that still hold or may still receive tickets: a Pending Order whose Checkout is holding or Committed, or whose LotteryEntry or ResaleEntry is Entered or Won, and, when that number is above 0, the SeatType of the Orders counted. The Order to leave out, when given, SHALL NOT be counted; it is the Order of the user's own holding Checkout that the new application resumes or replaces. It SHALL return a count of 0 and no SeatType when nothing is counted, also when the user's only Paid Order has every Ticket Voided by a resale. Void and Refunded Orders, Pending Orders whose Checkout's hold has lapsed, and Tickets that are Voided, SHALL NOT be counted.
 
 #### Scenario: Paid and pending orders
 - **WHEN** the user has a Paid Order with 2 Issued S席 Tickets and a Pending Order for 1 S席 ticket for the event
@@ -15,6 +15,11 @@ GetHeldForEvent SHALL take a user, an event and optionally one Order to leave ou
 
 #### Scenario: Entered lottery entry
 - **WHEN** the user's only Order for the event is Pending with an Entered LotteryEntry for 2 tickets
+- **THEN** GetHeldForEvent returns 2
+
+#### Scenario: Entered resale entry
+
+- **WHEN** the user's only Order for the event is Pending with an Entered ResaleEntry for 2 tickets
 - **THEN** GetHeldForEvent returns 2
 
 #### Scenario: Resold ticket

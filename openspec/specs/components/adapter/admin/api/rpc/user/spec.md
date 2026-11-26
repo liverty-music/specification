@@ -1,7 +1,7 @@
 # components/adapter/admin/api/rpc/user Specification
 
 ## Purpose
-The admin-facing User service boundary: only admins remove a fan User, the boundary validates the request, and it runs UserUseCase.Delete.
+The admin-facing User service boundary: only admins remove a fan User through this service, the boundary validates the request, and it runs UserUseCase.Delete.
 
 ## Requirements
 

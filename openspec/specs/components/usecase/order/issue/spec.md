@@ -81,6 +81,10 @@ else a Won ResaleEntry
   break event is not PUBLISHED
     UC->>ResaleEntry: RevertWin "concert cancelled"
   end
+  UC->>TicketSale: ListByEvent
+  opt any sale of the event requires verification
+    UC->>IdentityVerification: GetByUserID
+  end
   UC->>CardAuthorization: Capture
   alt capture fails with FailedPrecondition
     UC->>ResaleEntry: RevertWin "card could not be charged"
@@ -248,7 +252,7 @@ When the Checkout's sale requires verification, Issue SHALL bind every Ticket to
 
 ### Requirement: Issue a won resale entry
 
-When the Order's source is a Won ResaleEntry, Issue SHALL first check that the entry's event is still PUBLISHED; when it is not, as for a 中止 (cancelled) concert, Issue SHALL charge nothing and make the entry Lost and its Order Void with ResaleEntry.RevertWin, with the lost reason "concert cancelled", and the card authorization is then released and the fan told from that announcement. Otherwise Issue SHALL charge the Order's card authorization once and then, in one indivisible step: make the Order Paid; void the Ticket of each listing allocated to the entry and make each listing Sold; issue a new Ticket for the fan for each listing; and record the Settlements as for a resale purchase today, so the Organizer is paid once per seat. The listing fans' refunds then follow as for any Sold listing. When the card authorization can no longer be charged, Issue SHALL make the entry Lost and its Order Void with ResaleEntry.RevertWin, with the lost reason "card could not be charged", which announces the entry, so its listings are free again, and charge nothing; the card authorization is then released and the fan told from that announcement, as for an entry Lost at a draw. When the charge has not succeeded by the event's start time because the payment provider stayed unreachable, Issue SHALL stop charging and cancel the card authorization with CardAuthorization.Release:
+When the Order's source is a Won ResaleEntry, Issue SHALL first check that the entry's event is still PUBLISHED; when it is not, as for a 中止 (cancelled) concert, Issue SHALL charge nothing and make the entry Lost and its Order Void with ResaleEntry.RevertWin, with the lost reason "concert cancelled", and the card authorization is then released and the fan told from that announcement. Otherwise Issue SHALL charge the Order's card authorization once and then, in one indivisible step: make the Order Paid; void the Ticket of each listing allocated to the entry and make each listing Sold; issue a new Ticket for the fan for each listing; and record the Settlements as for a resale purchase today, so the Organizer is paid once per seat. The listing fans' refunds then follow as for any Sold listing. When any TicketSale of the event, read with TicketSale.ListByEvent, requires verification, Issue SHALL bind every new Ticket to the user's IdentityVerification, read with IdentityVerification.GetByUserID whatever its status, before the charge; when the user has none, it SHALL fail with that error, charge nothing and change nothing. When no sale of the event requires verification, the new Tickets carry no IdentityVerification. When the card authorization can no longer be charged, Issue SHALL make the entry Lost and its Order Void with ResaleEntry.RevertWin, with the lost reason "card could not be charged", which announces the entry, so its listings are free again, and charge nothing; the card authorization is then released and the fan told from that announcement, as for an entry Lost at a draw. When the charge has not succeeded by the event's start time because the payment provider stayed unreachable, Issue SHALL stop charging and cancel the card authorization with CardAuthorization.Release:
 - when the release succeeds, nothing was charged, and Issue SHALL make the entry Lost with ResaleEntry.RevertWin, with the lost reason "payment not completed before the show"; the fan is told from that announcement, and the card authorization is not released a second time;
 - when the release fails with FailedPrecondition because the card authorization was charged, an earlier attempt did charge the card, and Issue SHALL read the captured payment and issue the Order as after a successful charge;
 - while the payment provider cannot be reached, Issue SHALL keep the entry Won, try the release again, and an admin SHALL be told.
@@ -257,6 +261,11 @@ When that indivisible step finds a listing allocated to the entry Cancelled, bec
 #### Scenario: Won entry issued
 - **WHEN** a Won entry for 2 tickets of 5000 yen, allocated two listings of two fans, is issued
 - **THEN** the fan is charged 10000 yen and holds 2 new Issued Tickets, both listed Tickets are Voided and both listings Sold
+
+#### Scenario: Resale ticket of an event that requires verification
+
+- **WHEN** a Won entry is issued for an event one of whose sales requires verification, and the user has an IdentityVerification
+- **THEN** every new Ticket is bound to that IdentityVerification
 
 #### Scenario: Card can no longer be charged
 - **WHEN** the Won entry's card authorization was cancelled by the card issuer

@@ -41,7 +41,8 @@ provisioning sets the end-to-end test fans' passwords.
 - **WHEN** the `liverty-music` product org login policy is applied
 - **THEN** the policy SHALL NOT be applied to the `admin` role org
 - **AND** the `admin` role org SHALL retain a separate login policy that
-  allows external IdP sign-in (see "Configure Admin Org Login Policy")
+  allows sign-in only through the admin Google identity provider, with local
+  sign-in and self-registration disabled
 
 #### Scenario: Fan sets a password through the Zitadel API
 
