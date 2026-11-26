@@ -6,6 +6,7 @@ Two guest-only defects. A guest who already followed artists and finished onboar
 
 - Welcome redirects a returning guest to the timetable: unauthenticated, onboarding complete, and still following at least one artist. A guest still in onboarding keeps free access to Welcome, and a guest with no follows (a signed-out fan, or a guest who tapped `[Log In]`, which discards the follows) still sees Welcome.
 - The guest timetable applies the same lower bound as the signed-in one: the client cuts the `ListByArtists` result to the dates on or after the timetable's `from`. `ListByArtists` stays "past and upcoming" for its other callers.
+- A guest who opens `/notifications` is still sent to `/welcome` with a notice; a returning guest goes on from there to the timetable. No code change for this: it is what the redirect above does to that path.
 - No proto or backend change.
 
 ## Capabilities
@@ -18,6 +19,8 @@ None.
 
 - `components/infrastructure/fan/web/route/welcome`: new requirement "Returning Guest Redirect".
 - `components/infrastructure/fan/web/route/timetable`: new requirement "Guest timetable follows the same date lower bound" (an ADDED requirement, so it does not touch "Default today-onward timetable", which `globalize-venues` modifies).
+
+- `components/infrastructure/fan/web/route/notifications`: MODIFIED requirement "Only a signed-in fan can open the center" says where a returning guest arrives.
 
 ## Impact
 
