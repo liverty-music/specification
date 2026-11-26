@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan authorizes their card for a number of tickets and confirms the entry, the draw runs after the window closes, and a winning fan is charged and receives account-bound covered tickets while a losing fan is never charged; every fan is told the result.
+A fan authorizes their card for a number of tickets and confirms the entry, the draw runs after the window closes, and a winning fan is charged and receives account-bound covered tickets while a losing fan is never charged; every fan is told the result, and a fan who was not drawn or whose card could not be charged sees their ticket journey marked Lost.
 
 ```mermaid
 eventmodeling
@@ -33,12 +33,13 @@ tf 24 cmd LotteryEntryUseCase_EndForCancelledEvent
 tf 25 evt LotteryEntry_Lost
 rf 26 cmd OrderUseCase_ReleaseCardAuthorization ->> 16 ->> 25
 rf 27 cmd NotificationUseCase_SendLotteryLoss ->> 16 ->> 25
-rf 28 rmo LotteryEntryUseCase_ListByTicketSale ->> 15 ->> 16 ->> 25
-tf 29 ui Fan_LotteryEntry
-rf 30 rmo TicketUseCase_List ->> 18
-tf 31 ui Fan_Tickets
-rf 32 pcr Schedule_SettlementDue
-tf 33 cmd SettlementUseCase_ReleaseDueSettlements
+rf 28 cmd TicketJourneyUseCase_MarkLost ->> 16 ->> 25
+rf 29 rmo LotteryEntryUseCase_ListByTicketSale ->> 15 ->> 16 ->> 25
+tf 30 ui Fan_LotteryEntry
+rf 31 rmo TicketUseCase_List ->> 18
+tf 32 ui Fan_Tickets
+rf 33 pcr Schedule_SettlementDue
+tf 34 cmd SettlementUseCase_ReleaseDueSettlements
 ```
 
 ## Requirements
@@ -160,3 +161,17 @@ When a member cancels (中止) an Event, no further charge SHALL be made for its
 #### Scenario: Another date of the sale
 - **WHEN** a sale names two Events, and a member cancels one while fans are Entered for both
 - **THEN** the entries of the cancelled Event are Lost, and the entries of the other Event stay Entered and are drawn when the window closes
+
+### Requirement: A lost entry marks the fan's journey Lost
+
+When a fan's lottery entry is lost because it was not drawn or because the card could not be charged, and no other lottery entry of the fan for the event is Entered or Won, TicketJourneyUseCase.MarkLost SHALL record the fan's ticket journey for the event as Lost, set by the platform, so the Timetable and the concert sheet show Lost without the fan setting it.
+
+#### Scenario: Loss shown on the Timetable
+
+- **WHEN** a fan whose only entry for the event is not drawn opens the Timetable after the draw
+- **THEN** the event's journey shows Lost
+
+#### Scenario: Cancelled concert
+
+- **WHEN** a fan's entry ends because the concert was cancelled
+- **THEN** the event's journey is as it was before the cancellation

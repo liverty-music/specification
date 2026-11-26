@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A Ticket Journey is a fan's own record of where they stand in getting a ticket for one event, from watching for the sale through a lottery to a secured ticket. A fan has at most one journey per event; the fan sets it by hand and the system does not check it against real ticket sales. The platform records what it knows itself: a lottery entry on the platform marks it Applied and a ticket the platform issues marks it Paid. The app starts Tracking when the fan adds the event to their calendar.
+A Ticket Journey is a fan's own record of where they stand in getting a ticket for one event, from watching for the sale through a lottery to a secured ticket. A fan has at most one journey per event; the fan sets it by hand and the system does not check it against real ticket sales. The platform records what it knows itself: a lottery entry on the platform marks it Applied, a lost entry marks it Lost and a ticket the platform issues marks it Paid. The app starts Tracking when the fan adds the event to their calendar.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -78,7 +78,7 @@ A Ticket Journey SHALL accept any of the five statuses as its next status, whate
 
 ### Requirement: Which journeys the platform and the app may replace
 
-A status set by inference SHALL replace no journey: the app records it only when the fan has no journey for the event. Applied set by the platform SHALL replace a journey at Tracking, Applied or Lost, whoever set it, and SHALL NOT replace a journey at Unpaid or Paid, because the fan already has a ticket for the event. A status the fan sets replaces any journey (components/entity/ticket-journey/upsert).
+A status set by inference SHALL replace no journey: the app records it only when the fan has no journey for the event. Applied set by the platform SHALL replace a journey at Tracking, Applied or Lost, whoever set it, and SHALL NOT replace a journey at Unpaid or Paid, because the fan already has a ticket for the event. Lost set by the platform SHALL replace a journey at Tracking or Applied, whoever set it, and SHALL NOT replace a journey at Unpaid, Paid or Lost. A status the fan sets replaces any journey (components/entity/ticket-journey/upsert).
 
 #### Scenario: Inference over an existing journey
 
@@ -93,4 +93,19 @@ A status set by inference SHALL replace no journey: the app records it only when
 #### Scenario: Entry announced after the purchase
 
 - **WHEN** the fan's journey is Paid set by the platform and the platform records Applied
+- **THEN** the journey is not replaceable
+
+#### Scenario: Loss of an applied journey
+
+- **WHEN** the fan's journey is Applied set by the platform and the platform records Lost
+- **THEN** the journey is replaceable
+
+#### Scenario: Loss after the fan secured a ticket elsewhere
+
+- **WHEN** the fan's journey is Paid set by the fan and the platform records Lost
+- **THEN** the journey is not replaceable
+
+#### Scenario: Loss the fan already recorded
+
+- **WHEN** the fan's journey is Lost set by the fan and the platform records Lost
 - **THEN** the journey is not replaceable
