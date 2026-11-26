@@ -6,7 +6,7 @@ The backend pull request is merged only after backend release 2 of `globalize-ve
 
 ## 2. backend: usecase (components/usecase/settlement/release-due-settlements; Decisions 2 and 3)
 
-- [ ] 2.1 Give the settlement usecase the `entity.EventRepository`, read each Settlement's Event with `Get` before any payment provider call, withhold a CANCELLED one with an Info log, keep skipping an Event that does not exist, and wire the repository in the workflow worker; verify one `@spec` unit test per scenario of "Release 7 days after the event's current start": "Before the event plus 7 days", "Event start unknown", "Start time filled in after the purchase", "Cancelled event past the buffer" (no payout account read, `CreatePayout` or `MarkReleased` call) and "Cancelled after the run read the event" (the Event is cancelled after `Get` returned PUBLISHED, and the split is still paid and recorded)
+- [ ] 2.1 Give the settlement usecase the `entity.EventRepository`, read each Settlement's Event with `Get` before any payment provider call, withhold a CANCELLED one with an Info log, keep skipping an Event that does not exist, and wire the repository in the workflow worker; verify one `@spec` unit test per scenario of "Release 7 days after the event's current start": "Before the event plus 7 days", "Event start unknown", "Start time filled in after the purchase", "Cancelled event past the buffer" (no payout account read, `CreatePayout` or `MarkReleased` call), "Cancelled after the run read the event" (the Event is cancelled after `Get` returned PUBLISHED, and the split is still paid and recorded) and "Cancelled before a failed release is recorded" (`MarkReleased` fails on the first run, and the second run, reading CANCELLED, calls neither `CreatePayout` nor `MarkReleased`)
 
 ## 3. backend: story (stories/remove-a-cancelled-concert)
 
@@ -15,7 +15,7 @@ The backend pull request is merged only after backend release 2 of `globalize-ve
 ## 4. backend: release
 
 - [ ] 4.1 Confirm that `globalize-venues` backend release 2 has been released (its task 14.7), then merge the backend pull request, cut the release and confirm read-only in production that the release is rolled out and the `release-due-settlements` workflow completes without a new error
-- [ ] 4.2 Confirm read-only in production that no Released Settlement belongs to a CANCELLED Event; if one does, record its id in this task and tell the owner
+- [ ] 4.2 Confirm read-only in production that no Released Settlement belongs to a CANCELLED Event; if one does, record its id in this task and tell the owner. For each Held Settlement of a CANCELLED Event, confirm that the worker logs show no `Stripe Transfer created` with its id (design Risks, unrecorded payout)
 - [ ] 4.3 Run `gh workflow run stripe-sandbox-e2e.yml` in backend and confirm the run succeeds
 
 ## 5. specification: Purpose and topic page (at archive)

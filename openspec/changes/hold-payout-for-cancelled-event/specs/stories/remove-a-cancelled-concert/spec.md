@@ -2,7 +2,7 @@
 
 ### Requirement: A cancelled concert is never paid out
 
-After a member cancels an Event with SeriesUseCase.Cancel, a run of SettlementUseCase.ReleaseDueSettlements that starts after the cancellation SHALL pay the Organizer nothing for that Event's Orders, however long after the event's start it runs and whether or not an admin has refunded them. A Settlement of the Event that is Held stays Held until its Order is refunded; `Refund all` then makes it Reversed with no payout to claw back.
+After a member cancels an Event with SeriesUseCase.Cancel, a run of SettlementUseCase.ReleaseDueSettlements that starts after the cancellation SHALL pay the Organizer nothing for that Event's Orders, however long after the event's start it runs and whether or not an admin has refunded them. A Settlement of the Event that is Held stays Held until its Order is refunded, as by `Refund all`, which makes it Reversed.
 
 #### Scenario: Release date passes before the refunds
 

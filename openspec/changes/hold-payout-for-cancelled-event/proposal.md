@@ -8,7 +8,7 @@ The owner decided on 2026-11-26 (liverty-music/specification#996, first item; pi
 
 - A Settlement is not eligible for release when its Event is CANCELLED, however long after the start time.
 - `ReleaseDueSettlements` reads each Event's publish state on every run and withholds the payout of a CANCELLED Event. The Settlement stays Held.
-- Nothing else changes: `Refund all` still refunds each Paid Order and makes its Held Settlement Reversed; a Settlement already Released is still clawed back by the refund. No automatic refund, no new Settlement status, no new alert, no screen change, no proto change and no migration.
+- Nothing else changes: `Refund all` still refunds each Paid Order and makes its Held Settlement Reversed; a Settlement already Released is still clawed back by the refund. One limit remains: a payout that was made but not recorded before the cancellation stays unrecorded, and the refund does not claw it back (design Risks). No automatic refund, no new Settlement status, no new alert, no screen change, no proto change and no migration.
 
 ## Capabilities
 

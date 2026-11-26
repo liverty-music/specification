@@ -11,7 +11,7 @@ See proposal.md for the motivation. The current state, read on backend `main` af
 
 **Goals:**
 
-- No payout for an Order of an Event that a run reads as CANCELLED.
+- No payout call for an Order of an Event that a run reads as CANCELLED.
 - Add no state, no stored data and no manual step.
 
 **Non-Goals:**
@@ -19,13 +19,13 @@ See proposal.md for the motivation. The current state, read on backend `main` af
 - Automatic refund. The owner kept `Refund all` manual.
 - An alert or a screen that tells an admin a cancelled Event still has Paid Orders. Today the admin finds it on the Artist concerts screen. Adding a signal is a separate decision.
 - Cancellation after the payout. A refund already claws a Released Settlement back (`usecase/order/refund` "Payout clawed back"); the platform fee was never paid out and any negative balance on the Organizer's payout account is the platform's, as `entity/settlement` states.
-- Closing the existing race between a refund and a running sweep (see Risks).
+- Closing the existing race between a refund and a running sweep, or recovering a payout that was made but not recorded (see Risks).
 
 ## Decisions
 
 ### 1. The Settlement stays Held; the release rule refuses it
 
-The Event's publish state becomes an input of release eligibility. `entity.IsReleaseEligible` returns false for a CANCELLED Event. Held already means exactly what is true: none of the money has been paid out and all of it is with the platform. The refund then moves it to Reversed through the existing path.
+The Event's publish state becomes an input of release eligibility. `entity.IsReleaseEligible` returns false for a CANCELLED Event. Held already means what is true of a withheld Settlement: its money has not been paid out and is with the platform (the exception is the unrecorded payout under Risks). The refund then moves it to Reversed through the existing path.
 
 Alternatives rejected:
 
@@ -67,6 +67,7 @@ A Held Settlement of a cancelled Event leaves the work list when its Order is re
 - [A fan is not refunded because nobody runs `Refund all`] → The money now stays with the platform instead of reaching the Organizer, but nothing reminds the admin. Accepted for the pilot, where one Organizer is in direct contact.
 - [A mistaken cancellation blocks the payout for good, because CANCELLED is terminal] → The fans were already told of the cancellation and the refund, so refunding is the consistent outcome. Paying the Organizer anyway would be a manual transfer outside the product.
 - [A cancellation seconds before a payout does not stop it] → Decision 3; `Refund all` claws it back.
+- [A payout made but not recorded, then a cancellation] → `CreatePayout` and `MarkReleased` are separate steps. If the transfer succeeds and recording fails (database unavailable, worker stopped), today the next run repeats `CreatePayout` under the same idempotency key, gets the same transfer and records Released. If the Event is cancelled before that happens, the new rule withholds the Settlement: it stays Held, a refund reverses nothing, and the Organizer keeps the transfer. It needs a failure between two consecutive calls and a cancellation of an Event that started more than 7 days ago before a run succeeds, normally within 5 minutes. Accepted: the admin reverses the transfer in the payment provider's dashboard; the worker logs `Stripe Transfer created` with the settlement id, followed by the release failure. Alternatives rejected here: calling `CreatePayout` again for a cancelled Event would make a new payout when none exists (the provider keeps idempotency keys only 24 hours); looking up the provider's transfers needs a new entity operation and a provider read for every withheld Settlement. The claim state of Decision 3 is where this is fixed, with the race below. The MVP has one split per Settlement, so a partly paid multi-split Settlement cannot occur today.
 - [Existing race: a refund committed while a sweep runs] → `ListHeld` is a snapshot, and a Settlement made Reversed by a refund after the snapshot can still be paid; `MarkReleased` then fails and the run skips it, leaving a transfer nobody reverses. A refund that reads Held just before `MarkReleased` has the same result. This change closes it for 中止 refunds except within the window of Decision 3, because the run reads the cancellation before paying. A dispute refund of an Event that is not cancelled stays exposed. It exists today and is left to a separate fix.
 - [A cancelled Event's Held Settlements are read every 5 minutes until refunded] → Two reads each; negligible.
 
