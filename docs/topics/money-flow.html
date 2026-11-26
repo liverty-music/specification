@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>お金の流れ — Liverty Music</title>
+<meta name="description" content="ファンのカード与信から課金、Organizer への精算、手数料、返金までを、先着・抽選・リセールの違いとともにまとめた仕様の案内。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sans: "IBM Plex Sans JP", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --ink: #17212b;
+  --muted: #55606c;
+  --line: #d3d9df;
+  --soft: #edf0f3;
+  --hold: #9a5a00;
+  --hold-bg: #fff2dc;
+  --charge: #0a7556;
+  --charge-bg: #e1f3ec;
+  --refund: #b3261e;
+  --refund-bg: #fce7e5;
+  --payout: #3646a6;
+  --payout-bg: #e7e9f8;
+  --release: #5d6976;
+  --release-bg: #eceff2;
+  --focus: #1d5fd1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1419;
+    --surface: #172029;
+    --ink: #e5eaef;
+    --muted: #9ba7b3;
+    --line: #2d3843;
+    --soft: #1d2731;
+    --hold: #f2a74b;
+    --hold-bg: #36270f;
+    --charge: #4cc79d;
+    --charge-bg: #10302a;
+    --refund: #f4897f;
+    --refund-bg: #3a1b19;
+    --payout: #a3abff;
+    --payout-bg: #212650;
+    --release: #a5b0bb;
+    --release-bg: #232d37;
+    --focus: #7fb0ff;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1419;
+  --surface: #172029;
+  --ink: #e5eaef;
+  --muted: #9ba7b3;
+  --line: #2d3843;
+  --soft: #1d2731;
+  --hold: #f2a74b;
+  --hold-bg: #36270f;
+  --charge: #4cc79d;
+  --charge-bg: #10302a;
+  --refund: #f4897f;
+  --refund-bg: #3a1b19;
+  --payout: #a3abff;
+  --payout-bg: #212650;
+  --release: #a5b0bb;
+  --release-bg: #232d37;
+  --focus: #7fb0ff;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.75;
+}
+a { color: var(--payout); text-underline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+code { background: var(--soft); padding: 0.05em 0.35em; border-radius: 4px; overflow-wrap: anywhere; }
+
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: 16px; top: 8px; background: var(--surface); padding: 6px 10px; z-index: 10; }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+header.top { padding: 40px 0 8px; }
+.eyebrow { font-size: 0.8rem; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin: 0 0 6px; }
+h1 { font-size: clamp(1.7rem, 4.4vw, 2.5rem); line-height: 1.3; margin: 0 0 12px; text-wrap: balance; letter-spacing: 0.01em; }
+.lede { max-width: 66ch; color: var(--ink); margin: 0 0 24px; }
+
+nav.toc { margin: 0 0 8px; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 8px; }
+nav.toc a { display: inline-block; font-size: 0.85rem; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; color: var(--ink); background: var(--surface); }
+nav.toc a:hover { border-color: var(--muted); }
+
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 8px 0 8px; }
+.three > div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+.three h3 { margin: 0 0 6px; font-size: 1.02rem; line-height: 1.5; }
+.three p { margin: 0; font-size: 0.93rem; color: var(--muted); }
+.three .k { display: block; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+@media (max-width: 820px) { .three { grid-template-columns: minmax(0, 1fr); } }
+
+section { padding: 36px 0 8px; }
+h2 { font-size: 1.45rem; line-height: 1.4; margin: 0 0 8px; text-wrap: balance; }
+h3 { font-size: 1.1rem; margin: 24px 0 6px; }
+section > .wrap > p, .prose { max-width: 68ch; }
+.why { color: var(--muted); max-width: 68ch; margin-top: 0; }
+
+figure { margin: 16px 0 8px; }
+.frame { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.frame svg { display: block; width: 100%; height: auto; }
+.frame.w1040 svg { min-width: 860px; }
+.frame.w1000 svg { min-width: 760px; }
+figcaption { font-size: 0.86rem; color: var(--muted); margin-top: 6px; max-width: 80ch; }
+.scrollhint { display: none; font-size: 0.8rem; color: var(--muted); margin: 4px 0 0; }
+@media (max-width: 880px) { .scrollhint { display: block; } }
+
+/* legend */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.85rem; margin: 10px 0 0; padding: 0; list-style: none; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 26px; height: 0; border-top: 3px solid; }
+.sw.hold { border-color: var(--hold); border-top-style: dashed; }
+.sw.charge { border-color: var(--charge); }
+.sw.release { border-color: var(--release); border-top-style: dashed; }
+.sw.refund { border-color: var(--refund); }
+.sw.payout { border-color: var(--payout); }
+
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); margin: 14px 0 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; line-height: 1.6; }
+.tbl.wide table { min-width: 720px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+thead th { background: var(--soft); font-size: 0.82rem; letter-spacing: 0.02em; color: var(--muted); font-weight: 600; }
+tbody th { font-weight: 600; white-space: nowrap; }
+td .num, .num { font-variant-numeric: tabular-nums; font-family: var(--mono); }
+
+.tag { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 0 8px; border-radius: 999px; border: 1px solid; line-height: 1.7; white-space: nowrap; }
+.tag.hold { color: var(--hold); background: var(--hold-bg); border-color: var(--hold); }
+.tag.charge { color: var(--charge); background: var(--charge-bg); border-color: var(--charge); }
+.tag.refund { color: var(--refund); background: var(--refund-bg); border-color: var(--refund); }
+.tag.payout { color: var(--payout); background: var(--payout-bg); border-color: var(--payout); }
+.tag.release { color: var(--release); background: var(--release-bg); border-color: var(--release); }
+
+/* fee block */
+.fee { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 820px) { .fee { grid-template-columns: minmax(0, 1fr); } }
+.formula { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+.formula h3 { margin-top: 0; }
+.formula .eq { font-family: var(--mono); font-size: 0.92rem; background: var(--soft); border-radius: 6px; padding: 8px 10px; overflow-wrap: anywhere; margin: 6px 0 10px; }
+.formula p { margin: 0 0 8px; font-size: 0.93rem; }
+.calc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+.calc h3 { margin-top: 0; }
+.calc .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.calc label { display: block; font-size: 0.82rem; color: var(--muted); }
+.calc input { width: 100%; min-width: 0; font: inherit; font-family: var(--mono); font-size: 1rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.calc dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; margin: 14px 0 0; font-size: 0.93rem; }
+.calc dt { color: var(--muted); }
+.calc dd { margin: 0; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.calc dd.big { font-weight: 600; }
+.calc .sep { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
+
+/* pitfalls */
+.pit td:first-child { width: 34%; }
+.pit td:nth-child(3) { color: var(--refund); }
+
+/* sources */
+.sources { font-size: 0.86rem; color: var(--muted); }
+.sources dl { display: grid; grid-template-columns: minmax(0, 14em) minmax(0, 1fr); gap: 6px 16px; margin: 0; }
+.sources dt { font-weight: 600; color: var(--ink); }
+.sources dd { margin: 0; overflow-wrap: anywhere; }
+.sources code { background: transparent; padding: 0; }
+@media (max-width: 640px) { .sources dl { grid-template-columns: 1fr; } .sources dd { margin-bottom: 8px; } }
+
+footer { padding: 32px 0 48px; color: var(--muted); font-size: 0.82rem; }
+
+/* SVG */
+svg text { font-family: var(--sans); }
+.bx { fill: var(--surface); stroke: var(--line); stroke-width: 1.3; }
+.bx-soft { fill: var(--soft); stroke: var(--line); stroke-width: 1.2; }
+.bx-plat { fill: var(--soft); stroke: var(--muted); stroke-width: 1.3; }
+.t { fill: var(--ink); font-size: 14px; font-weight: 600; }
+.tl { fill: var(--ink); font-size: 17px; font-weight: 700; }
+.s { fill: var(--muted); font-size: 12px; font-family: var(--sans); }
+.si { fill: var(--ink); font-size: 12px; }
+.c { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; }
+.lab { font-size: 12.5px; font-weight: 600; }
+.lh { stroke: var(--hold); stroke-width: 2.2; stroke-dasharray: 7 5; fill: none; }
+.lc { stroke: var(--charge); stroke-width: 2.6; fill: none; }
+.lr { stroke: var(--release); stroke-width: 2; stroke-dasharray: 7 5; fill: none; }
+.lf { stroke: var(--refund); stroke-width: 2.4; fill: none; }
+.lfd { stroke: var(--refund); stroke-width: 2.2; stroke-dasharray: 7 5; fill: none; }
+.lp { stroke: var(--payout); stroke-width: 2.6; fill: none; }
+.lg { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.lgd { stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 3 4; fill: none; }
+.fh { fill: var(--hold); } .fc { fill: var(--charge); } .fr { fill: var(--release); } .ff { fill: var(--refund); } .fp { fill: var(--payout); } .fg { fill: var(--muted); }
+.bd-hold rect { fill: var(--hold-bg); stroke: var(--hold); } .bd-hold text { fill: var(--hold); }
+.bd-charge rect { fill: var(--charge-bg); stroke: var(--charge); } .bd-charge text { fill: var(--charge); }
+.bd-refund rect { fill: var(--refund-bg); stroke: var(--refund); } .bd-refund text { fill: var(--refund); }
+.bd-payout rect { fill: var(--payout-bg); stroke: var(--payout); } .bd-payout text { fill: var(--payout); }
+.bd-release rect { fill: var(--release-bg); stroke: var(--release); } .bd-release text { fill: var(--release); }
+.bd-none text { fill: var(--muted); }
+[class^="bd-"] text { font-size: 11.5px; font-weight: 600; }
+.seg-c { fill: var(--charge-bg); stroke: var(--charge); stroke-width: 1.3; }
+.seg-f { fill: var(--refund-bg); stroke: var(--refund); stroke-width: 1.3; }
+.seg-p { fill: var(--payout-bg); stroke: var(--payout); stroke-width: 1.3; }
+.seg-g { fill: var(--release-bg); stroke: var(--release); stroke-width: 1.3; }
+.axis { stroke: var(--line); stroke-width: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+@media print {
+  nav.toc, .calc { display: none; }
+  .frame, .tbl { overflow: visible; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">本文へ移動</a>
+
+<!-- Shared arrow markers; kept rendered (not display:none) so every SVG can reference them. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="ah-hold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fh"/></marker>
+    <marker id="ah-charge" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fc"/></marker>
+    <marker id="ah-release" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fr"/></marker>
+    <marker id="ah-refund" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ff"/></marker>
+    <marker id="ah-payout" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fp"/></marker>
+    <marker id="ah-grey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fg"/></marker>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Liverty Music 仕様ガイド ／ 決済・精算・返金</p>
+    <h1>お金の流れ：ファンのカードから Organizer の口座まで</h1>
+    <p class="lede">Liverty Music はチケット代を<strong>収納代行</strong>として受け取ります。チケットを売るのは法律上 Organizer (販売業者) で、プラットフォームはファンが払ったお金を公演後まで預かり、手数料を引いて Organizer に払います。この文書は、そのお金を「誰が・いつ・いくら・誰に」動かすかを、先着・抽選・リセールの違いとあわせて示します。</p>
+
+    <h2 id="three" style="font-size:1.1rem;margin-top:8px">まず知っておく 3 つのこと</h2>
+    <div class="three">
+      <div>
+        <span class="k">与信 ≠ 課金</span>
+        <h3>カードは先に「押さえる」だけ。請求はチケットを渡すと決まってから</h3>
+        <p>CardAuthorization (与信) は金額をカードに確保するだけです。課金 (Capture) は、先着なら注文確定のとき、抽選とリセールなら当選したときだけ行います。だからチケットを受け取らないファンには請求しません。</p>
+      </div>
+      <div>
+        <span class="k">預かってから払う</span>
+        <h3>Organizer への振込は公演開始の 7 日後</h3>
+        <p>課金と同時に Settlement が Held で作られ、お金はプラットフォームに残ります。公演開始から 7 日たち、Organizer の PayoutAccount が active なら振り込みます。手数料は Organizer ごとの率 (新規は 8%) で、Settlement を作った時点で決まります。</p>
+      </div>
+      <div>
+        <span class="k">払い戻しは 2 つだけ</span>
+        <h3>返金は「中止」と「Dispute」のときだけ</h3>
+        <p>自己都合の払い戻しはありません。行けなくなったファンは、席種が完売した後に公式リセールで額面のまま譲ります。出品者に戻るのは額面から 10% の手数料を引いた額です。中止の返金は admin が実行し、自動では行われません。</p>
+      </div>
+    </div>
+
+    <nav class="toc" aria-label="目次">
+      <ol>
+        <li><a href="#map">お金の置き場所</a></li>
+        <li><a href="#when">いつ動くか (先着・抽選・リセール)</a></li>
+        <li><a href="#states">状態の対応</a></li>
+        <li><a href="#fees">手数料と取り分</a></li>
+        <li><a href="#resale">リセールのお金</a></li>
+        <li><a href="#cancel">中止と返金</a></li>
+        <li><a href="#failure">失敗しても二重にならない</a></li>
+        <li><a href="#pitfalls">取り違えやすい点</a></li>
+        <li><a href="#sources">出典</a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ 1. MAP ============ -->
+<section id="map" aria-labelledby="map-h">
+  <div class="wrap">
+    <h2 id="map-h">お金の置き場所と、動く矢印</h2>
+    <p class="why">登場するのは 3 者とカード会社だけです。支払いは Stripe を通り、ファンのお金はいったん Liverty Music の残高に入ります。Organizer の PayoutAccount は Stripe 上の受け取り用アカウントで、カード決済は受け付けません。</p>
+    <figure>
+      <div class="frame w1040" tabindex="0" role="region" aria-label="図 (横にスクロールできます)">
+        <svg viewBox="0 0 1040 470" role="img" aria-labelledby="map-t map-d">
+          <title id="map-t">お金の置き場所と流れ</title>
+          <desc id="map-d">ファンのカードからプラットフォームへ、与信と課金。プラットフォームからファンへ、与信の解放と返金。プラットフォームから Organizer へ、公演開始7日後の振込。Organizer からプラットフォームへ、振込後の取り戻し。Dispute ではカード会社がプラットフォームから取り戻す。</desc>
+
+          <!-- Fan -->
+          <rect class="bx" x="20" y="100" width="190" height="250" rx="10"/>
+          <text class="tl" x="115" y="135" text-anchor="middle">ファン</text>
+          <text class="si" x="115" y="160" text-anchor="middle">クレジットカード</text>
+          <text class="s" x="115" y="182" text-anchor="middle">カード番号・有効期限は</text>
+          <text class="s" x="115" y="198" text-anchor="middle">保存しない (ブランドと</text>
+          <text class="s" x="115" y="214" text-anchor="middle">下 4 桁だけ)</text>
+
+          <!-- Platform -->
+          <rect class="bx-plat" x="420" y="50" width="200" height="345" rx="10"/>
+          <text class="tl" x="520" y="82" text-anchor="middle">Liverty Music</text>
+          <text class="s" x="520" y="102" text-anchor="middle">収納代行・Stripe 上の残高</text>
+          <rect class="bx" x="436" y="120" width="168" height="74" rx="8"/>
+          <text class="t" x="520" y="146" text-anchor="middle">Settlement Held</text>
+          <text class="s" x="520" y="166" text-anchor="middle">1 Order につき 1 件</text>
+          <text class="s" x="520" y="182" text-anchor="middle">公演後まで預かる</text>
+          <rect class="bx" x="436" y="214" width="168" height="74" rx="8"/>
+          <text class="t" x="520" y="240" text-anchor="middle">手数料</text>
+          <text class="s" x="520" y="260" text-anchor="middle">振り込まずに残る分</text>
+          <text class="s" x="520" y="276" text-anchor="middle">+ リセール手数料 10%</text>
+          <text class="s" x="520" y="322" text-anchor="middle">Organizer の残高が</text>
+          <text class="s" x="520" y="338" text-anchor="middle">マイナスになった分は</text>
+          <text class="s" x="520" y="354" text-anchor="middle">プラットフォームが負う</text>
+
+          <!-- Organizer -->
+          <rect class="bx" x="830" y="100" width="190" height="250" rx="10"/>
+          <text class="tl" x="925" y="135" text-anchor="middle">Organizer</text>
+          <text class="si" x="925" y="160" text-anchor="middle">PayoutAccount</text>
+          <text class="s" x="925" y="180" text-anchor="middle">Stripe 上の受け取り口</text>
+          <text class="s" x="925" y="196" text-anchor="middle">(銀行口座そのものではない)</text>
+          <text class="s" x="925" y="226" text-anchor="middle">status が active の</text>
+          <text class="s" x="925" y="242" text-anchor="middle">ときだけ受け取れる</text>
+
+          <!-- Issuer -->
+          <rect class="bx-soft" x="20" y="392" width="190" height="62" rx="10"/>
+          <text class="t" x="115" y="418" text-anchor="middle">カード会社</text>
+          <text class="s" x="115" y="438" text-anchor="middle">Dispute を開く</text>
+
+          <!-- Fan -> Platform: hold -->
+          <line class="lh" x1="212" y1="140" x2="414" y2="140" marker-end="url(#ah-hold)"/>
+          <text class="lab fh" x="313" y="130" text-anchor="middle">① 与信 CardAuthorization</text>
+          <text class="s" x="313" y="158" text-anchor="middle">額を押さえるだけ・請求しない</text>
+          <!-- Fan -> Platform: charge -->
+          <line class="lc" x1="212" y1="200" x2="414" y2="200" marker-end="url(#ah-charge)"/>
+          <text class="lab fc" x="313" y="190" text-anchor="middle">② 課金 Capture</text>
+          <text class="s" x="313" y="218" text-anchor="middle">チケットを渡すと決まったときだけ</text>
+          <!-- Platform -> Fan: release -->
+          <line class="lr" x1="418" y1="262" x2="216" y2="262" marker-end="url(#ah-release)"/>
+          <text class="lab fr" x="313" y="252" text-anchor="middle">与信の解放 Release</text>
+          <text class="s" x="313" y="280" text-anchor="middle">落選・期限切れ・取り下げ・中止</text>
+          <!-- Platform -> Fan: refund -->
+          <line class="lf" x1="418" y1="322" x2="216" y2="322" marker-end="url(#ah-refund)"/>
+          <text class="lab ff" x="313" y="312" text-anchor="middle">返金 Refund (元のカードへ)</text>
+          <text class="s" x="313" y="340" text-anchor="middle">中止・リセールの出品者</text>
+
+          <!-- Platform -> Organizer: payout -->
+          <line class="lp" x1="622" y1="160" x2="824" y2="160" marker-end="url(#ah-payout)"/>
+          <text class="lab fp" x="723" y="150" text-anchor="middle">③ 振込 payout</text>
+          <text class="s" x="723" y="178" text-anchor="middle">金額 − 手数料 を公演開始</text>
+          <text class="s" x="723" y="194" text-anchor="middle">+ 7 日後に</text>
+          <!-- Organizer -> Platform: reverse -->
+          <line class="lfd" x1="828" y1="262" x2="626" y2="262" marker-end="url(#ah-refund)"/>
+          <text class="lab ff" x="727" y="252" text-anchor="middle">取り戻し ReversePayout</text>
+          <text class="s" x="727" y="280" text-anchor="middle">振込後に返金になったとき</text>
+
+          <!-- Dispute -->
+          <path class="lfd" d="M418,375 C330,375 300,420 216,420" marker-end="url(#ah-refund)"/>
+          <text class="lab ff" x="300" y="384" text-anchor="middle">Dispute</text>
+          <text class="s" x="318" y="440" text-anchor="middle">カード会社が残高から取り戻す</text>
+          <line class="lg" x1="115" y1="390" x2="115" y2="356" marker-end="url(#ah-grey)"/>
+          <text class="s" x="124" y="378">ファンへ</text>
+        </svg>
+      </div>
+      <p class="scrollhint">図は横にスクロールできます。</p>
+      <ul class="legend" aria-label="線の意味">
+        <li><span class="sw hold"></span>与信 (押さえるだけ)</li>
+        <li><span class="sw charge"></span>課金</li>
+        <li><span class="sw release"></span>与信の解放 (請求なし)</li>
+        <li><span class="sw refund"></span>返金・取り戻し</li>
+        <li><span class="sw payout"></span>Organizer への振込</li>
+      </ul>
+      <figcaption>番号 ①②③ は 1 件の購入で起きる順番です。どの買い方でも、課金された Order には必ず Settlement が 1 件あります。</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 2. WHEN ============ -->
+<section id="when" aria-labelledby="when-h">
+  <div class="wrap">
+    <h2 id="when-h">いつ動くか：先着・抽選・リセール</h2>
+    <p class="why">3 つの買い方は「与信をいつ置き、いつ課金するか」が違います。与信を置いてから課金するまでの間に外れたり期限が切れたりしたら、与信を解放して終わります。最後の段は 3 つに共通の、Organizer への精算です。</p>
+    <figure>
+      <div class="frame w1040" tabindex="0" role="region" aria-label="図 (横にスクロールできます)">
+        <svg viewBox="0 0 1040 600" role="img" aria-labelledby="when-t when-d">
+          <title id="when-t">買い方ごとの与信と課金のタイミング</title>
+          <desc id="when-d">先着は15分の確保、カード与信、注文確定で課金。抽選は与信を開き、カード認証完了で応募、受付終了から1分以内に抽選、当選者だけ課金。リセールは完売後の出品と、与信つきの申込、毎日12時の抽選、当選で課金、出品者へ額面から10%を引いて返金。精算は課金と同時にSettlementがHeldで作られ、公演開始から7日後、PayoutAccountがactiveなら振込。</desc>
+
+          <!-- Row labels -->
+          <text class="tl" x="14" y="46">先着</text>
+          <text class="c" x="14" y="66">Checkout</text>
+          <text class="c" x="14" y="80">UseCase</text>
+          <text class="tl" x="14" y="186">抽選</text>
+          <text class="c" x="14" y="206">LotteryEntry</text>
+          <text class="c" x="14" y="220">UseCase</text>
+          <text class="tl" x="14" y="326">リセール</text>
+          <text class="c" x="14" y="346">ResaleListing</text>
+          <text class="c" x="14" y="360">ResaleEntry</text>
+          <text class="tl" x="14" y="476">精算</text>
+          <text class="c" x="14" y="496">Settlement</text>
+          <line class="axis" x1="10" y1="140" x2="1030" y2="140"/>
+          <line class="axis" x1="10" y1="280" x2="1030" y2="280"/>
+          <line class="axis" x1="10" y1="430" x2="1030" y2="430"/>
+
+          <!-- ===== First come ===== -->
+          <rect class="bx" x="120" y="20" width="260" height="80" rx="8"/>
+          <text class="t" x="134" y="44">15 分だけチケットを確保</text>
+          <text class="c" x="134" y="62">.Start</text>
+          <g class="bd-none"><text x="134" y="88">お金はまだ動かない</text></g>
+          <line class="lg" x1="382" y1="60" x2="414" y2="60" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="418" y="20" width="260" height="80" rx="8"/>
+          <text class="t" x="432" y="44">氏名・電話番号 + カード与信</text>
+          <text class="c" x="432" y="62">.AuthorizeCard</text>
+          <g class="bd-hold"><rect x="432" y="72" width="64" height="20" rx="10"/><text x="464" y="86" text-anchor="middle">与信</text></g>
+          <line class="lg" x1="680" y1="60" x2="712" y2="60" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="716" y="20" width="300" height="80" rx="8"/>
+          <text class="t" x="730" y="44">注文確定 → 確保を確定 → 課金</text>
+          <text class="c" x="730" y="62">OrderUseCase.Place → Issue</text>
+          <g class="bd-charge"><rect x="730" y="72" width="64" height="20" rx="10"/><text x="762" y="86" text-anchor="middle">課金</text></g>
+          <text class="s" x="804" y="87">Order Paid・券を発行</text>
+          <text class="s" x="134" y="124">15 分たって確定していなければ：1 分以内にチケットを在庫へ戻し、2 分以内に与信を解放。確保は延長しない。</text>
+
+          <!-- ===== Lottery ===== -->
+          <rect class="bx" x="120" y="160" width="200" height="80" rx="8"/>
+          <text class="t" x="134" y="184">与信を開く</text>
+          <text class="c" x="134" y="202">.AuthorizeCard</text>
+          <g class="bd-hold"><rect x="134" y="212" width="64" height="20" rx="10"/><text x="166" y="226" text-anchor="middle">与信</text></g>
+          <text class="s" x="206" y="227">まだ応募ではない</text>
+          <line class="lg" x1="322" y1="200" x2="346" y2="200" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="350" y="160" width="210" height="80" rx="8"/>
+          <text class="t" x="364" y="184">カード認証の完了で応募</text>
+          <text class="c" x="364" y="202">.Confirm</text>
+          <g class="bd-none"><text x="364" y="228">Entered・Pending Order</text></g>
+          <line class="lg" x1="562" y1="200" x2="586" y2="200" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="590" y="160" width="200" height="80" rx="8"/>
+          <text class="t" x="604" y="184">受付終了後に抽選</text>
+          <text class="c" x="604" y="202">.DrawDueSales → .Draw</text>
+          <g class="bd-none"><text x="604" y="228">1 分以内・当落を記録するだけ</text></g>
+          <line class="lg" x1="792" y1="200" x2="816" y2="200" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="820" y="160" width="196" height="80" rx="8"/>
+          <text class="t" x="834" y="184">当選者だけ課金</text>
+          <text class="c" x="834" y="202">OrderUseCase.Issue</text>
+          <g class="bd-charge"><rect x="834" y="212" width="64" height="20" rx="10"/><text x="866" y="226" text-anchor="middle">課金</text></g>
+          <text class="s" x="906" y="227">Paid・券を発行</text>
+          <text class="s" x="134" y="262">落選・中止：与信を解放し請求しない。当選者の与信が使えなければ Lost になり、その枚数は誰にも回さない (繰上げなし)。</text>
+
+          <!-- ===== Resale ===== -->
+          <text class="s" x="120" y="296">出品する人</text>
+          <rect class="bx" x="120" y="302" width="160" height="80" rx="8"/>
+          <text class="t" x="134" y="326">席種の完売後に出品</text>
+          <text class="c" x="134" y="344">Listing.Create</text>
+          <g class="bd-none"><text x="134" y="370">額面のまま</text></g>
+          <text class="tl" x="290" y="349" text-anchor="middle" style="fill:var(--muted)">+</text>
+          <text class="s" x="300" y="296">買いたい人</text>
+          <rect class="bx" x="300" y="302" width="166" height="80" rx="8"/>
+          <text class="t" x="314" y="326">申込と与信</text>
+          <text class="c" x="314" y="344">Entry.AuthorizeCard</text>
+          <g class="bd-hold"><rect x="314" y="354" width="64" height="20" rx="10"/><text x="346" y="368" text-anchor="middle">与信</text></g>
+          <line class="lg" x1="468" y1="342" x2="490" y2="342" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="494" y="302" width="166" height="80" rx="8"/>
+          <text class="t" x="508" y="326">毎日 12:00 に抽選</text>
+          <text class="c" x="508" y="344">Entry.Draw</text>
+          <g class="bd-none"><text x="508" y="370">枚数ぶん揃えば当選</text></g>
+          <line class="lg" x1="662" y1="342" x2="684" y2="342" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="688" y="302" width="160" height="80" rx="8"/>
+          <text class="t" x="702" y="326">当選者に課金</text>
+          <text class="c" x="702" y="344">OrderUseCase.Issue</text>
+          <g class="bd-charge"><rect x="702" y="354" width="64" height="20" rx="10"/><text x="734" y="368" text-anchor="middle">課金</text></g>
+          <line class="lg" x1="850" y1="342" x2="866" y2="342" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="870" y="302" width="160" height="80" rx="8"/>
+          <text class="t" x="884" y="326">出品者へ返金</text>
+          <text class="c" x="884" y="344">Listing.RefundSold</text>
+          <g class="bd-refund"><rect x="884" y="354" width="88" height="20" rx="10"/><text x="928" y="368" text-anchor="middle">額面 − 10%</text></g>
+          <text class="s" x="120" y="404">外れた申込は与信のまま次の抽選を待つ。最終抽選でも外れた・与信が抽選の 24 時間後までもたない (Lapsed)・</text>
+          <text class="s" x="120" y="420">取り下げた・中止になった場合は、どれも与信を解放する。当選すると出品者の券は Voided、買った人には新しい券。</text>
+
+          <!-- ===== Settlement ===== -->
+          <rect class="bx" x="120" y="450" width="200" height="80" rx="8"/>
+          <text class="t" x="134" y="474">Paid と同時に Held</text>
+          <text class="c" x="134" y="492">Order.Issue</text>
+          <g class="bd-none"><text x="134" y="518">手数料もここで固定</text></g>
+          <line class="lg" x1="322" y1="490" x2="346" y2="490" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="350" y="450" width="210" height="80" rx="8"/>
+          <text class="t" x="364" y="474">公演開始から 7 日たった?</text>
+          <text class="c" x="364" y="492">ReleaseDueSettlements</text>
+          <g class="bd-none"><text x="364" y="518">5 分ごとに確認</text></g>
+          <line class="lg" x1="562" y1="490" x2="586" y2="490" marker-end="url(#ah-grey)"/>
+          <rect class="bx" x="590" y="450" width="200" height="80" rx="8"/>
+          <text class="t" x="604" y="474">PayoutAccount は active?</text>
+          <text class="c" x="604" y="492">PayoutAccount.GetStatus</text>
+          <g class="bd-none"><text x="604" y="518">違えば Held のまま</text></g>
+          <line class="lp" x1="792" y1="490" x2="816" y2="490" marker-end="url(#ah-payout)"/>
+          <rect class="bx" x="820" y="450" width="196" height="80" rx="8"/>
+          <text class="t" x="834" y="474">Organizer へ振込</text>
+          <text class="c" x="834" y="492">Settlement.CreatePayout</text>
+          <g class="bd-payout"><rect x="834" y="502" width="80" height="20" rx="10"/><text x="874" y="516" text-anchor="middle">Released</text></g>
+          <text class="s" x="120" y="556">Organizer の本人確認が終わっていなくても、販売・当選・発券は止まらない。待つのは振込だけ。</text>
+          <text class="s" x="120" y="574">公演の開始時刻は毎回読み直すので、延期すれば振込もそのぶん遅れる。開始時刻が未定の間は振り込まない。</text>
+        </svg>
+      </div>
+      <p class="scrollhint">図は横にスクロールできます。</p>
+    </figure>
+
+    <div class="tbl wide" tabindex="0" role="region" aria-label="表 (横にスクロールできます)">
+      <table>
+        <caption class="skip">買い方ごとの違い</caption>
+        <thead><tr><th scope="col"></th><th scope="col">先着 (FirstCome)</th><th scope="col">抽選 (Lottery)</th><th scope="col">公式リセール</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">与信を置く</th><td>15 分の確保の中で</td><td>受付期間中。カード認証が終わった時点で応募になる</td><td>完売した席種に申し込むとき</td></tr>
+          <tr><th scope="row">課金する</th><td>注文確定のとき</td><td>受付終了後の抽選で当選したとき</td><td>毎日の抽選で当選したとき</td></tr>
+          <tr><th scope="row">外れた与信</th><td>確保切れから 2 分以内に解放</td><td>落選したら解放</td><td>最終抽選まで持ち越し、終われば解放</td></tr>
+          <tr><th scope="row">American Express</th><td>使える</td><td>使えない (認証後に解放され、応募にならない)</td><td>仕様に記載なし</td></tr>
+          <tr><th scope="row">課金に失敗したら</th><td>確保を戻し Order は Void</td><td>Lost。枚数は繰り上げない</td><td>Lost。出品は次の抽選に回る</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. STATES ============ -->
+<section id="states" aria-labelledby="states-h">
+  <div class="wrap">
+    <h2 id="states-h">状態の対応：1 つの出来事で 3 つが同時に変わる</h2>
+    <p class="why">お金にかかわる記録は CardAuthorization (カードの与信)、Order (購入の記録)、Settlement (振込の記録) の 3 つです。どれも 1 つの出来事で一緒に変わり、途中だけ変わった状態は残りません。たとえば Order を Paid にするときは、券の発行と Settlement の作成も同時に行い、どれか 1 つでも失敗したら何も変えません。</p>
+    <div class="tbl wide" tabindex="0" role="region" aria-label="表 (横にスクロールできます)">
+      <table>
+        <thead><tr><th scope="col">出来事</th><th scope="col">CardAuthorization</th><th scope="col">Order</th><th scope="col">Settlement</th><th scope="col">お金</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">与信を開く</th><td>Pending</td><td>まだ無い (先着は Pending)</td><td>—</td><td><span class="tag release">動かない</span></td></tr>
+          <tr><th scope="row">カード認証の完了</th><td>Authorized (期限つき)</td><td>Pending</td><td>—</td><td><span class="tag hold">与信</span></td></tr>
+          <tr><th scope="row">課金して発券</th><td>Captured</td><td>Paid (券を発行)</td><td>Held で作成</td><td><span class="tag charge">課金</span></td></tr>
+          <tr><th scope="row">外れ・期限切れ・取り下げ</th><td>Released</td><td>Void (券なし)</td><td>—</td><td><span class="tag release">解放</span></td></tr>
+          <tr><th scope="row">振込</th><td>—</td><td>Paid のまま</td><td>Released</td><td><span class="tag payout">振込</span></td></tr>
+          <tr><th scope="row">返金 (中止・Dispute)</th><td>—</td><td>Refunded (券は Voided)</td><td>Reversed</td><td><span class="tag refund">返金</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose">Order は Pending から必ず Paid か Void のどちらかへ進みます。Void は「一度も課金されなかった」、Refunded は「課金した後に返した」という意味で、返金できるのは Paid の Order だけです。Event を削除できるのは、その Event の Order がすべて Void か Refunded になってからです。</p>
+  </div>
+</section>
+
+<!-- ============ 4. FEES ============ -->
+<section id="fees" aria-labelledby="fees-h">
+  <div class="wrap">
+    <h2 id="fees-h">手数料と Organizer の取り分</h2>
+    <p class="why">手数料は 2 種類あります。Order ごとの<strong>プラットフォーム手数料</strong>と、リセールの出品者から引く<strong>リセール手数料</strong>です。どちらも円未満は切り捨てで、端数は Organizer と出品者の得になります。</p>
+    <div class="fee">
+      <div class="formula">
+        <h3>プラットフォーム手数料 (Settlement)</h3>
+        <div class="eq">手数料 = floor(金額 × 率 ÷ 10000)　率は 0.01% 単位</div>
+        <div class="eq">Organizer の取り分 (split) = 金額 − 手数料</div>
+        <p>率は Organizer ごとに 0〜30% で、新しい Organizer は 8% です。admin が変えられますが、変更が効くのはそれ以降の Order だけです。Settlement を作った時点で取り分が決まるので、後から率を変えても過去の振込額は変わりません。</p>
+        <p>例：10,000 円で 8% なら手数料 800 円、取り分 9,200 円。3,333 円なら手数料 266 円、取り分 3,067 円。</p>
+        <h3>リセール手数料 (ResaleListing)</h3>
+        <div class="eq">リセール手数料 = floor(額面 × 10%)</div>
+        <div class="eq">出品者への返金額 = 額面 − リセール手数料</div>
+        <p>例：額面 5,000 円なら手数料 500 円、出品者への返金 4,500 円。3,333 円なら 333 円と 3,000 円。</p>
+        <p>会場費は Organizer 自身の費用で、Settlement の受取人にはなりません。決済代行 (Stripe) の手数料をどちらが負うかは、仕様には書かれていません。</p>
+      </div>
+      <form class="calc" id="calc" aria-labelledby="calc-h" onsubmit="return false">
+        <h3 id="calc-h">計算してみる</h3>
+        <div class="row">
+          <div><label for="c-price">席種の価格 (円)</label><input id="c-price" type="number" inputmode="numeric" min="1" step="1" value="5000"></div>
+          <div><label for="c-count">枚数</label><input id="c-count" type="number" inputmode="numeric" min="1" step="1" value="2"></div>
+          <div><label for="c-rate">手数料率 (%)</label><input id="c-rate" type="number" inputmode="decimal" min="0" max="30" step="0.01" value="8"></div>
+        </div>
+        <dl aria-live="polite">
+          <dt>ファンへの請求 (Order の金額)</dt><dd class="big" id="o-amount">—</dd>
+          <dt>プラットフォーム手数料</dt><dd id="o-fee">—</dd>
+          <dt>Organizer への振込 (公演開始 + 7 日後)</dt><dd class="big" id="o-split">—</dd>
+          <dt class="sep">1 枚をリセールしたときの出品者への返金</dt><dd class="sep" id="o-refund">—</dd>
+          <dt>そのときのリセール手数料</dt><dd id="o-rfee">—</dd>
+        </dl>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. RESALE ============ -->
+<section id="resale" aria-labelledby="resale-h">
+  <div class="wrap">
+    <h2 id="resale-h">リセールのお金：Organizer には 1 席につき 1 回だけ払う</h2>
+    <p class="why">リセールでは同じ席の代金を 2 人が払います。Organizer に二重に払わないよう、売れた券の分だけ元の Order の Settlement を減らし、買った人の Order には新しい Settlement を作ります。出品者への返金は振込ではなく、出品者が最初に払った決済の<strong>一部返金</strong>です。</p>
+    <figure>
+      <div class="frame w1000" tabindex="0" role="region" aria-label="図 (横にスクロールできます)">
+        <svg viewBox="0 0 1000 330" role="img" aria-labelledby="rs-t rs-d">
+          <title id="rs-t">リセール 1 件のお金の行き先</title>
+          <desc id="rs-d">手数料率5%のOrganizer。ファンAが5000円の券を2枚、10000円で購入し、1枚をリセール。ファンBが5000円で購入。Aへ4500円を返金。残る10500円のうち、Organizerへ9500円、プラットフォームに1000円。</desc>
+          <text class="s" x="20" y="26">例：手数料率 5% の Organizer。ファン A が 5,000 円の券を 2 枚買い、1 枚をリセールでファン B に譲った。</text>
+
+          <text class="t" x="160" y="72" text-anchor="end">ファンが払った</text>
+          <text class="s" x="160" y="90" text-anchor="end">15,000 円</text>
+          <rect class="seg-c" x="170" y="54" width="520" height="42" rx="3"/>
+          <text class="si" x="182" y="80">ファン A　10,000 円 (2 枚)</text>
+          <rect class="seg-c" x="690" y="54" width="260" height="42" rx="3"/>
+          <text class="si" x="702" y="80">ファン B　5,000 円 (1 枚)</text>
+
+          <text class="t" x="160" y="140" text-anchor="end">A へ返金</text>
+          <text class="s" x="160" y="158" text-anchor="end">4,500 円</text>
+          <rect class="seg-f" x="170" y="122" width="234" height="42" rx="3"/>
+          <text class="si" x="182" y="148">額面 5,000 − 10%</text>
+
+          <text class="t" x="160" y="208" text-anchor="end">残り</text>
+          <text class="s" x="160" y="226" text-anchor="end">10,500 円</text>
+          <rect class="seg-p" x="170" y="190" width="247" height="42" rx="3"/>
+          <text class="si" x="180" y="208">Organizer 4,750 円</text>
+          <text class="s" x="180" y="224">A の Order の split</text>
+          <rect class="seg-p" x="417" y="190" width="247" height="42" rx="3"/>
+          <text class="si" x="427" y="208">Organizer 4,750 円</text>
+          <text class="s" x="427" y="224">B の Order の split</text>
+          <rect class="seg-g" x="664" y="190" width="13" height="42"/>
+          <rect class="seg-g" x="677" y="190" width="13" height="42"/>
+          <rect class="seg-g" x="690" y="190" width="26" height="42"/>
+          <line class="lg" x1="677" y1="234" x2="677" y2="262"/>
+          <line class="lg" x1="703" y1="234" x2="760" y2="262"/>
+          <text class="s" x="560" y="278">手数料 250 + 250 (各 Order の 5%)</text>
+          <text class="s" x="760" y="278">リセール手数料 500</text>
+
+          <text class="t" x="170" y="312">Organizer の合計 9,500 円 ＝ リセールがなかった場合と同じ。プラットフォームの合計 1,000 円。</text>
+        </svg>
+      </div>
+      <p class="scrollhint">図は横にスクロールできます。</p>
+      <figcaption>A の Order の split は 9,500 円から 4,750 円に減ります (売れた枚数 k ÷ まだ有効な枚数 m の割合を減らし、減らす額は円未満切り捨て)。全部売れたら A の Settlement は Reversed になります。合計は、売れた 1 枚につき最大 1 円の端数を除いて変わりません。</figcaption>
+    </figure>
+    <p class="prose">出品者への返金は、買った人への課金から 2 分以内に行います。失敗しても 24 時間までリトライし、それでも駄目なら admin に知らせます。出品の締め切りと最後の抽選は同じ時刻で、公演当日の 12:00 (会場のタイムゾーン) と開演 3 時間前 (入場開始) の早いほうです。売れ残った券は出品者のもので、そのまま入場に使えます。</p>
+  </div>
+</section>
+
+<!-- ============ 6. CANCEL ============ -->
+<section id="cancel" aria-labelledby="cancel-h">
+  <div class="wrap">
+    <h2 id="cancel-h">中止になったら：自動で止まるもの、admin が返すもの</h2>
+    <p class="why">member が Event を中止すると、まだ課金していない与信は自動で解放されます。課金済みの Order は自動では返金されず、admin が管理画面の <code>Refund all</code> で返します。中止の返金 (理由 Cancellation) は Event が CANCELLED のときしか通りません。</p>
+    <figure>
+      <div class="frame w1040" tabindex="0" role="region" aria-label="図 (横にスクロールできます)">
+        <svg viewBox="0 0 1040 560" role="img" aria-labelledby="cx-t cx-d">
+          <title id="cx-t">中止の後に何が起きるか</title>
+          <desc id="cx-d">中止のとき、先着の確保中は15分後に期限切れで与信解放。抽選の応募中はすぐに落選で与信解放。抽選で当選し未課金なら課金の直前に落選で与信解放。リセール申込中は次の抽選時刻に落選で与信解放。課金済みのOrderは中止の通知だけで、adminのRefund allで残っている券の額面を返金し、SettlementはReversedになる。すべてVoidかRefundedになればEventを削除できる。</desc>
+
+          <text class="s" x="230" y="20">そのときのファンの状態</text>
+          <text class="s" x="480" y="20">自動で起きること</text>
+          <text class="s" x="830" y="20">お金</text>
+
+          <rect class="bx-plat" x="10" y="190" width="180" height="96" rx="10"/>
+          <text class="t" x="100" y="222" text-anchor="middle">member が</text>
+          <text class="t" x="100" y="242" text-anchor="middle">Event を中止</text>
+          <text class="c" x="100" y="266" text-anchor="middle">SeriesUseCase.Cancel</text>
+
+          <!-- connectors -->
+          <path class="lg" d="M190,238 H205 V55 H226" marker-end="url(#ah-grey)"/>
+          <path class="lg" d="M205,125 H226" marker-end="url(#ah-grey)"/>
+          <path class="lg" d="M205,195 H226" marker-end="url(#ah-grey)"/>
+          <path class="lg" d="M205,238 V265 H226" marker-end="url(#ah-grey)"/>
+          <path class="lg" d="M205,265 V365 H226" marker-end="url(#ah-grey)"/>
+
+          <!-- row 1 -->
+          <rect class="bx" x="230" y="32" width="230" height="46" rx="8"/>
+          <text class="si" x="244" y="52">先着で確保中</text>
+          <text class="c" x="244" y="68">Checkout Held</text>
+          <text class="si" x="480" y="52">注文確定は失敗。15 分の確保が切れると</text>
+          <text class="si" x="480" y="70">Expired、Order は Void</text>
+          <g class="bd-release"><rect x="830" y="44" width="92" height="22" rx="11"/><text x="876" y="59" text-anchor="middle">与信を解放</text></g>
+
+          <!-- row 2 -->
+          <rect class="bx" x="230" y="102" width="230" height="46" rx="8"/>
+          <text class="si" x="244" y="122">抽選に応募済み</text>
+          <text class="c" x="244" y="138">LotteryEntry Entered</text>
+          <text class="si" x="480" y="122">受付期間中でも待たずに Lost。</text>
+          <text class="si" x="480" y="140">メールと push で中止と請求なしを伝える</text>
+          <g class="bd-release"><rect x="830" y="114" width="92" height="22" rx="11"/><text x="876" y="129" text-anchor="middle">与信を解放</text></g>
+
+          <!-- row 3 -->
+          <rect class="bx" x="230" y="172" width="230" height="46" rx="8"/>
+          <text class="si" x="244" y="192">抽選で当選、まだ未課金</text>
+          <text class="c" x="244" y="208">LotteryEntry Won</text>
+          <text class="si" x="480" y="192">課金の直前に公開中か確かめ、Lost にする。</text>
+          <text class="si" x="480" y="210">課金が済んでいたら Paid にして下の返金へ</text>
+          <g class="bd-release"><rect x="830" y="184" width="92" height="22" rx="11"/><text x="876" y="199" text-anchor="middle">与信を解放</text></g>
+
+          <!-- row 4 -->
+          <rect class="bx" x="230" y="242" width="230" height="46" rx="8"/>
+          <text class="si" x="244" y="262">リセールに申込中</text>
+          <text class="c" x="244" y="278">ResaleEntry Entered</text>
+          <text class="si" x="480" y="262">次の抽選時刻に、何も割り当てずに Lost</text>
+          <g class="bd-release"><rect x="830" y="254" width="92" height="22" rx="11"/><text x="876" y="269" text-anchor="middle">与信を解放</text></g>
+
+          <!-- row 5 -->
+          <rect class="bx" x="230" y="340" width="230" height="50" rx="8"/>
+          <text class="si" x="244" y="361">課金済み</text>
+          <text class="c" x="244" y="378">Order Paid</text>
+          <text class="si" x="480" y="361">中止のメールと push だけ。</text>
+          <text class="si" x="480" y="379">自動では返金しない</text>
+          <g class="bd-none"><text x="830" y="370">まだ動かない</text></g>
+
+          <!-- admin stage -->
+          <path class="lg" d="M560,392 V430" marker-end="url(#ah-grey)"/>
+          <text class="s" x="570" y="416">admin の操作</text>
+          <rect class="bx-plat" x="470" y="434" width="340" height="56" rx="8"/>
+          <text class="t" x="484" y="458">admin が Refund all (理由 Cancellation)</text>
+          <text class="c" x="484" y="478">OrderUseCase.Refund<tspan class="s" dx="6">を Paid の Order ごとに</tspan></text>
+          <line class="lf" x1="812" y1="462" x2="826" y2="462" marker-end="url(#ah-refund)"/>
+          <g class="bd-refund"><rect x="830" y="440" width="200" height="22" rx="11"/><text x="930" y="455" text-anchor="middle">残っている券の額面を返金</text></g>
+          <text class="s" x="830" y="482">Settlement は Reversed</text>
+          <text class="s" x="830" y="498">(振込済みなら取り戻す)</text>
+          <text class="s" x="230" y="520">リセールで売れた券の分は返金しない (出品者のリセール手数料も戻らない)。券は Voided、出品中だったものは Cancelled。</text>
+          <text class="s" x="230" y="540">Paid と Pending の Order がなくなったら、admin が Event を Delete できる。</text>
+        </svg>
+      </div>
+      <p class="scrollhint">図は横にスクロールできます。</p>
+    </figure>
+
+    <h3>返金の理由は 2 つ</h3>
+    <div class="tbl wide" tabindex="0" role="region" aria-label="表 (横にスクロールできます)">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">Cancellation (中止)</th><th scope="col">Dispute (カード会社の異議)</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">誰が始める</th><td>admin が管理画面から</td><td>Stripe からの通知を受けて自動で</td></tr>
+          <tr><th scope="row">条件</th><td>Event が CANCELLED であること。公開中の Event では失敗し、お金は動かない</td><td>Event の状態は問わない</td></tr>
+          <tr><th scope="row">ファンへ返す額</th><td>Order の金額 ÷ 枚数 × まだ有効な券の枚数</td><td>0 円 (カード会社がすでにファンへ戻している)</td></tr>
+          <tr><th scope="row">Settlement</th><td colspan="2">Held なら Reversed にして振り込まない。Released なら振込を取り戻す。手数料は Organizer から取り戻さないので、振込後の Dispute ではプラットフォームが手数料分を負う</td></tr>
+          <tr><th scope="row">ファンへの通知</th><td>金額と返金先カードをメールと push で。全部リセール済みで 0 円なら送らない</td><td>送らない</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7. FAILURE ============ -->
+<section id="failure" aria-labelledby="failure-h">
+  <div class="wrap">
+    <h2 id="failure-h">失敗しても二重にならない</h2>
+    <p class="why">課金・解放・返金・振込は、どれも同じ操作を何度繰り返しても 1 回分しか効きません。そのため、Stripe につながらないときは安全にリトライできます。リトライには期限があり、超えたら admin に知らせます。</p>
+    <div class="tbl wide" tabindex="0" role="region" aria-label="表 (横にスクロールできます)">
+      <table>
+        <thead><tr><th scope="col">起きたこと</th><th scope="col">どうなるか</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">ダブルタップ・リロード・別タブ</th><td>同じ Checkout に戻り、確保・課金・発行は 1 回だけ。注文確定を 2 回押しても Issue は 1 回だけ動き、両方に同じ Order を返す。</td></tr>
+          <tr><th scope="row">注文確定が 30 秒で終わらない</th><td>画面には Unavailable を返すが、Issue は続く。Stripe が答えれば Order は Paid になる。</td></tr>
+          <tr><th scope="row">課金中に Stripe につながらない</th><td>課金をリトライし (先着なら確保は Committed のまま)、課金は 1 回だけ。24 時間たっても終わらなければ止めて admin に知らせる。</td></tr>
+          <tr><th scope="row">課金の途中で処理が止まった</th><td>止まった所から再開し、もう一度は課金しない。抽選は同じ当選者のまま再開する。</td></tr>
+          <tr><th scope="row">与信がもう使えない (カード解約など)</th><td>先着は確保を戻して Order を Void。抽選・リセールは Lost にして、当選の取り消しをメールで伝える。</td></tr>
+          <tr><th scope="row">与信の解放に失敗</th><td>24 時間までリトライし、失敗や期限切れは admin に知らせる。与信が解放されないまま放置されることはない。</td></tr>
+          <tr><th scope="row">リセールの課金が開演まで終わらない</th><td>課金をやめて与信を解放する。解放できれば Lost (請求なし)。解放が「課金済み」で失敗したら、課金は通っていたので発券する。</td></tr>
+          <tr><th scope="row">振込に失敗</th><td>その Settlement だけ Held のまま残り、5 分後にもう一度試す。ほかの振込は止まらない。</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8. PITFALLS ============ -->
+<section id="pitfalls" aria-labelledby="pit-h">
+  <div class="wrap">
+    <h2 id="pit-h">取り違えやすい点</h2>
+    <div class="tbl wide pit" tabindex="0" role="region" aria-label="取り違えやすい点の表">
+      <table>
+        <thead><tr><th scope="col">思い込みやすいこと</th><th scope="col">実際の仕様</th><th scope="col">取り違えると</th></tr></thead>
+        <tbody>
+          <tr><td>抽選に応募した時点でお金を取る</td><td>応募時は与信だけ。抽選 (Draw) 自体も課金も解放もしない。課金は当選後の OrderUseCase.Issue だけ</td><td>落選者への請求や、抽選処理の中での二重課金</td></tr>
+          <tr><td>抽選の AuthorizeCard を呼べば応募になる</td><td>応募 (Entered) になるのはカード認証の完了後に Confirm が通ったとき。ブラウザを閉じても Stripe の通知で Confirm が動く。受付終了後に作られる応募は与信を解放して作らない</td><td>応募していない人を抽選に入れる、受付終了後の応募を通す</td></tr>
+          <tr><td>中止すれば返金も自動で走る</td><td>中止で自動に止まるのは未課金の与信だけ。課金済みは admin の Refund all が必要</td><td>中止したのにファンへ返金されない</td></tr>
+          <tr><td>振込は公演が終われば行う</td><td>公演開始 + 7 日、かつ PayoutAccount が active のとき。開始時刻は毎回読み直す</td><td>Dispute に備える期間がなくなり、取り戻せない振込が出る</td></tr>
+          <tr><td>手数料率を下げれば過去分も下がる</td><td>率は Settlement 作成時に固定。変更は以後の Order だけ</td><td>振込額の説明が Organizer との合意とずれる</td></tr>
+          <tr><td>リセール出品者への返金は Organizer の取り分から出る</td><td>出品者が最初に払った決済の一部返金。Organizer には元 Order の split を減らし、買った人の Order の split を足す</td><td>同じ席に 2 回振り込む</td></tr>
+          <tr><td>リセールで売れた券も中止なら全額返す</td><td>売れた券は返金しない (リセール手数料も戻らない)。返すのはまだ有効な券の額面だけ</td><td>同じ席の代金を 2 人分返金する</td></tr>
+          <tr><td>抽選の当選者が払えなければ、次点を繰り上げる</td><td>抽選は繰上げなし。その枚数は割り当てないまま。リセールは出品が次の抽選に回る</td><td>販売数の超過や、抽選の公平性の崩れ</td></tr>
+          <tr><td>在庫の販売数にはリセールも含む</td><td>TicketStock の販売数にリセールは数えない。返金済み (Refunded) の Order は数えたまま</td><td>完売判定が崩れ、リセールが開かない・売り過ぎる</td></tr>
+          <tr><td>紹介コード (ReferralCode) で報酬を払う</td><td>コードは購入を数えるためだけ。報酬もアクセス権も生まない。Order の作成時に固定</td><td>払う約束のない報酬を計上する</td></tr>
+          <tr><td>American Express はどこでも使える</td><td>先着は使える。抽選は使えない (カード認証の後で解放され、応募にならない)</td><td>抽選で AmEx の応募を受け付けてしまう</td></tr>
+                <tr><td>Dispute の返金は、通常の返金と同じ</td><td>返金額は 0 円です (お金はカード会社がプラットフォームから取り戻す)。公演がどの状態でも受け付け、Ticket は Voided になります。精算がまだ Held なら Reversed にして二度と払わず、Released なら払った分を Organizer から取り戻します</td><td>返金額を二重に払う。あるいは、公演前の Dispute で精算が残り、Organizer に払ってしまう</td></tr>
+        <tr><td>決済の通知は課金の結果も受け取る</td><td>決済の webhook が処理するのは、カード与信の完了と Dispute だけです。課金の完了、返金の反映、振込の取り消しなど、ほかの通知は受け取っても何もしません。署名が無効、または 300 秒より古い通知は拒否します</td><td>通知を待って状態が進むと考える。実際の課金と返金は、バックエンドが自分で呼んで進める</td></tr>
+        <tr><td>同じ公演で席種を選び分けられる</td><td>1 人のアカウントが 1 つの公演で持てる、または申し込める席種は 1 つだけです。先着・抽選・リセールのどれを通しても同じ数え方です</td><td>S 席を押さえたまま A 席も取ろうとして、弾かれる</td></tr>
+
+</tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 9. SOURCES ============ -->
+<section id="sources" aria-labelledby="src-h" class="sources">
+  <div class="wrap">
+    <h2 id="src-h">出典</h2>
+    <p>パスはすべて <code>openspec/specs/</code> からの相対パスです。</p>
+    <dl>
+      <dt>収納代行・Settlement の状態・手数料の計算・リセール分の減額</dt>
+      <dd><code>components/entity/settlement/spec.md</code></dd>
+      <dt>振込の条件 (7 日・active・5 分ごと)</dt>
+      <dd><code>components/usecase/settlement/release-due-settlements/spec.md</code>, <code>stories/win-tickets-in-a-lottery/spec.md</code> (payout readiness)</dd>
+      <dt>手数料率 0〜30%・新規 8%</dt>
+      <dd><code>components/entity/organizer/spec.md</code></dd>
+      <dt>PayoutAccount と Stripe</dt>
+      <dd><code>components/entity/payout-account/spec.md</code>, <code>components/usecase/payout-account/get/spec.md</code>, <code>components/usecase/payout-account/start-onboarding/spec.md</code>, <code>components/infrastructure/organizer/web/route/settings/spec.md</code></dd>
+      <dt>与信・課金・解放・AmEx・期限</dt>
+      <dd><code>components/entity/card-authorization/spec.md</code>, <code>…/card-authorization/create/spec.md</code>, <code>…/capture/spec.md</code>, <code>…/release/spec.md</code>, <code>…/get/spec.md</code></dd>
+      <dt>Order の状態・カード情報を保存しない・Void と削除</dt>
+      <dd><code>components/entity/order/spec.md</code>, <code>components/entity/order/issue/spec.md</code></dd>
+      <dt>先着の 15 分・確定・期限切れ</dt>
+      <dd><code>stories/buy-tickets-first-come/spec.md</code>, <code>components/entity/checkout/spec.md</code>, <code>components/usecase/checkout/start/spec.md</code>, <code>…/checkout/authorize-card/spec.md</code>, <code>…/checkout/expire/spec.md</code>, <code>components/usecase/order/place/spec.md</code></dd>
+      <dt>課金と発行 (3 つの買い方)、24 時間での停止、開演までの課金</dt>
+      <dd><code>components/usecase/order/issue/spec.md</code></dd>
+      <dt>与信の解放とリトライ</dt>
+      <dd><code>components/usecase/order/release-card-authorization/spec.md</code></dd>
+      <dt>抽選の応募・抽選・繰上げなし・中止</dt>
+      <dd><code>stories/win-tickets-in-a-lottery/spec.md</code>, <code>components/entity/lottery-entry/spec.md</code>, <code>components/usecase/lottery-entry/authorize-card/spec.md</code>, <code>…/confirm/spec.md</code>, <code>…/draw/spec.md</code>, <code>…/draw-due-sales/spec.md</code>, <code>…/end-for-cancelled-event/spec.md</code></dd>
+      <dt>リセールの出品・申込・抽選・返金・手数料 10%</dt>
+      <dd><code>stories/resell-a-ticket/spec.md</code>, <code>components/entity/resale-listing/spec.md</code>, <code>components/entity/resale-entry/spec.md</code>, <code>components/usecase/resale-listing/create/spec.md</code>, <code>…/resale-listing/refund-sold/spec.md</code>, <code>components/usecase/resale-entry/authorize-card/spec.md</code>, <code>…/resale-entry/draw/spec.md</code>, <code>…/resale-entry/withdraw/spec.md</code>, <code>components/entity/order/create-refund/spec.md</code></dd>
+      <dt>在庫の販売数と完売</dt>
+      <dd><code>components/entity/ticket-stock/spec.md</code></dd>
+      <dt>中止・返金・削除</dt>
+      <dd><code>stories/remove-a-cancelled-concert/spec.md</code>, <code>components/usecase/order/refund/spec.md</code>, <code>components/entity/order/commit-refund/spec.md</code>, <code>components/infrastructure/admin/web/route/artist-concerts/spec.md</code>, <code>components/usecase/notification/send-order-refunded/spec.md</code></dd>
+      <dt>Dispute と Stripe の通知</dt>
+      <dd><code>components/adapter/fan/api/webhook/payment-events/spec.md</code></dd>
+      <dt>紹介コード</dt>
+      <dd><code>stories/attribute-a-purchase-to-a-referral-link/spec.md</code>, <code>components/entity/referral/spec.md</code></dd>
+      <dt>中止後のリセール手数料 (利用規約)</dt>
+      <dd><code>components/infrastructure/fan/web/global/legal-document/spec.md</code></dd>
+    </dl>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">事実の正本は <code>openspec/specs</code> です。<code>openspec/changes</code> にある未実装の計画は含めていません。</div>
+</footer>
+
+<script>
+(function () {
+  var f = new Intl.NumberFormat("ja-JP");
+  function yen(n) { return f.format(n) + " 円"; }
+  function num(id) { var v = Number(document.getElementById(id).value); return isFinite(v) ? v : NaN; }
+  function update() {
+    var price = Math.floor(num("c-price"));
+    var count = Math.floor(num("c-count"));
+    var ratePct = num("c-rate");
+    var out = ["o-amount", "o-fee", "o-split", "o-refund", "o-rfee"];
+    if (!(price >= 1) || !(count >= 1) || !(ratePct >= 0) || ratePct > 30) {
+      out.forEach(function (id) { document.getElementById(id).textContent = "—"; });
+      return;
+    }
+    // Rate is stored in hundredths of a percent; fee = floor(amount * rate / 10000).
+    var rate = Math.round(ratePct * 100);
+    var amount = price * count;
+    var fee = Math.floor(amount * rate / 10000);
+    var resaleFee = Math.floor(price / 10);
+    document.getElementById("o-amount").textContent = yen(amount);
+    document.getElementById("o-fee").textContent = yen(fee);
+    document.getElementById("o-split").textContent = yen(amount - fee);
+    document.getElementById("o-refund").textContent = yen(price - resaleFee);
+    document.getElementById("o-rfee").textContent = yen(resaleFee);
+  }
+  ["c-price", "c-count", "c-rate"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", update);
+  });
+  update();
+})();
+</script>
+</body>
+</html>
