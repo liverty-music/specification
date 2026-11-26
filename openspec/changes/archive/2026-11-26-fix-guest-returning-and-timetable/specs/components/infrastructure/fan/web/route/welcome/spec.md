@@ -2,7 +2,7 @@
 
 ### Requirement: Returning Guest Redirect
 
-The system SHALL redirect an unauthenticated guest whose onboarding is complete and who follows at least one artist away from the landing page to the Timetable. A guest still in onboarding, and a guest who follows no artist, SHALL still be able to load the landing page. The redirect SHALL NOT discard any guest data, and the landing page's `[Log In]` SHALL keep discarding the guest follows and home before it starts sign-in.
+The system SHALL redirect an unauthenticated guest whose onboarding is complete and who follows at least one artist away from the landing page to the Timetable. A guest still in onboarding, and a guest who follows no artist, SHALL still be able to load the landing page. The redirect SHALL NOT discard any guest data.
 
 #### Scenario: Returning guest opens the app
 
@@ -16,7 +16,7 @@ The system SHALL redirect an unauthenticated guest whose onboarding is complete 
 
 #### Scenario: Guest with no follows opens Welcome
 
-- **WHEN** an unauthenticated user whose onboarding is complete but who follows no artist (a signed-out fan, or a guest who tapped `[Log In]` and came back without signing in) navigates to `/`
+- **WHEN** an unauthenticated user whose onboarding is complete but who follows no artist (a signed-out fan, for example) navigates to `/`
 - **THEN** the system SHALL load the landing page
 
 ## MODIFIED Requirements
