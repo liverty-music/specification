@@ -8,7 +8,7 @@ Provides an emotional payoff on the Timetable, gated on the timetable being real
 
 ### Requirement: Two-Tier Celebration Overlay
 
-The system SHALL present a celebration overlay at two distinct moments on the Timetable, gated on the timetable being real (home area set and data loaded). Each tier SHALL be shown at most once on the device.
+The system SHALL present a celebration overlay at two distinct moments on the Timetable, gated on the timetable being real (home area set and data loaded). Each tier SHALL be shown at most once on the device. The light tier counts as shown once the overlay has opened. The post-signup tier counts as shown once the post-signup sequence it leads to has ended: the post-signup dialog has opened, or it has no step to show and does not open ("The post-signup sequence survives closing the app" in the post-signup dialog). A fan who closes the app before that sees the celebration again on the next Timetable visit.
 
 - **Light tier** (a fan in onboarding arriving at the Timetable): shown only when the fan follows at least 1 artist AND the timetable holds at least 1 concert. It renders without confetti and shows three lines: 「タイムテーブル完成！」, 「{{artists}}組のアーティストの{{concerts}}公演が見つかりました」 (the number of followed artists and the number of concerts on the timetable) and 「タップして見てみよう」.
 - **Post-signup tier** (the Timetable right after a sign-up): renders with confetti, headline 「ようこそ！もうライブは見逃さない」 and a body of two lines, 「新着ライブは」 and 「Liverty Music にお任せ！」, and on dismissal opens the post-signup dialog. A sign-up started from a concert sheet's ticket sale notification button SHALL NOT show this tier; the post-signup dialog states what follows it instead.
@@ -62,7 +62,7 @@ The English locale SHALL show equivalent texts.
 
 #### Scenario: Celebration does not replay
 
-- **WHEN** a user who has already seen a given celebration tier returns to the Timetable
+- **WHEN** a user who has already seen a given celebration tier, as the requirement counts it, returns to the Timetable
 - **THEN** the system SHALL NOT display that celebration tier again
 
 #### Scenario: Reduced motion preference

@@ -611,7 +611,7 @@ When the identity verification (本人確認, identity check) row shows how stro
 
 ### Requirement: Consent toggles invite the fan to help, in plain words
 
-The Settings page SHALL present the analytics consent toggles using labels and descriptions that name the consent *purpose* (what the data is used for) in words a fan without technical knowledge understands, and that invite the fan to help improve the service. They SHALL NOT name the data's processing *geography*, and SHALL NOT call the data anonymous, because a signed-in fan's data is tied to their account. Each consent toggle on the Settings page SHALL remain a persistent, user-controlled opt-out for the corresponding consent purpose. The Settings page SHALL NOT present a per-region ("domestic" vs "overseas") processing toggle, and SHALL NOT remove a consent purpose's Settings opt-out while that purpose can be granted at signup.
+The Settings page SHALL present the analytics consent toggles using labels and descriptions that name the consent *purpose* (what the data is used for) in words a fan without technical knowledge understands, and that invite the fan to help improve the service. They SHALL NOT name the data's processing *geography*, and SHALL NOT call the data anonymous, because a signed-in fan's data is tied to their account. The onboarding consent notice SHALL follow the same rule: its introduction SHALL be true for a guest and for a signed-in fan, so it SHALL NOT call the analytics anonymous and SHALL say that they are linked to the account while the fan is signed in. Each consent toggle on the Settings page SHALL remain a persistent, user-controlled opt-out for the corresponding consent purpose. The Settings page SHALL NOT present a per-region ("domestic" vs "overseas") processing toggle, and SHALL NOT remove a consent purpose's Settings opt-out while that purpose can be granted at signup.
 
 In Japanese the section and toggles SHALL read:
 
@@ -637,6 +637,12 @@ In Japanese the section and toggles SHALL read:
 
 - **WHEN** either consent toggle's description is shown, in any language
 - **THEN** it SHALL NOT describe the data as anonymous or anonymised
+
+#### Scenario: Consent notice makes no anonymity claim
+
+- **WHEN** the onboarding consent notice's introduction is shown, in any language
+- **THEN** it SHALL NOT describe the data as anonymous or anonymised
+- **AND** it SHALL say that the analytics are linked to the account while the fan is signed in
 
 #### Scenario: Settings opt-out persists for a purpose granted at signup
 
