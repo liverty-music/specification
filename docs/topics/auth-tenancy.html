@@ -303,7 +303,7 @@ footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
     </li>
     <li>
       <b>パスワードはない。パスキーを失ったときの戻り方は利用者ごとに違う</b>
-      <p>ファンは確認済みメールに届くリンクで自分で再登録、Organizer のメンバーは管理者の再招待、管理者は Google Workspace のアカウントで入ります。</p>
+      <p>ファンは確認済みメールに届くリンクで自分で再登録、Organizer のメンバーは管理者が送るパスキー登録リンク、管理者は Google Workspace のアカウントで入ります。</p>
     </li>
     <li>
       <b>「誰のデータか」はリクエストではなくトークンが決める</b>
@@ -461,7 +461,7 @@ footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
         <tr><th scope="row">アカウントの作られ方</th><td>本人が hosted login で登録</td><td>管理者が Organizer を作ると、オーナーに招待メールが届く。自己登録はできない</td><td>Google Workspace のアカウント</td></tr>
         <tr><th scope="row">サインイン</th><td>メールを入力 → パスキー</td><td>メールを入力 → パスキー。Organizer が自社の IdP を連携していればそれも使える</td><td>Google Workspace の IdP 経由</td></tr>
         <tr><th scope="row">パスワード</th><td>なし (自動 E2E テスト用のファンだけ例外)</td><td>なし</td><td>Google Workspace 側 (この仕様の範囲外)</td></tr>
-        <tr><th scope="row">パスキーを失ったら</th><td>確認済みメールへのリンクで自分で再登録</td><td>管理者による再招待</td><td>この仕様の範囲外</td></tr>
+        <tr><th scope="row">パスキーを失ったら</th><td>確認済みメールへのリンクで自分で再登録</td><td>管理者が本人を確認し、失ったパスキーを削除してから、登録リンクを送る (画面は無く、手順書で行う)</td><td>この仕様の範囲外</td></tr>
         <tr><th scope="row">API が扱う範囲</th><td>自分の User だけ</td><td>自社の Organizer だけ。active の間だけ</td><td>admin 役割があれば管理操作</td></tr>
       </tbody>
     </table>
@@ -987,7 +987,7 @@ footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
         <tr><td>pre-access-token webhook (確認済みメールを <code>email</code> クレームに足す、署名検証)</td><td><code>components/adapter/fan/api/webhook/pre-access-token/spec.md</code></td></tr>
         <tr><td>Organizer の作成手順、失敗時の扱い</td><td><code>components/usecase/organizer/create/spec.md</code>, <code>components/usecase/organizer/reconcile-provisioning/spec.md</code></td></tr>
         <tr><td>Provision の内容 (オーナー identity、identity 名、招待メール)</td><td><code>components/entity/organization/provision/spec.md</code></td></tr>
-        <tr><td>招待メール 1 通、コードを URL に載せない、管理者の再招待</td><td><code>stories/bootstrap-owner-credentials-on-first-sign-in/spec.md</code></td></tr>
+        <tr><td>招待メール 1 通、コードを URL に載せない、管理者による復旧</td><td><code>stories/bootstrap-owner-credentials-on-first-sign-in/spec.md</code></td></tr>
         <tr><td>1 つの OIDC クライアント、目印は権限にならない、不一致は 1 回再認証して拒否、同じメールでファンと Organizer</td><td><code>stories/sign-in-as-organizer/spec.md</code></td></tr>
         <tr><td>Organizer の Organization のログインポリシー (自己登録なし、外部 IdP 可、未知のメールを知らせる、既定のリダイレクト)、必ず 1 つの Organization を指定、端末への記憶</td><td><code>components/infrastructure/organizer/web/global/hosted-login/spec.md</code></td></tr>
         <tr><td>find-organizer 画面へのリンク送信と回数制限</td><td><code>components/usecase/organizer/send-sign-in-links/spec.md</code>, <code>components/entity/organizer/send-sign-in-links/spec.md</code>, <code>components/entity/organizer/list-by-owner-email/spec.md</code></td></tr>
