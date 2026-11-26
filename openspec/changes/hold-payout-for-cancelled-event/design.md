@@ -35,7 +35,7 @@ Alternatives rejected:
 
 ### 2. Read the publish state per Settlement with `Event.Get`
 
-The usecase receives the existing `entity.EventRepository` and calls `Get` for each Held Settlement, next to the `GetEventStartTime` call it already makes, before any Stripe call. A CANCELLED Event is logged at Info level and skipped, like the other withheld payouts, so no payout account is refreshed for it.
+The usecase receives the existing `entity.EventRepository` and calls `Get` for each Held Settlement, next to the `GetEventStartTime` call it already makes, before any Stripe call. A CANCELLED Event is logged at Info level and skipped, like the other withheld payouts, so no payout account is refreshed for it. The release time stays the instant `releaseOne` takes before this read, as today, so a cancellation stored before a Settlement's release time was always seen by the run that released it; the production check of the Migration Plan relies on this.
 
 Alternatives rejected:
 
