@@ -59,11 +59,15 @@ message Event {
   // This date is displayed to fans when browsing or purchasing tickets.
   LocalDate local_date = 4 [(buf.validate.field).required = true];
 
-  // start_time is the timestamp when the performance is scheduled to begin.
+  // start_time is the wall-clock time the performance is scheduled to begin:
+  // a time of day on local_date, read in the Venue's time zone
+  // (Venue.time_zone). It is not an instant; combine it with local_date and the
+  // zone to get one.
   // This field is optional and may be omitted for events where the start time is not yet confirmed.
   StartTime start_time = 5;
 
-  // open_time is the timestamp when venue doors open for fan entry.
+  // open_time is the wall-clock time venue doors open for fan entry, read like
+  // start_time.
   // This field is optional and may be omitted when door times have not been announced.
   OpenTime open_time = 6;
 
