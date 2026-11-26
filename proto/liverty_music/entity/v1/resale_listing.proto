@@ -123,7 +123,7 @@ message ResaleListing {
   ];
 
   // The close time: when the listing can no longer be bought or withdrawn,
-  // its event's last resale draw, 12:00 Japan time on the event's day, or 3
+  // its event's last resale draw, 12:00 at its Venue on the event's day, or 3
   // hours before the event's start time, when admission opens, if that is
   // earlier. The start time is required for a sale and fixed once a
   // TicketSale names the event.

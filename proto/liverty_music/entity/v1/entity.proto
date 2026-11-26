@@ -3,8 +3,8 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
-import "google/protobuf/timestamp.proto";
 import "google/type/date.proto";
+import "google/type/timeofday.proto";
 
 // Package liverty_music.entity.v1 provides core business entity definitions for the Liverty Music application.
 //
@@ -25,18 +25,35 @@ message LocalDate {
   google.type.Date value = 1 [(buf.validate.field).required = true];
 }
 
-// StartTime represents the timestamp when a performance is scheduled to begin.
-// Stored as a full timestamp; time-of-day extraction is the responsibility of the consumer.
+// StartTime is the wall-clock time a performance begins at its venue: a time
+// of day on the event's local date, read in the time zone of the event's
+// Venue (Venue.time_zone; for a concert candidate, its own time_zone).
 message StartTime {
-  // The start timestamp. Must be present when the message itself is set.
-  google.protobuf.Timestamp value = 1 [(buf.validate.field).required = true];
+  // The time of day, hours 0 to 23 and minutes 0 to 59; seconds and nanos
+  // are 0.
+  google.type.TimeOfDay value = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "time_of_day.minute"
+      message: "must be a time of day in whole minutes, from 00:00 to 23:59"
+      expression: "this.hours >= 0 && this.hours <= 23 && this.minutes >= 0 && this.minutes <= 59 && this.seconds == 0 && this.nanos == 0"
+    }
+  ];
 }
 
-// OpenTime represents the timestamp when venue doors open for entry.
-// Stored as a full timestamp; time-of-day extraction is the responsibility of the consumer.
+// OpenTime is the wall-clock time the venue's doors open for entry: a time of
+// day on the event's local date, read in the same time zone as StartTime.
 message OpenTime {
-  // The open timestamp. Must be present when the message itself is set.
-  google.protobuf.Timestamp value = 1 [(buf.validate.field).required = true];
+  // The time of day, hours 0 to 23 and minutes 0 to 59; seconds and nanos
+  // are 0.
+  google.type.TimeOfDay value = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "time_of_day.minute"
+      message: "must be a time of day in whole minutes, from 00:00 to 23:59"
+      expression: "this.hours >= 0 && this.hours <= 23 && this.minutes >= 0 && this.minutes <= 59 && this.seconds == 0 && this.nanos == 0"
+    }
+  ];
 }
 
 // Title represents the human-readable name of a concert or event.

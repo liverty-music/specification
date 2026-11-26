@@ -13,7 +13,7 @@ syntax = "proto3";
 package liverty_music.rpc.organizer.ticket_sale.v1;
 
 import "buf/validate/validate.proto";
-import "google/protobuf/timestamp.proto";
+import "google/type/datetime.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/referral.proto";
 import "liverty_music/entity/v1/seat_type.proto";
@@ -126,6 +126,11 @@ service TicketSaleService {
 // CreateRequest carries the Series, the sale's settings and its events.
 message CreateRequest {
   option (buf.validate.message).cel = {
+    id: "create_request.window_zone"
+    message: "sale_start_time and sale_end_time must name the same time zone"
+    expression: "this.sale_end_time.time_zone.id == this.sale_start_time.time_zone.id"
+  };
+  option (buf.validate.message).cel = {
     id: "create_request.distinct_events"
     message: "event_ids must not repeat an event"
     expression: "this.event_ids.map(e, e.value).unique()"
@@ -144,11 +149,37 @@ message CreateRequest {
     not_in: [0]
   }];
 
-  // Required. When the sale opens.
-  google.protobuf.Timestamp sale_start_time = 4 [(buf.validate.field).required = true];
+  // Required. When the sale opens: a civil date-time with the sale's IANA
+  // time zone, which MUST be one of the zones of the events' Venues.
+  google.type.DateTime sale_start_time = 4 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "sale_time.time_zone"
+      message: "a sale time must name its IANA time zone"
+      expression: "this.time_zone.id != ''"
+    },
+    (buf.validate.field).cel = {
+      id: "sale_time.minute"
+      message: "a sale time must be a date and a time in whole minutes"
+      expression: "this.year >= 1 && this.year <= 9999 && this.month >= 1 && this.month <= 12 && this.day >= 1 && this.day <= 31 && this.hours >= 0 && this.hours <= 23 && this.minutes >= 0 && this.minutes <= 59 && this.seconds == 0 && this.nanos == 0"
+    }
+  ];
 
-  // Required. When the sale closes, after the sale start.
-  google.protobuf.Timestamp sale_end_time = 5 [(buf.validate.field).required = true];
+  // Required. When the sale closes, after the sale start, in the same time
+  // zone as sale_start_time.
+  google.type.DateTime sale_end_time = 5 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "sale_time.time_zone"
+      message: "a sale time must name its IANA time zone"
+      expression: "this.time_zone.id != ''"
+    },
+    (buf.validate.field).cel = {
+      id: "sale_time.minute"
+      message: "a sale time must be a date and a time in whole minutes"
+      expression: "this.year >= 1 && this.year <= 9999 && this.month >= 1 && this.month <= 12 && this.day >= 1 && this.day <= 31 && this.hours >= 0 && this.hours <= 23 && this.minutes >= 0 && this.minutes <= 59 && this.seconds == 0 && this.nanos == 0"
+    }
+  ];
 
   // Optional. Whether fans taking part must hold an Active
   // IdentityVerification. UNSPECIFIED (the default) requires none.
@@ -251,15 +282,47 @@ message ListByEventResponse {
 
 // SetWindowRequest names the sale and its new window.
 message SetWindowRequest {
+  option (buf.validate.message).cel = {
+    id: "set_window_request.window_zone"
+    message: "sale_start_time and sale_end_time must name the same time zone"
+    expression: "this.sale_end_time.time_zone.id == this.sale_start_time.time_zone.id"
+  };
+
   // Required. The sale to change. Its Series MUST be owned by the caller's
   // Organizer.
   entity.v1.TicketSaleId ticket_sale_id = 1 [(buf.validate.field).required = true];
 
-  // Required. When the sale opens.
-  google.protobuf.Timestamp sale_start_time = 2 [(buf.validate.field).required = true];
+  // Required. When the sale opens: a civil date-time with the sale's IANA
+  // time zone, which MUST be one of the zones of the events' Venues.
+  google.type.DateTime sale_start_time = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "sale_time.time_zone"
+      message: "a sale time must name its IANA time zone"
+      expression: "this.time_zone.id != ''"
+    },
+    (buf.validate.field).cel = {
+      id: "sale_time.minute"
+      message: "a sale time must be a date and a time in whole minutes"
+      expression: "this.year >= 1 && this.year <= 9999 && this.month >= 1 && this.month <= 12 && this.day >= 1 && this.day <= 31 && this.hours >= 0 && this.hours <= 23 && this.minutes >= 0 && this.minutes <= 59 && this.seconds == 0 && this.nanos == 0"
+    }
+  ];
 
-  // Required. When the sale closes, after the sale start.
-  google.protobuf.Timestamp sale_end_time = 3 [(buf.validate.field).required = true];
+  // Required. When the sale closes, after the sale start, in the same time
+  // zone as sale_start_time.
+  google.type.DateTime sale_end_time = 3 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "sale_time.time_zone"
+      message: "a sale time must name its IANA time zone"
+      expression: "this.time_zone.id != ''"
+    },
+    (buf.validate.field).cel = {
+      id: "sale_time.minute"
+      message: "a sale time must be a date and a time in whole minutes"
+      expression: "this.year >= 1 && this.year <= 9999 && this.month >= 1 && this.month <= 12 && this.day >= 1 && this.day <= 31 && this.hours >= 0 && this.hours <= 23 && this.minutes >= 0 && this.minutes <= 59 && this.seconds == 0 && this.nanos == 0"
+    }
+  ];
 }
 
 // SetWindowResponse returns the sale with its new window.

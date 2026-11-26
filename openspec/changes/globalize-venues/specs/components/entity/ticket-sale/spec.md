@@ -18,7 +18,11 @@ Every TicketSale SHALL have a time zone, the IANA time zone name in which its st
 
 ### Requirement: The window is local date-times in the sale's time zone
 
-A TicketSale's start time and end time SHALL each be a local date-time, a calendar date and a time of day without an offset, read in the sale's time zone. The instant of each SHALL be computed from the local date-time and the sale's time zone whenever a rule needs one, so a change of the zone's rules before the sale moves the instant and keeps the announced wall-clock time. Every rule that compares a sale's start or end with an instant, with another sale's window or with an event's start SHALL use these instants; the length of an Organizer's Lottery window is measured on the local date-times instead ("A lottery window lasts 1 to 14 days"). A local date-time that does not exist in the sale's time zone, because the clocks skip it when daylight saving time starts, SHALL be invalid. A local date-time that occurs twice, because the clocks repeat it when daylight saving time ends, SHALL stand for the earlier of the two instants.
+A TicketSale's start time and end time SHALL each be a local date-time, a calendar date and a time of day without an offset, read in the sale's time zone. The instant of each SHALL be computed from the local date-time and the sale's time zone whenever a rule needs one, so a change of the zone's rules before the sale moves the instant and keeps the announced wall-clock time. Every rule that compares a sale's start or end with an instant, with another sale's window or with an event's start SHALL use these instants; the length of an Organizer's Lottery window is measured on the local date-times instead ("A lottery window lasts 1 to 14 days"). A local date-time that does not exist in the sale's time zone, because the clocks skip it when daylight saving time starts, SHALL be invalid. A local date-time that occurs twice, because the clocks repeat it when daylight saving time ends, SHALL stand for the earlier of the two instants. A start time and an end time SHALL be in whole minutes, with no seconds or fraction.
+
+#### Scenario: Times are whole minutes
+- **WHEN** a sale is stored with an end time of 2026-11-10 20:00:30
+- **THEN** the sale is invalid
 
 #### Scenario: Sale abroad
 - **WHEN** a sale's time zone is Asia/Taipei and its start time is 2026-11-01 12:00

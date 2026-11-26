@@ -114,7 +114,7 @@ message Scanner {
 }
 
 // AdmissionWindow is when a Scanner can admit, derived from its event's
-// current local date and start time in Japan time: from 3 hours before the
+// current local date and start time in its Venue's time zone: from 3 hours before the
 // start time until 04:00 on the day after the local date. The open time does
 // not affect it, because an event may have none. A time is inside it when
 // it is at or after open_time and before close_time. An event without a start

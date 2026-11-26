@@ -26,7 +26,7 @@ service TicketSaleService {
   // whether it is low on stock and whether its official resale is open now.
   // It needs no sign-in. An event that no sale names, or whose concert is not
   // published (for example a cancelled 中止 concert), returns no sale and no
-  // stock. The sales' start and end are shown in Japan time by the client.
+  // stock. The sales' start and end carry their time zone; the client shows them in the viewer's zone.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The event_id is missing or malformed.

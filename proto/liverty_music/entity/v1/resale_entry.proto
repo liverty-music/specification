@@ -85,7 +85,7 @@ enum ResaleEntryLostReason {
 // companion group of tickets allocated all-or-nothing by a daily draw, paid by
 // the Order's CardAuthorization placed on the fan's card for the amount when
 // the fan applies and captured only on a win. It belongs to no TicketSale: its
-// supply is the stock's ResaleListings. Draws run at 12:00 Japan time on every
+// supply is the stock's ResaleListings. Draws run at 12:00 in the event's Venue's time zone on every
 // day before the event's day, and on the event's day at its resale deadline,
 // 12:00 or 3 hours before the start time if that is earlier, which is the last
 // draw. A fan has at most one ENTERED resale entry per event (enforced

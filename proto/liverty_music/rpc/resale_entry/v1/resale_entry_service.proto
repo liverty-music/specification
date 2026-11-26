@@ -29,7 +29,7 @@ import "liverty_music/entity/v1/user.proto";
 //
 // Once the fan completes authentication, the platform also makes the entry by
 // itself, so an entry is made even when the browser closes before Confirm.
-// Draws run at 12:00 Japan time on every day before the event's day and on
+// Draws run at 12:00 at the event's Venue on every day before the event's day and on
 // the event's day at its resale deadline, 12:00 or 3 hours before the start
 // time if that is earlier, which is the last draw. A draw allocates each entry
 // all its tickets or none; an entry not allocated stays ENTERED for the next

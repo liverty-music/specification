@@ -22,7 +22,7 @@ service ResaleListingService {
   // the LISTED listing. The Ticket must be Issued and not admitted, bought
   // first come or won in a lottery, of a TicketStock that has sold out, for a
   // published concert, and resale must still be open: before the listing's
-  // close time, the event's last resale draw (12:00 Japan time on the event's
+  // close time, the event's last resale draw (12:00 at its Venue on the event's
   // day, or 3 hours before the start time if that is earlier). A Ticket has at most one
   // LISTED listing; one whose earlier listing was withdrawn can be listed
   // again.
