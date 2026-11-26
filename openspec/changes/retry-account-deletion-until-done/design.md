@@ -11,7 +11,7 @@ See proposal.md. Facts (backend `origin/main`, 2026-11-26):
 
 **Goals:** a deletion that was accepted always ends in removal or in an admin being told.
 
-**Non-Goals:** repairing Users already left behind (there are none to repair: an admin can delete one on the Users screen); a new screen message for the Unavailable case.
+**Non-Goals:** repairing Users already left behind (there are none to repair: an admin can delete one on the Users screen); any screen change.
 
 ## Decisions
 
