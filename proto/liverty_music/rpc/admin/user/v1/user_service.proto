@@ -35,10 +35,12 @@ service UserService {
   // Nothing is removed while the User has a deletion blocker: an Issued
   // Ticket for an Event whose local date is today or later at its Venue, a
   // Listed resale listing, a lottery entry awaiting its draw, or a payment in
-  // progress (a Checkout being paid, or a won entry not charged yet). A Ticket for an Event that has passed and a paid Order do not
-  // block. The sign-in identity is removed before the User record and an
-  // identity that is already gone counts as removed, so a call that failed
-  // partway is completed by calling Delete again.
+  // progress (a Checkout being paid, or a won entry not charged yet). A Ticket
+  // for an Event that has passed and a paid Order do not block. Otherwise the
+  // removal is started and waited on for up to 5 seconds: the User record is
+  // removed first, then the sign-in identity, and a started removal runs to
+  // its end on its own. Success means the removal is still running or has
+  // removed the User.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
@@ -46,6 +48,8 @@ service UserService {
   // - INVALID_ARGUMENT: The user id is missing or not a UUID.
   // - NOT_FOUND: The user does not exist.
   // - FAILED_PRECONDITION: The user has a deletion blocker.
+  // - UNAVAILABLE: The removal could not be started, or the wait for it could
+  //   not be read; a started removal goes on.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
 
@@ -71,6 +75,6 @@ message DeleteRequest {
   entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
 }
 
-// DeleteResponse is returned once the User and its sign-in identity have been
-// removed.
+// DeleteResponse is returned once the User is removed, or while the accepted
+// removal is still running.
 message DeleteResponse {}
