@@ -10,7 +10,7 @@ A Ticket is one account-bound admission right to an event, issued from an Order.
 | order | the Order that issued it | required |
 | user | the account the ticket is bound to | required; never changes (official resale voids the ticket and issues a new one) |
 | event | the event it admits to, which gives the date and venue on its face | required |
-| identity verification | the identity verification the ticket is bound to | optional; set only when the sale required verification |
+| identity verification | the identity verification the ticket is bound to | optional; set only when the sale the ticket was bought in required verification or, for a ticket bought through official resale, when any sale of the event does |
 | resale without consent prohibited | the face states that resale without the Organizer's consent is prohibited | always true |
 | status | lifecycle; a Voided ticket is no longer valid for entry | Issued or Voided |
 | issue time | when the ticket was issued | required |

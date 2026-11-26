@@ -539,7 +539,7 @@ svg text { font-family: var(--sans); }
         </tbody>
       </table>
     </div>
-    <p class="prose">Order は Pending から必ず Paid か Void のどちらかへ進みます。Void は「一度も課金されなかった」、Refunded は「課金した後に返した」という意味で、返金できるのは Paid の Order だけです。Event を削除できるのは、その Event の Order がすべて Void か Refunded になってからです。</p>
+    <p class="prose">Order は Pending から必ず Paid か Void のどちらかへ進みます。Void は「Paid にならなかった」、Refunded は「Paid になった後に返した」という意味で、返金できるのは Paid の Order だけです。公式リセールで請求した直後に出品が取り消されたときは、全額を返金したうえで Void になります (この請求と返金は Order に記録しません)。Event を削除できるのは、その Event の Order がすべて Void か Refunded になってからです。</p>
   </div>
 </section>
 

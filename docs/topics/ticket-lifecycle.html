@@ -269,7 +269,7 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
   <h2 style="font-size:18px;margin-top:8px">まず知っておく 3 つのこと</h2>
   <ol class="three">
     <li><b>申込み → Order → Ticket の 3 段で進む</b><span>申込みの形は取得方法ごとに違います (<code>Checkout</code> / <code>LotteryEntry</code> / <code>ResaleEntry</code>)。どれも Pending の Order を 1 つだけ持ち、Order が Paid になった瞬間に Ticket が発行されます。</span></li>
-    <li><b>カードは先に仮押さえ、請求は Ticket を渡す直前だけ</b><span>外れた・期限が切れた・取り下げた申込みの Order は Void になり、仮押さえは請求せずに解放されます。Ticket を受け取らない fan が請求されることはありません。</span></li>
+    <li><b>カードは先に仮押さえ、請求は Ticket を渡す直前だけ</b><span>外れた・期限が切れた・取り下げた申込みの Order は Void になり、仮押さえは請求せずに解放されます。Ticket を受け取らない fan に請求が残ることはありません (公式リセールで、請求の直後に出品が取り消されたときは全額を返金します)。</span></li>
     <li><b>Ticket の状態は Issued と Voided の 2 つだけ</b><span>入場済みかどうかは状態ではなく admit time で表します。リセールは名義変更ではなく、旧 Ticket を Voided にして買った fan に新しい Ticket を発行します。</span></li>
   </ol>
 
@@ -562,7 +562,7 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
           <text class="s2" x="400" y="194">仮押さえの期限が抽選の 24 時間後より前。</text>
           <text class="s2" x="400" y="212">メールと push で再申込みを案内</text>
           <text class="s2" x="400" y="274">fan が抽選前に取り下げた (通知なし)</text>
-          <text class="s" x="20" y="316">Won 以外の終わり方では Order は Void になり、仮押さえは請求せず解放される。</text>
+          <text class="s" x="20" y="316">当選して発券される以外の終わり方では Order は Void になり、請求前の仮押さえは解放される。</text>
 
           <line class="grid" x1="20" y1="338" x2="700" y2="338"/>
           <text class="lane" x="20" y="366">出品 ResaleListing (売る側)</text>
@@ -628,14 +628,14 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
           <text class="s2" x="584" y="308">請求せず返した</text>
         </svg>
       </div>
-      <figcaption>Order が Paid になるときは、請求済みの支払い情報・人数分の Ticket・Organizer への支払い記録 (Settlement、Held) をまとめて保存し、どれか 1 つでも失敗したら何も保存しません。Paid にならずに終わった Order は Void になり、その仮押さえは請求せずに解放されます。</figcaption>
+      <figcaption>Order が Paid になるときは、請求済みの支払い情報・人数分の Ticket・Organizer への支払い記録 (Settlement、Held) をまとめて保存し、どれか 1 つでも失敗したら何も保存しません。Paid にならずに終わった Order は Void になり、請求前の仮押さえは解放されます。例外は、公式リセールで請求した直後に出品が取り消されたときで、全額を返金してから Void にします (請求も返金も Order には記録しません)。</figcaption>
     </figure>
 
     <div class="tbl-wrap">
       <table>
         <thead><tr><th scope="col">ルール</th><th scope="col">理由・破ると何が起きるか</th></tr></thead>
         <tbody>
-          <tr><td>Void になれるのは Pending からだけ</td><td>一度請求した Order を「払われなかった」扱いにしない</td></tr>
+          <tr><td>Void になれるのは Pending からだけ</td><td>一度 Paid になった Order を「払われなかった」扱いにしない</td></tr>
           <tr><td>返金できるのは Paid の Order だけ。理由は中止 (Cancellation) か Dispute (カード会社による払い戻し)</td><td>中止の返金は、公演が CANCELLED のときしか通らない</td></tr>
           <tr><td>中止の返金額は「まだ Issued の Ticket の分」</td><td>リセールで売れた Ticket は手数料を引いて返金済みなので、二重に返さない</td></tr>
           <tr><td>請求の処理は止まっても途中から再開し、カードを二度請求しない。24 時間たっても終わらなければ admin に知らせる</td><td>決済代行が落ちていても、復旧後に 1 回だけ請求される</td></tr>
@@ -866,7 +866,7 @@ footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
       <table class="pit">
         <thead><tr><th scope="col">取り違え</th><th scope="col">正しくは</th><th scope="col">取り違えると</th></tr></thead>
         <tbody>
-          <tr><td>Order の Void と Ticket の Voided は同じ</td><td>Void は「一度も払われずに終わった Order」。Voided は「無効になった Ticket」で、その Order は Paid か Refunded のまま</td><td>リセールで売れた Ticket の Order を未払い扱いにし、返金額や支払いを誤る</td></tr>
+          <tr><td>Order の Void と Ticket の Voided は同じ</td><td>Void は「一度も Paid にならずに終わった Order」。Voided は「無効になった Ticket」で、その Order は Paid か Refunded のまま</td><td>リセールで売れた Ticket の Order を未払い扱いにし、返金額や支払いを誤る</td></tr>
           <tr><td>入場済みは Ticket の状態の 1 つ</td><td>状態は Issued と Voided だけ。入場は admit time と Admission で表し、Voided にしても消えない</td><td>返金で来場の証拠を消し、chargeback に反論できなくなる</td></tr>
           <tr><td>リセールは Ticket の名義変更</td><td>旧 Ticket を Voided にし、買った fan に新しい Ticket を発行する。Ticket の user は変わらない</td><td>出品者のコードで入場できてしまう、または買った fan が入場できない</td></tr>
           <tr><td>公演を中止すれば返金される</td><td>Paid の Order は admin が <code>Refund all</code> するまで Paid のまま</td><td>fan に返金されないまま Event を削除しようとして失敗する</td></tr>
