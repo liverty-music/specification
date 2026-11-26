@@ -24,7 +24,7 @@ A fan who loses a lottery gets the loss email, but the Timetable and the concert
 - `components/entity/ticket-journey/upsert-if-replaceable` (Purpose): the Purpose names the platform's Lost. Its requirement already refers to the entity's replacement rule and is unchanged.
 - `stories/win-tickets-in-a-lottery` (Purpose): a lost entry marks the fan's journey Lost.
 
-`entity/lottery-entry/list-by-user` and `entity/ticket-stock/get` are used as they are.
+`entity/order/get`, `entity/lottery-entry/list-by-user` and `entity/ticket-stock/get` are used as they are.
 
 ## Impact
 
