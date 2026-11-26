@@ -5,7 +5,8 @@ Account deletion removes the sign-in identity and then the User, inside the requ
 ## What Changes
 
 - Once Delete has accepted a deletion, the platform carries it to the end on its own: it continues after the request ends and after a restart, and tries a failed step again for up to 24 hours.
-- An admin is told about a deletion that ends without removing the account.
+- An admin is told about a deletion that ends without removing the account and its sign-in identity.
+- The removal deletes the User first and its sign-in identity afterwards. The identity of a removed User gets no new account.
 - Delete waits up to 5 seconds, so that its answer reaches the fan and admin apps before they stop waiting. A deletion still running then is answered with success, because it was accepted and completes on its own. The fan sees the account deleted and is signed out, as today.
 - A removal that cannot go on, including one that finds a new blocker, is reported to an admin.
 - The removal runs in the workflow worker. Only the worker may delete a fan identity: the fan API and the admin console API lose that permission.
@@ -22,7 +23,9 @@ None.
 
 - `components/usecase/user/delete`: the deletion completes on its own.
 - `components/entity/user/delete-identity`: fails with Unavailable when the identity provider cannot be reached.
-- `components/entity/user/delete`: fails with Unavailable when the store cannot be reached.
+- `components/entity/user/delete`: records the removed identity; fails with Unavailable when the store cannot be reached.
+- `components/entity/user/create`: refuses the identity of a removed User.
+- `components/usecase/user/create`: the same refusal.
 - `components/infrastructure/backend/process/identity-provider-credentials` (Purpose): who may delete a fan identity; the workflow worker as the caller.
 - `stories/delete-my-account`: a started deletion completes.
 - `stories/sign-up-or-sign-in`: a failed Create no longer promises an account regardless of the cause.
@@ -31,5 +34,6 @@ None.
 
 ## Impact
 
-- backend: `UserUseCase.Delete`, a workflow, the error code a failed workflow hands its caller, the worker's wiring, the identity service's listeners, the identity remover's error code.
-- specification: the caller list in the identity service's proto comment. No schema, database or cluster change, and no release needed.
+- backend: a migration adding the removed identities, `User.Create` and `User.Delete`, `UserUseCase.Delete`, a workflow, the error code a failed workflow hands its caller, the worker's wiring, the identity service's listeners, the identity remover's error code.
+- specification: the identity service's caller list and the errors of `UserService.Create`, both proto comments; no release needed.
+- database: one new table. No cluster change.
