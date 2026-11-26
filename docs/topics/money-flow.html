@@ -255,7 +255,7 @@ svg text { font-family: var(--sans); }
       <div>
         <span class="k">預かってから払う</span>
         <h3>Organizer への振込は公演開始の 7 日後</h3>
-        <p>課金と同時に Settlement が Held で作られ、お金はプラットフォームに残ります。公演開始から 7 日たち、Organizer の PayoutAccount が active なら振り込みます。手数料は Organizer ごとの率 (新規は 8%) で、Settlement を作った時点で決まります。</p>
+        <p>課金と同時に Settlement が Held で作られ、お金はプラットフォームに残ります。公演開始から 7 日たち、Organizer の PayoutAccount が active なら振り込みます。中止した公演の分は振り込みません。手数料は Organizer ごとの率 (新規は 8%) で、Settlement を作った時点で決まります。</p>
       </div>
       <div>
         <span class="k">払い戻しは 2 つだけ</span>
@@ -388,7 +388,7 @@ svg text { font-family: var(--sans); }
       <div class="frame w1040" tabindex="0" role="region" aria-label="図 (横にスクロールできます)">
         <svg viewBox="0 0 1040 600" role="img" aria-labelledby="when-t when-d">
           <title id="when-t">買い方ごとの与信と課金のタイミング</title>
-          <desc id="when-d">先着は15分の確保、カード与信、注文確定で課金。抽選は与信を開き、カード認証完了で応募、受付終了から1分以内に抽選、当選者だけ課金。リセールは完売後の出品と、与信つきの申込、毎日12時の抽選、当選で課金、出品者へ額面から10%を引いて返金。精算は課金と同時にSettlementがHeldで作られ、公演開始から7日後、PayoutAccountがactiveなら振込。</desc>
+          <desc id="when-d">先着は15分の確保、カード与信、注文確定で課金。抽選は与信を開き、カード認証完了で応募、受付終了から1分以内に抽選、当選者だけ課金。リセールは完売後の出品と、与信つきの申込、毎日12時の抽選、当選で課金、出品者へ額面から10%を引いて返金。精算は課金と同時にSettlementがHeldで作られ、公演が中止でなく開始から7日後で、PayoutAccountがactiveなら振込。中止した公演の分は振り込まずHeldのまま。</desc>
 
           <!-- Row labels -->
           <text class="tl" x="14" y="46">先着</text>
@@ -487,7 +487,7 @@ svg text { font-family: var(--sans); }
           <rect class="bx" x="350" y="450" width="210" height="80" rx="8"/>
           <text class="t" x="364" y="474">公演開始から 7 日たった?</text>
           <text class="c" x="364" y="492">ReleaseDueSettlements</text>
-          <g class="bd-none"><text x="364" y="518">5 分ごとに確認</text></g>
+          <g class="bd-none"><text x="364" y="518">5 分ごと。中止なら払わない</text></g>
           <line class="lg" x1="562" y1="490" x2="586" y2="490" marker-end="url(#ah-grey)"/>
           <rect class="bx" x="590" y="450" width="200" height="80" rx="8"/>
           <text class="t" x="604" y="474">PayoutAccount は active?</text>
@@ -500,6 +500,7 @@ svg text { font-family: var(--sans); }
           <g class="bd-payout"><rect x="834" y="502" width="80" height="20" rx="10"/><text x="874" y="516" text-anchor="middle">Released</text></g>
           <text class="s" x="120" y="556">Organizer の本人確認が終わっていなくても、販売・当選・発券は止まらない。待つのは振込だけ。</text>
           <text class="s" x="120" y="574">公演の開始時刻は毎回読み直すので、延期すれば振込もそのぶん遅れる。開始時刻が未定の間は振り込まない。</text>
+          <text class="s" x="120" y="592">公演の公開状態も毎回読み直す。中止 (CANCELLED) の公演は何日たっても振り込まず、Settlement は Held のまま。</text>
         </svg>
       </div>
       <p class="scrollhint">図は横にスクロールできます。</p>
@@ -634,12 +635,12 @@ svg text { font-family: var(--sans); }
 <section id="cancel" aria-labelledby="cancel-h">
   <div class="wrap">
     <h2 id="cancel-h">中止になったら：自動で止まるもの、admin が返すもの</h2>
-    <p class="why">member が Event を中止すると、まだ課金していない与信は自動で解放されます。課金済みの Order は自動では返金されず、admin が管理画面の <code>Refund all</code> で返します。中止の返金 (理由 Cancellation) は Event が CANCELLED のときしか通りません。</p>
+    <p class="why">member が Event を中止すると、まだ課金していない与信は自動で解放されます。課金済みの Order は自動では返金されず、admin が管理画面の <code>Refund all</code> で返します。中止の返金 (理由 Cancellation) は Event が CANCELLED のときしか通りません。中止した公演の分は、返金の前でも後でも Organizer に振り込みません。ただし、振込の処理が公演の状態を読んだ直後に中止された場合はその回の振込が実行され、<code>Refund all</code> で取り戻します。</p>
     <figure>
       <div class="frame w1040" tabindex="0" role="region" aria-label="図 (横にスクロールできます)">
-        <svg viewBox="0 0 1040 560" role="img" aria-labelledby="cx-t cx-d">
+        <svg viewBox="0 0 1040 580" role="img" aria-labelledby="cx-t cx-d">
           <title id="cx-t">中止の後に何が起きるか</title>
-          <desc id="cx-d">中止のとき、先着の確保中は15分後に期限切れで与信解放。抽選の応募中はすぐに落選で与信解放。抽選で当選し未課金なら課金の直前に落選で与信解放。リセール申込中は次の抽選時刻に落選で与信解放。課金済みのOrderは中止の通知だけで、adminのRefund allで残っている券の額面を返金し、SettlementはReversedになる。すべてVoidかRefundedになればEventを削除できる。</desc>
+          <desc id="cx-d">中止のとき、先着の確保中は15分後に期限切れで与信解放。抽選の応募中はすぐに落選で与信解放。抽選で当選し未課金なら課金の直前に落選で与信解放。リセール申込中は次の抽選時刻に落選で与信解放。課金済みのOrderは中止の通知だけで、adminのRefund allで残っている券の額面を返金し、SettlementはReversedになる。すべてVoidかRefundedになればEventを削除できる。中止した公演の分はOrganizerに振り込まず、Heldの精算は返金するまでHeldのまま。</desc>
 
           <text class="s" x="230" y="20">そのときのファンの状態</text>
           <text class="s" x="480" y="20">自動で起きること</text>
@@ -708,6 +709,7 @@ svg text { font-family: var(--sans); }
           <text class="s" x="830" y="498">(振込済みなら取り戻す)</text>
           <text class="s" x="230" y="520">リセールで売れた券の分は返金しない (出品者のリセール手数料も戻らない)。券は Voided、出品中だったものは Cancelled。</text>
           <text class="s" x="230" y="540">Paid と Pending の Order がなくなったら、admin が Event を Delete できる。</text>
+          <text class="s" x="230" y="560">中止した公演は Organizer に振り込まない。Held の Settlement は、返金するまで Held のまま。</text>
         </svg>
       </div>
       <p class="scrollhint">図は横にスクロールできます。</p>
@@ -763,7 +765,7 @@ svg text { font-family: var(--sans); }
           <tr><td>抽選に応募した時点でお金を取る</td><td>応募時は与信だけ。抽選 (Draw) 自体も課金も解放もしない。課金は当選後の OrderUseCase.Issue だけ</td><td>落選者への請求や、抽選処理の中での二重課金</td></tr>
           <tr><td>抽選の AuthorizeCard を呼べば応募になる</td><td>応募 (Entered) になるのはカード認証の完了後に Confirm が通ったとき。ブラウザを閉じても Stripe の通知で Confirm が動く。受付終了後に作られる応募は与信を解放して作らない</td><td>応募していない人を抽選に入れる、受付終了後の応募を通す</td></tr>
           <tr><td>中止すれば返金も自動で走る</td><td>中止で自動に止まるのは未課金の与信だけ。課金済みは admin の Refund all が必要</td><td>中止したのにファンへ返金されない</td></tr>
-          <tr><td>振込は公演が終われば行う</td><td>公演開始 + 7 日、かつ PayoutAccount が active のとき。開始時刻は毎回読み直す</td><td>Dispute に備える期間がなくなり、取り戻せない振込が出る</td></tr>
+          <tr><td>振込は公演が終われば行う</td><td>公演が中止でなく開始 + 7 日、かつ PayoutAccount が active のとき。公開状態と開始時刻は毎回読み直す</td><td>Dispute に備える期間がなくなり、取り戻せない振込が出る</td></tr>
           <tr><td>手数料率を下げれば過去分も下がる</td><td>率は Settlement 作成時に固定。変更は以後の Order だけ</td><td>振込額の説明が Organizer との合意とずれる</td></tr>
           <tr><td>リセール出品者への返金は Organizer の取り分から出る</td><td>出品者が最初に払った決済の一部返金。Organizer には元 Order の split を減らし、買った人の Order の split を足す</td><td>同じ席に 2 回振り込む</td></tr>
           <tr><td>リセールで売れた券も中止なら全額返す</td><td>売れた券は返金しない (リセール手数料も戻らない)。返すのはまだ有効な券の額面だけ</td><td>同じ席の代金を 2 人分返金する</td></tr>
@@ -791,7 +793,7 @@ svg text { font-family: var(--sans); }
     <dl>
       <dt>収納代行・Settlement の状態・手数料の計算・リセール分の減額</dt>
       <dd><code>components/entity/settlement/spec.md</code></dd>
-      <dt>振込の条件 (7 日・active・5 分ごと)</dt>
+      <dt>振込の条件 (中止でない・7 日・active・5 分ごと)</dt>
       <dd><code>components/usecase/settlement/release-due-settlements/spec.md</code>, <code>stories/win-tickets-in-a-lottery/spec.md</code> (payout readiness)</dd>
       <dt>手数料率 0〜30%・新規 8%</dt>
       <dd><code>components/entity/organizer/spec.md</code></dd>
