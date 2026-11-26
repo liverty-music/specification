@@ -15,7 +15,7 @@ The backend pull request is merged only after backend release 2 of `globalize-ve
 ## 4. backend: release
 
 - [ ] 4.1 Confirm that `globalize-venues` backend release 2 has been released (its task 14.7), then merge the backend pull request, cut the release and confirm read-only in production that the release is rolled out and the `release-due-settlements` workflow completes without a new error
-- [ ] 4.2 Confirm read-only in production that no Released Settlement belongs to a CANCELLED Event; if one does, record its id in this task and tell the owner. For each Held Settlement of a CANCELLED Event, confirm that the worker logs show no `Stripe Transfer created` with its id (design Risks, unrecorded payout)
+- [ ] 4.2 Query read-only in production the Settlements of CANCELLED Events whose release time is after the rollout of task 4.1; expect none. For one that appears, take the time of the Event's `Cancel` call from the organizer console API logs: a cancellation before the release time is a defect, to record in this task and report to the owner; a later one is a cancellation after the payout (design Decision 3 and Non-Goals), which `Refund all` claws back. Also for each Held Settlement of a CANCELLED Event, confirm that the worker logs show no `Stripe Transfer created` with its id (design Risks, unrecorded payout)
 - [ ] 4.3 Run `gh workflow run stripe-sandbox-e2e.yml` in backend and confirm the run succeeds
 
 ## 5. specification: Purpose and topic page (at archive)

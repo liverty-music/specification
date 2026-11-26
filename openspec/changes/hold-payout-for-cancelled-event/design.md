@@ -75,6 +75,6 @@ A Held Settlement of a cancelled Event leaves the work list when its Order is re
 
 1. Wait until `globalize-venues` backend release 2 is released.
 2. Merge the backend pull request and cut a release. No migration, no configuration and no proto release.
-3. Verify read-only in production that the workflow worker runs the new release and that no Released Settlement belongs to a CANCELLED Event.
+3. Verify read-only in production that the workflow worker runs the new release and that no Settlement released since then belongs to an Event that was already CANCELLED at its release time. Released Settlements of Events cancelled after the payout, and those released before the rollout, are expected and are clawed back by their refunds.
 
 Rollback is the previous image; no data was written by this change. A rollback releases due Settlements of cancelled Events again, so run `Refund all` for them first.
