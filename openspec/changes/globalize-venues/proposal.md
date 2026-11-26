@@ -74,6 +74,8 @@ Venues and Google place data:
 - `components/entity/venue/create`: fails without a first-level admin area or a time zone of the Area's country; stores coordinates with their fetch time.
 - `components/entity/venue/get-by-listed-name`: an admin area is required; the absent-matches-absent rule goes.
 - `components/entity/venue/get-place`: returns the place's name, country, coordinates, the area its address suggests and its time zone, for a member to confirm.
+- `components/entity/venue/search-place`: returns each place's country and first-level Area (Decision 19).
+- `components/entity/venue/select-place`: picks only places inside the event's admin area (Decision 19); both still store none of Google's content.
 - `components/entity/concert/search`: returns a first-level Area code and local start and open times; leaves out private events and shows on a ship or at sea.
 - `components/usecase/concert/create-from-discovered` (and Purpose diagram at archive): stages an event without an admin area or time zone; a new Venue takes the listed name; a candidate keeps only the resolved place id.
 - `components/usecase/concert-candidate/approve` (and Purpose diagram at archive): takes the area and time zone from the admin when the candidate lacks them; fetches the place's coordinates by place id.
@@ -108,7 +110,7 @@ Times:
 - `components/infrastructure/fan/web/global/legal-document`, `components/infrastructure/fan/web/route/tickets`: the resale draw time is 12:00 at the venue's local time.
 - `components/infrastructure/admin/web/route/approval-queue`: the admin gives or corrects the area and time zone of any candidate; the resolved place is shown as a map link.
 
-Unchanged, and why: `components/entity/concert` "Proximity to a home area" and `components/entity/proximity` compare the same codes, now always first-level, and NEARBY already falls back to AWAY without coordinates; the Event and Concert operations that compare "Venue, date and start time" (`entity/concert/create`, `fill-event-start-times`, `entity/series/publish-events`, `filter-new-series` and others) keep their wording, now over local times; `entity/scanner` and `entity/resale-listing` already use the Venue's time zone; `entity/settlement` reads the start time as an instant, which is now computed; `entity/notification` already uses the fan's time zone; `entity/concert/list-by-follower` already compares with "the current date", which `entity/venue` now defines per Venue; `entity/venue/search-place` returns each place's country and first-level Area, and `select-place` picks only places inside the event's admin area (Decision 19); both still store none of Google's content.
+Unchanged, and why: `components/entity/concert` "Proximity to a home area" and `components/entity/proximity` compare the same codes, now always first-level, and NEARBY already falls back to AWAY without coordinates; the Event and Concert operations that compare "Venue, date and start time" (`entity/concert/create`, `fill-event-start-times`, `entity/series/publish-events`, `filter-new-series` and others) keep their wording, now over local times; `entity/scanner` and `entity/resale-listing` already use the Venue's time zone; `entity/settlement` reads the start time as an instant, which is now computed; `entity/notification` already uses the fan's time zone; `entity/concert/list-by-follower` already compares with "the current date", which `entity/venue` now defines per Venue.
 
 ## Impact
 
