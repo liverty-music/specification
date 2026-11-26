@@ -1,7 +1,7 @@
 # components/entity/ticket-journey/upsert-if-replaceable Specification
 
 ## Purpose
-Stores a status that the platform or the app sets for a fan's journey only when the journey the fan has may be replaced by it: an inferred status never replaces a journey, and the platform's Applied never replaces a journey at Unpaid or Paid.
+Stores a status that the platform or the app sets for a fan's journey only when the journey the fan has may be replaced by it: an inferred status never replaces a journey, the platform's Applied never replaces a journey at Unpaid or Paid, and the platform's Lost replaces only a journey at Tracking or Applied.
 
 ## Requirements
 
