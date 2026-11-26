@@ -11,9 +11,10 @@
 
 ## 3. backend: usecase and story (components/usecase/user/delete)
 
-- [ ] 3.1 Add the `delete-user` workflow, make `Delete` start and await it, and wire the worker's `UserUseCase` with the identity remover and the blocker reads; verify one unit test per scenario of both requirements of `usecase/user/delete`
-- [ ] 3.2 Add the story test for "A started deletion completes" with a failing record removal and verify it passes
-- [ ] 3.3 Open the backend PR, merge, release; confirm read-only in prod that the release is rolled out, the worker registered `delete-user` and no `workflow.needs_admin` is raised for it
+- [ ] 3.1 Keep the apperr code of a failed run through `Workflows.Await` in `internal/infrastructure/workflow`; verify an integration test where a client other than the worker awaits a run that failed with FailedPrecondition and reads that code, and that the run is still reported for an admin, and a passkey test where an addition's run that failed with Aborted still lets the removal continue
+- [ ] 3.2 Add the `delete-user` workflow, make `Delete` start and await it, and wire the worker's `UserUseCase` with the identity remover and the blocker reads; verify one unit test per scenario of both requirements of `usecase/user/delete`
+- [ ] 3.3 Add the story test for "A started deletion completes" with a failing record removal and verify it passes
+- [ ] 3.4 Open the backend PR, merge, release; confirm read-only in prod that the release is rolled out, the worker registered `delete-user` and no `workflow.needs_admin` is raised for it
 
 ## 4. specification: Purpose
 

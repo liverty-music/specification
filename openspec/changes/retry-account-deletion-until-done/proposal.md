@@ -6,7 +6,7 @@ Account deletion removes the sign-in identity and then the User, inside the requ
 
 - Once Delete has accepted a deletion, the platform carries it to the end on its own: it continues after the request ends and after a restart, and tries a failed step again for up to 24 hours.
 - An admin is told about a deletion that ends without removing the account.
-- Delete waits up to 10 seconds. A deletion still running then is answered with success, because it was accepted and completes on its own. The fan sees the account deleted and is signed out, as today.
+- Delete waits up to 5 seconds, so that its answer reaches the fan and admin apps before they stop waiting. A deletion still running then is answered with success, because it was accepted and completes on its own. The fan sees the account deleted and is signed out, as today.
 - A removal that cannot go on, including one that finds a new blocker, is reported to an admin.
 - The removal runs in the workflow worker. Only the worker may delete a fan identity: the fan API and the admin console API lose that permission.
 - The identity-provider spec names the workflow worker where it still says event consumer.
@@ -31,5 +31,5 @@ None.
 
 ## Impact
 
-- backend: `UserUseCase.Delete`, a workflow, the worker's wiring, the identity service's listeners, the identity remover's error code.
+- backend: `UserUseCase.Delete`, a workflow, the error code a failed workflow hands its caller, the worker's wiring, the identity service's listeners, the identity remover's error code.
 - specification: the caller list in the identity service's proto comment. No schema, database or cluster change, and no release needed.

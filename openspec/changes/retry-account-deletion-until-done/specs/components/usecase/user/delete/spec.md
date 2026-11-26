@@ -4,7 +4,7 @@
 
 ### Requirement: Delete removes the user
 
-Delete SHALL load the User through User.Get, failing with NotFound for an unknown User. It SHALL fail with FailedPrecondition, removing nothing, while UserUseCase.ListDeletionBlockers returns any blocker for the User. Otherwise it SHALL start the removal of the User and wait up to 10 seconds for it. The removal SHALL check the blockers again and remove the User's sign-in identity through User.DeleteIdentity, then check the blockers once more and remove the User through User.Delete; the User's Orders, Tickets, LotteryEntries and ResaleListings remain. Delete SHALL succeed when the removal removed the User, and also when it has not ended within the wait, because it then runs to its end on its own. When the removal ends without removing the User within the wait, Delete SHALL fail with the removal's failure: FailedPrecondition for a blocker, otherwise the code of the failed step. Delete serves the fan removing their own account and an admin removing a fan's account alike.
+Delete SHALL load the User through User.Get, failing with NotFound for an unknown User. It SHALL fail with FailedPrecondition, removing nothing, while UserUseCase.ListDeletionBlockers returns any blocker for the User. Otherwise it SHALL start the removal of the User and wait up to 5 seconds for it. The removal SHALL check the blockers again and remove the User's sign-in identity through User.DeleteIdentity, then check the blockers once more and remove the User through User.Delete; the User's Orders, Tickets, LotteryEntries and ResaleListings remain. Delete SHALL succeed when the removal removed the User, and also when it has not ended within the wait, because it then runs to its end on its own. When the removal ends without removing the User within the wait, Delete SHALL fail with the removal's failure: FailedPrecondition for a blocker, otherwise the code of the failed step. Delete serves the fan removing their own account and an admin removing a fan's account alike.
 
 #### Scenario: Existing user
 
@@ -75,7 +75,7 @@ Once started, a removal SHALL continue whether or not its caller still waits, an
 #### Scenario: Identity provider down for a minute
 
 - **WHEN** User.DeleteIdentity fails with Unavailable for 1 minute and then succeeds
-- **THEN** Delete succeeds after 10 seconds and the User and its identity are removed afterwards
+- **THEN** Delete succeeds after 5 seconds and the User and its identity are removed afterwards
 
 #### Scenario: Restart in the middle
 
