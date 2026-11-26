@@ -4,7 +4,7 @@
 
 ### Requirement: A lost entry marks the fan's journey Lost
 
-When a fan's lottery entry is lost because it was not drawn or because the card could not be charged, and the fan holds no ticket and no other open application for the event, TicketJourneyUseCase.MarkLost SHALL record the fan's ticket journey for the event as Lost, set by the platform, so the Timetable and the concert sheet show Lost without the fan setting it.
+When a fan's lottery entry is lost because it was not drawn or because the card could not be charged, and no other lottery entry of the fan for the event is Entered or Won, TicketJourneyUseCase.MarkLost SHALL record the fan's ticket journey for the event as Lost, set by the platform, so the Timetable and the concert sheet show Lost without the fan setting it.
 
 #### Scenario: Loss shown on the Timetable
 

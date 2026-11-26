@@ -8,7 +8,7 @@ TicketJourneyUseCase.MarkLost records Lost on a fan's ticket journey for an even
 
 ### Requirement: Lost after a lost lottery entry
 
-MarkLost SHALL run for each lottery entry announced as lost (LotteryEntry.Lost), with its Order's user and the event of its TicketStock. It SHALL record nothing when the entry's lost reason is that the concert was cancelled. It SHALL record nothing when Order.GetHeldForEvent reports one or more tickets for the user and the event, because the fan holds tickets or has another application that may receive them. Otherwise it SHALL record Lost, set by the platform, for the user's journey for the event through TicketJourney.UpsertIfReplaceable. It SHALL NOT raise a hype level. Running it again for the same entry SHALL leave the journey as the first run left it. When a read or UpsertIfReplaceable fails, MarkLost SHALL fail with that error and is run again.
+MarkLost SHALL run for each lottery entry announced as lost (LotteryEntry.Lost), with its Order's user and the event of its TicketStock. It SHALL record nothing when the entry's lost reason is that the concert was cancelled. It SHALL read the user's entries with LotteryEntry.ListByUser and, for each other entry that is Entered or Won, its Order's TicketStock with TicketStock.Get; it SHALL record nothing when one of those entries is for the same event, because that entry's result decides the journey. A checkout or a resale entry SHALL NOT hold the record back. Otherwise it SHALL record Lost, set by the platform, for the user's journey for the event through TicketJourney.UpsertIfReplaceable. It SHALL NOT raise a hype level. Running it again for the same entry SHALL leave the journey as the first run left it. When a read or UpsertIfReplaceable fails, MarkLost SHALL fail with that error and is run again.
 
 #### Scenario: Not drawn
 
@@ -25,19 +25,29 @@ MarkLost SHALL run for each lottery entry announced as lost (LotteryEntry.Lost),
 - **WHEN** an entry is announced lost because the concert was cancelled
 - **THEN** the fan's journey is unchanged
 
-#### Scenario: Another application still open
+#### Scenario: Another entry still open
 
 - **WHEN** a fan's presale entry is announced lost while their entry in another sale of the event is Entered
 - **THEN** the journey stays Applied
 
+#### Scenario: The other entry is lost too
+
+- **WHEN** that other entry is later announced lost as not drawn
+- **THEN** the journey is Lost set by the platform
+
+#### Scenario: Open checkout
+
+- **WHEN** an entry is announced lost while the fan holds an unpaid checkout for the event
+- **THEN** the journey is Lost set by the platform
+
 #### Scenario: Fan already has a ticket
 
-- **WHEN** an entry is announced lost for a fan who holds an Issued Ticket for the event
-- **THEN** the journey is unchanged
+- **WHEN** an entry is announced lost for a fan whose journey for the event is Paid
+- **THEN** the journey stays Paid
 
 #### Scenario: No journey
 
-- **WHEN** an entry is announced lost for a fan who removed their journey for the event and holds nothing for it
+- **WHEN** an entry is announced lost for a fan who removed their journey for the event
 - **THEN** the fan's journey is Lost set by the platform
 
 #### Scenario: Recording fails
