@@ -26,11 +26,15 @@ For any other event that has an admin area and a time zone, CreateFromDiscovered
 
 ### Requirement: Unresolved venue is staged
 
-When the event has no admin area or no time zone, CreateFromDiscovered SHALL stage it (ConcertCandidate.Upsert) without looking up the venue. When the venue lookup chooses no place (the search finds none), it SHALL stage the event without a resolved place id. In both cases it SHALL NOT create a Venue and SHALL NOT publish the event.
+When the event has no admin area or no time zone, CreateFromDiscovered SHALL stage it (ConcertCandidate.Upsert) without looking up the venue. When the venue lookup chooses no place (the search finds none, or none inside the event's admin area, see Venue.SelectPlace), it SHALL stage the event without a resolved place id. In both cases it SHALL NOT create a Venue and SHALL NOT publish the event.
 
 #### Scenario: Venue not found
 - **WHEN** no place is chosen
 - **THEN** a ConcertCandidate without a resolved place id is stored and nothing is published
+
+#### Scenario: Only places elsewhere
+- **WHEN** an event's admin area is US-CA and every place found for its venue lies in another country or admin area
+- **THEN** a ConcertCandidate without a resolved place id is stored, no Venue is created and nothing is published
 
 #### Scenario: Area unknown
 - **WHEN** an event comes without an admin area
