@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>チケットのライフサイクル | Liverty Music</title>
+<meta name="description" content="在庫 (TicketStock) から注文 (Order)、チケット (Ticket)、入場、無効化までの状態と、次へ進む条件。先着・抽選・リセールの違いを含む。">
+<style>
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f4;
+  --ink: #15202b;
+  --ink-2: #34414f;
+  --muted: #5b6876;
+  --line: #d3d9e0;
+  --line-strong: #8d99a6;
+  --accent: #0d6c78;
+  --accent-ink: #0a5761;
+  --accent-bg: #e0f0f1;
+  --ok: #1b7340;
+  --ok-bg: #e3f3e8;
+  --wait: #8a5a00;
+  --wait-bg: #fbf0d9;
+  --end: #a8261d;
+  --end-bg: #fbe6e4;
+  --neutral-bg: #eceff3;
+  --edge: #6b7785;
+  --focus: #0d6c78;
+  --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Menlo", "Consolas", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1418;
+    --surface: #171e24;
+    --surface-2: #1d262e;
+    --ink: #e5ebf0;
+    --ink-2: #c3ccd5;
+    --muted: #97a4b1;
+    --line: #2c3742;
+    --line-strong: #5f6d7b;
+    --accent: #5cc0c8;
+    --accent-ink: #7fd3d9;
+    --accent-bg: #15343a;
+    --ok: #6ccf93;
+    --ok-bg: #16301f;
+    --wait: #eab55a;
+    --wait-bg: #352914;
+    --end: #f08a80;
+    --end-bg: #3a1b19;
+    --neutral-bg: #222c35;
+    --edge: #8b98a6;
+    --focus: #7fd3d9;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1418;
+  --surface: #171e24;
+  --surface-2: #1d262e;
+  --ink: #e5ebf0;
+  --ink-2: #c3ccd5;
+  --muted: #97a4b1;
+  --line: #2c3742;
+  --line-strong: #5f6d7b;
+  --accent: #5cc0c8;
+  --accent-ink: #7fd3d9;
+  --accent-bg: #15343a;
+  --ok: #6ccf93;
+  --ok-bg: #16301f;
+  --wait: #eab55a;
+  --wait-bg: #352914;
+  --end: #f08a80;
+  --end-bg: #3a1b19;
+  --neutral-bg: #222c35;
+  --edge: #8b98a6;
+  --focus: #7fd3d9;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.75;
+}
+a { color: var(--accent-ink); }
+a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+.wrap { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
+
+/* header */
+.top {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; padding-bottom: 10px; }
+.crumb { font-size: 13px; color: var(--muted); letter-spacing: 0.04em; }
+.theme-btn {
+  font: inherit; font-size: 13px; color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer;
+}
+
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; }
+h1 { font-size: clamp(26px, 4.2vw, 36px); margin: 32px 0 8px; letter-spacing: 0.01em; }
+h2 { font-size: 23px; margin: 0 0 6px; }
+h3 { font-size: 17px; margin: 24px 0 8px; }
+.lede { font-size: 17px; color: var(--ink-2); max-width: 46em; margin: 0 0 20px; }
+p { max-width: 46em; margin: 0 0 12px; }
+.small { font-size: 14px; color: var(--muted); }
+
+/* three things */
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 8px 0 24px; padding: 0; list-style: none; counter-reset: k; }
+.three li {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 16px 12px; counter-increment: k;
+}
+.three li::before {
+  content: counter(k); display: inline-grid; place-items: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: var(--surface); font-weight: 700; font-size: 14px;
+  margin-bottom: 6px;
+}
+.three b { display: block; font-size: 16px; line-height: 1.5; margin-bottom: 4px; }
+.three span { font-size: 14.5px; color: var(--ink-2); line-height: 1.7; display: block; }
+
+nav.toc { margin: 0 0 8px; }
+nav.toc ol { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 0; margin: 0; list-style: none; }
+nav.toc a {
+  display: inline-block; font-size: 14px; text-decoration: none; color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px; background: var(--surface);
+}
+nav.toc a:hover { border-color: var(--accent); color: var(--accent-ink); }
+
+section { padding: 36px 0 8px; border-top: 1px solid var(--line); margin-top: 28px; }
+.sec-num { font-family: var(--font-mono); font-size: 13px; color: var(--accent-ink); letter-spacing: 0.06em; display: block; margin-bottom: 2px; }
+
+/* figure frames */
+figure { margin: 16px 0 20px; }
+.frame {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  overflow-x: auto; overscroll-behavior-x: contain; padding: 12px;
+}
+.frame:focus-visible { outline: 3px solid var(--focus); }
+.frame svg { display: block; max-width: none; height: auto; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; max-width: 46em; }
+.scroll-hint { display: none; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+@media (max-width: 760px) { .scroll-hint { display: block; } }
+
+/* svg vocabulary */
+svg text { font-family: var(--font-sans); fill: var(--ink); }
+svg .t { font-size: 14px; font-weight: 700; }
+svg .tm { font-family: var(--font-mono); font-size: 13.5px; font-weight: 700; }
+svg .s { font-size: 12.5px; fill: var(--muted); }
+svg .s2 { font-size: 12.5px; fill: var(--ink-2); }
+svg .lbl { font-size: 12.5px; fill: var(--ink-2); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+svg .lane { font-size: 13px; font-weight: 700; fill: var(--muted); }
+svg .box { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.4; }
+svg .box.ok { fill: var(--ok-bg); stroke: var(--ok); }
+svg .box.wait { fill: var(--wait-bg); stroke: var(--wait); }
+svg .box.end { fill: var(--end-bg); stroke: var(--end); }
+svg .box.acc { fill: var(--accent-bg); stroke: var(--accent); }
+svg .box.neu { fill: var(--neutral-bg); stroke: var(--line-strong); }
+svg .box.q { fill: var(--surface-2); stroke: var(--line-strong); }
+svg .edge { fill: none; stroke: var(--edge); stroke-width: 1.6; }
+svg .edge.dash { stroke-dasharray: 5 4; }
+svg .edge.end { stroke: var(--end); }
+svg .edge.ok { stroke: var(--ok); }
+svg .ah { fill: var(--edge); }
+svg .ah-end { fill: var(--end); }
+svg .ah-ok { fill: var(--ok); }
+svg .bar { stroke: none; }
+svg .bar.sale { fill: var(--accent-bg); }
+svg .bar.resale { fill: var(--wait-bg); }
+svg .bar.gate { fill: var(--ok-bg); }
+svg .axis { stroke: var(--line-strong); stroke-width: 1.2; }
+svg .tick { stroke: var(--wait); stroke-width: 2; }
+svg .tick-strong { stroke: var(--end); stroke-width: 2.4; }
+svg .mark { fill: var(--accent); }
+svg .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin: 12px 0 18px; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.6; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+thead th { background: var(--surface-2); font-size: 13.5px; color: var(--ink-2); white-space: nowrap; }
+tbody th { font-weight: 700; white-space: nowrap; }
+.cmp { min-width: 720px; }
+.cmp { table-layout: fixed; }
+.cmp thead th:first-child, .cmp tbody th { width: 16%; }
+.cancel { min-width: 640px; }
+.pit { min-width: 700px; }
+.pit td:first-child { width: 30%; font-weight: 700; }
+.src { min-width: 640px; font-size: 13.5px; }
+.src td:last-child { font-family: var(--font-mono); font-size: 12.5px; word-break: break-all; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* pills */
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; border-radius: 4px; padding: 0 6px; border: 1px solid; line-height: 1.7; white-space: nowrap; }
+.pill.ok { color: var(--ok); background: var(--ok-bg); border-color: var(--ok); }
+.pill.wait { color: var(--wait); background: var(--wait-bg); border-color: var(--wait); }
+.pill.end { color: var(--end); background: var(--end-bg); border-color: var(--end); }
+.pill.neu { color: var(--ink-2); background: var(--neutral-bg); border-color: var(--line-strong); }
+
+/* stock bar */
+.stock { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 14px 0; }
+.stock-bar { display: flex; height: 40px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line-strong); font-variant-numeric: tabular-nums; }
+.stock-bar div { display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.sb-sold { background: var(--ink-2); color: var(--surface); }
+.sb-held { background: var(--wait-bg); color: var(--wait); border-left: 1px solid var(--wait); border-right: 1px solid var(--wait); }
+.sb-rem { background: var(--surface-2); color: var(--ink-2); }
+.stock-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; font-size: 14px; }
+.stock-legend b { display: block; font-size: 14px; }
+.stock-legend span:not(.sw) { color: var(--muted); font-size: 13.5px; line-height: 1.6; display: block; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; border: 1px solid var(--line-strong); }
+
+/* ticket grid */
+.tgrid { display: grid; grid-template-columns: 110px repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+.tgrid .h { font-size: 13.5px; color: var(--muted); align-self: end; padding: 0 4px; font-weight: 700; }
+.tgrid .rh { font-family: var(--font-mono); font-size: 14px; font-weight: 700; align-self: center; }
+.tcell { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 12px; font-size: 14px; line-height: 1.6; }
+.tcell b { display: block; font-size: 15px; margin-bottom: 2px; }
+.tcell.ok { border-color: var(--ok); background: var(--ok-bg); }
+.tcell.ok b { color: var(--ok); }
+.tcell.end b { color: var(--end); }
+
+.journey { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px; }
+
+.note { border-left: 3px solid var(--line-strong); padding: 4px 0 4px 12px; color: var(--ink-2); font-size: 15px; max-width: 46em; margin: 12px 0; }
+
+footer { padding: 28px 0 48px; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 760px) {
+  .three { grid-template-columns: 1fr; }
+  .stock-legend { grid-template-columns: 1fr; }
+  .tgrid { grid-template-columns: 74px repeat(2, minmax(0, 1fr)); }
+  .tcell { padding: 8px 9px; font-size: 13.5px; }
+  h2 { font-size: 21px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <span class="crumb">Liverty Music 仕様ガイド</span>
+    <button class="theme-btn" type="button" id="themeBtn" aria-label="ライトとダークのテーマを切り替える">テーマ切替</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>チケットのライフサイクル</h1>
+  <p class="lede">Organizer が用意した在庫 (<code>TicketStock</code>) から、fan の申込み、注文 (<code>Order</code>)、チケット (<code>Ticket</code>)、会場での入場、そして返金や再販による無効化までを 1 枚の地図にまとめた文書です。取得方法は先着・抽選・公式リセールの 3 つで、それぞれ申込みの形が違います。</p>
+
+  <h2 style="font-size:18px;margin-top:8px">まず知っておく 3 つのこと</h2>
+  <ol class="three">
+    <li><b>申込み → Order → Ticket の 3 段で進む</b><span>申込みの形は取得方法ごとに違います (<code>Checkout</code> / <code>LotteryEntry</code> / <code>ResaleEntry</code>)。どれも Pending の Order を 1 つだけ持ち、Order が Paid になった瞬間に Ticket が発行されます。</span></li>
+    <li><b>カードは先に仮押さえ、請求は Ticket を渡す直前だけ</b><span>外れた・期限が切れた・取り下げた申込みの Order は Void になり、仮押さえは請求せずに解放されます。Ticket を受け取らない fan が請求されることはありません。</span></li>
+    <li><b>Ticket の状態は Issued と Voided の 2 つだけ</b><span>入場済みかどうかは状態ではなく admit time で表します。リセールは名義変更ではなく、旧 Ticket を Voided にして買った fan に新しい Ticket を発行します。</span></li>
+  </ol>
+
+  <nav class="toc" aria-label="目次">
+    <ol>
+      <li><a href="#map">1. 全体の地図</a></li>
+      <li><a href="#stock">2. 在庫の数え方</a></li>
+      <li><a href="#routes">3. 3 つの取得方法</a></li>
+      <li><a href="#order">4. Order とカード</a></li>
+      <li><a href="#ticket">5. Ticket と入場</a></li>
+      <li><a href="#timeline">6. 1 公演の時間軸</a></li>
+      <li><a href="#cancel">7. 公演が中止になったら</a></li>
+      <li><a href="#journey">8. TicketJourney は別物</a></li>
+      <li><a href="#pitfalls">9. 取り違えやすい点</a></li>
+      <li><a href="#sources">出典</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1. MAP -->
+  <section id="map" aria-labelledby="h-map">
+    <span class="sec-num">01</span>
+    <h2 id="h-map">全体の地図</h2>
+    <p>左から右へ進みます。在庫から 3 種類の申込みが生まれ、どれも 1 つの Order に行き着きます。Ticket は出品されると再びリセールの供給に戻ります。</p>
+    <figure>
+      <div class="frame" tabindex="0" role="region" aria-label="全体の地図 (横にスクロールできます)">
+        <svg width="960" height="470" viewBox="0 0 960 470" role="img" aria-labelledby="map-t map-d">
+          <title id="map-t">チケットのライフサイクル全体図</title>
+          <desc id="map-d">TicketStock から Checkout、LotteryEntry、ResaleEntry の 3 つの申込みが生まれ、それぞれ 1 つの Order になる。Order は CardAuthorization で支払われ、Paid になると Ticket を発行する。Ticket は入場で Admission を 1 回だけ記録する。Ticket を出品すると ResaleListing になり、抽選で ResaleEntry に割り当てられる。</desc>
+          <defs>
+            <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <!-- column captions -->
+          <text class="lane" x="16" y="150">在庫</text>
+          <text class="lane" x="236" y="88">申込み (取得方法ごと)</text>
+          <text class="lane" x="490" y="140">注文</text>
+          <text class="lane" x="726" y="160">チケット</text>
+          <text class="lane" x="850" y="160">入場</text>
+
+          <!-- stock -->
+          <rect class="box acc" x="16" y="166" width="140" height="128" rx="8"/>
+          <text class="tm" x="30" y="192">TicketStock</text>
+          <text class="s2" x="30" y="216">1 公演 × 1 SeatType</text>
+          <text class="s" x="30" y="238">の在庫</text>
+          <text class="s" x="30" y="262">quantity は作成後</text>
+          <text class="s" x="30" y="282">変わらない</text>
+
+          <!-- routes -->
+          <rect class="box" x="236" y="100" width="204" height="76" rx="8"/>
+          <text class="tm" x="250" y="124">Checkout</text>
+          <text class="s2" x="250" y="146">先着: 在庫を 15 分 hold</text>
+          <text class="s" x="250" y="166">FirstCome TicketSale</text>
+
+          <rect class="box" x="236" y="196" width="204" height="76" rx="8"/>
+          <text class="tm" x="250" y="220">LotteryEntry</text>
+          <text class="s2" x="250" y="242">抽選: 締切後に在庫を配分</text>
+          <text class="s" x="250" y="262">Lottery TicketSale</text>
+
+          <rect class="box" x="236" y="292" width="204" height="76" rx="8"/>
+          <text class="tm" x="250" y="316">ResaleEntry</text>
+          <text class="s2" x="250" y="338">リセール: 毎日の抽選で</text>
+          <text class="s" x="250" y="358">出品された Ticket を配分</text>
+
+          <path class="edge" d="M156,214 L236,140" marker-end="url(#a1)"/>
+          <path class="edge" d="M156,232 L236,234" marker-end="url(#a1)"/>
+          <path class="edge dash" d="M156,252 L236,326" marker-end="url(#a1)"/>
+          <text class="lbl" x="92" y="322">SoldOut で開く</text>
+
+          <!-- card authorization -->
+          <rect class="box neu" x="490" y="14" width="196" height="72" rx="8"/>
+          <text class="tm" x="504" y="38">CardAuthorization</text>
+          <text class="s2" x="504" y="60">カードの仮押さえ</text>
+          <text class="s" x="504" y="78">→ 請求 または 解放</text>
+          <path class="edge dash" d="M588,150 L588,86"/>
+          <text class="lbl" x="596" y="124">請求は Paid の直前だけ</text>
+
+          <!-- order -->
+          <rect class="box" x="490" y="150" width="196" height="170" rx="8"/>
+          <text class="tm" x="504" y="176">Order</text>
+          <text class="s2" x="504" y="198">申込み 1 つにつき 1 つ</text>
+          <rect class="box wait" x="504" y="212" width="74" height="24" rx="4"/>
+          <text class="tm" x="512" y="229" style="font-size:12px;fill:var(--wait)">Pending</text>
+          <rect class="box ok" x="504" y="246" width="56" height="24" rx="4"/>
+          <text class="tm" x="513" y="263" style="font-size:12px;fill:var(--ok)">Paid</text>
+          <text class="s" x="566" y="263">→</text>
+          <rect class="box neu" x="582" y="246" width="90" height="24" rx="4"/>
+          <text class="tm" x="590" y="263" style="font-size:12px">Refunded</text>
+          <rect class="box end" x="504" y="280" width="56" height="24" rx="4"/>
+          <text class="tm" x="514" y="297" style="font-size:12px;fill:var(--end)">Void</text>
+          <text class="s" x="566" y="297">請求なしで終了</text>
+
+          <path class="edge" d="M440,138 L490,206" marker-end="url(#a1)"/>
+          <path class="edge" d="M440,234 L490,234" marker-end="url(#a1)"/>
+          <path class="edge" d="M440,330 L490,262" marker-end="url(#a1)"/>
+
+          <!-- ticket -->
+          <rect class="box" x="726" y="176" width="104" height="116" rx="8"/>
+          <text class="tm" x="740" y="200">Ticket</text>
+          <text class="s2" x="740" y="224">Issued</text>
+          <text class="s2" x="740" y="244">Voided</text>
+          <text class="s" x="740" y="270">アカウント</text>
+          <text class="s" x="740" y="286">に紐付く</text>
+          <path class="edge ok" d="M686,234 L726,234" marker-end="url(#a1)"/>
+          <text class="lbl" x="690" y="224">発行</text>
+
+          <!-- admission -->
+          <rect class="box ok" x="850" y="176" width="100" height="116" rx="8"/>
+          <text class="tm" x="862" y="200">Admission</text>
+          <text class="s2" x="862" y="224">入場の記録</text>
+          <text class="s" x="862" y="248">1 Ticket に</text>
+          <text class="s" x="862" y="266">1 回だけ</text>
+          <path class="edge" d="M830,234 L850,234" marker-end="url(#a1)"/>
+
+          <!-- resale listing loop -->
+          <rect class="box wait" x="490" y="384" width="196" height="72" rx="8"/>
+          <text class="tm" x="504" y="408">ResaleListing</text>
+          <text class="s2" x="504" y="430">1 枚を額面で出品</text>
+          <text class="s" x="504" y="448">売れたら旧 Ticket は Voided</text>
+          <path class="edge" d="M778,292 L778,420 L686,420" marker-end="url(#a1)"/>
+          <text class="lbl" x="786" y="366">出品</text>
+          <path class="edge" d="M490,420 L338,420 L338,368" marker-end="url(#a1)"/>
+          <text class="lbl" x="350" y="412">抽選で割り当て</text>
+        </svg>
+      </div>
+      <p class="scroll-hint">図は枠の中で横にスクロールできます。</p>
+      <figcaption>実線は状態が進む流れ、点線は条件付きのつながり。Order の 4 状態の意味は <a href="#order">4 節</a>、Ticket の 2 状態は <a href="#ticket">5 節</a>。</figcaption>
+    </figure>
+  </section>
+
+  <!-- 2. STOCK -->
+  <section id="stock" aria-labelledby="h-stock">
+    <span class="sec-num">02</span>
+    <h2 id="h-stock">在庫の数え方</h2>
+    <p><code>TicketStock</code> は 1 公演 (Event) の 1 SeatType ぶんのチケットです。公演と SeatType の組に 1 つだけで、同じ公演のすべての TicketSale (先行・一般など) が同じ在庫から売ります。だから先行抽選で当選した枚数は、一般販売の残りから自動的に引かれます。状態は属性として持たず、その時点の Order から数えます。</p>
+
+    <div class="stock" role="img" aria-label="quantity 150 の在庫の例。sold 100、held 6、remaining 44。">
+      <div class="stock-bar">
+        <div class="sb-sold" style="flex:100">sold 100</div>
+        <div class="sb-held" style="flex:6" title="held 6"></div>
+        <div class="sb-rem" style="flex:44">remaining 44</div>
+      </div>
+      <div class="stock-legend">
+        <div><span class="sw" style="background:var(--ink-2)"></span><b style="display:inline">sold 100</b><span>Paid・Refunded の Order と、Committed の Checkout・Won の LotteryEntry を持つ Pending の Order の枚数。リセールで買われた枚数は数えない。</span></div>
+        <div><span class="sw" style="background:var(--wait-bg);border-color:var(--wait)"></span><b style="display:inline">held 6</b><span>hold 中 (Held かつ 15 分以内) の Checkout の枚数。</span></div>
+        <div><span class="sw" style="background:var(--surface-2)"></span><b style="display:inline">remaining 44</b><span>quantity − sold − held。0 未満にはならない。</span></div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th scope="col">在庫の状態</th><th scope="col">条件</th><th scope="col">意味すること</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><span class="pill end">SoldOut</span></th><td>sold = quantity</td><td>この SeatType の公式リセールが開く (締切まで)</td></tr>
+          <tr><th scope="row"><span class="pill wait">AllHeld</span></th><td>remaining = 0 かつ sold &lt; quantity</td><td>他の fan の hold が切れれば買える。リセールは開かない</td></tr>
+          <tr><th scope="row"><span class="pill ok">Available</span></th><td>それ以外</td><td>remaining が quantity の 1/10 (切り上げ) 以下なら LowStock</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">SoldOut の後でも、請求できずに確定を取り消された分が戻ると Available に戻り、リセールは閉じます。</p>
+  </section>
+
+  <!-- 3. ROUTES -->
+  <section id="routes" aria-labelledby="h-routes">
+    <span class="sec-num">03</span>
+    <h2 id="h-routes">3 つの取得方法</h2>
+    <p>違いは「いつ在庫を確保するか」と「いつ請求するか」です。</p>
+    <div class="tbl-wrap">
+      <table class="cmp">
+        <thead><tr><th scope="col"></th><th scope="col">先着</th><th scope="col">抽選</th><th scope="col">公式リセール</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">申込み</th><td><code>Checkout</code></td><td><code>LotteryEntry</code></td><td><code>ResaleEntry</code> (供給側は <code>ResaleListing</code>)</td></tr>
+          <tr><th scope="row">受け付ける期間</th><td>FirstCome TicketSale の窓の間</td><td>Lottery TicketSale の窓 (1〜14 日)</td><td>在庫が SoldOut の間、リセール締切まで</td></tr>
+          <tr><th scope="row">申込みの成立</th><td>開始した時点で remaining から hold</td><td>カード認証が完了した時点 (ブラウザを閉じても成立)</td><td>カード認証が完了した時点</td></tr>
+          <tr><th scope="row">在庫の確保</th><td>開始時に 15 分 hold、注文確定で確定</td><td>締切から 1 分以内の抽選で、ランダム順に全員分か 0 枚か</td><td>在庫は使わない。出品された Ticket を毎日の抽選で、全員分か 0 枚か</td></tr>
+          <tr><th scope="row">請求</th><td>注文確定 (<code>OrderUseCase.Place</code>) の直後</td><td>当選後</td><td>当選後 (券面価格)</td></tr>
+          <tr><th scope="row">外れたとき</th><td>15 分で Expired</td><td>Lost。繰上げ当選はない</td><td>次の抽選へ持ち越し。最終抽選でも外れたら Lost</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>どの取得方法にも共通するルール</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th scope="col">ルール</th><th scope="col">理由・破ると何が起きるか</th></tr></thead>
+        <tbody>
+          <tr><td>1 アカウントが 1 公演で持てる枚数は per-account limit まで (1〜10、指定がなければ 4)。すべての TicketSale・SeatType・公式リセールの合計で数える</td><td>同行者は 1 つの入場 QR コードでまとめて入場し、1 つのコードで提示できるのは 10 枚まで</td></tr>
+          <tr><td>1 公演で持つ・申し込む SeatType は 1 種類だけ</td><td>先行で S席に当選した fan は、一般で A席を申し込めない</td></tr>
+          <tr><td>1 つの抽選 TicketSale に、1 公演につき 1 回だけ申し込める</td><td>2 回目の申込みは拒否され、仮押さえは解放される</td></tr>
+          <tr><td>二重タップ・リトライ・再読み込み・別タブでも、hold・請求・発行は 1 回</td><td>fan が二重に請求されない</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>先着: <code>Checkout</code> の状態</h3>
+    <figure>
+      <div class="frame" tabindex="0" role="region" aria-label="Checkout の状態遷移図">
+        <svg width="700" height="270" viewBox="0 0 700 270" role="img" aria-labelledby="co-t">
+          <title id="co-t">Checkout は Held から Committed、Completed へ進む。Held は 15 分で Expired、枚数を変えて再開始すると Released。Committed で請求できなければ Released。</title>
+          <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+          <rect class="box wait" x="20" y="40" width="140" height="52" rx="8"/>
+          <text class="tm" x="34" y="62">Held</text><text class="s" x="34" y="82">15 分 hold、延長なし</text>
+          <rect class="box wait" x="270" y="40" width="140" height="52" rx="8"/>
+          <text class="tm" x="284" y="62">Committed</text><text class="s" x="284" y="82">sold に入った</text>
+          <rect class="box ok" x="520" y="40" width="160" height="52" rx="8"/>
+          <text class="tm" x="534" y="62">Completed</text><text class="s" x="534" y="82">Order Paid・Ticket 発行</text>
+          <rect class="box end" x="20" y="180" width="140" height="52" rx="8"/>
+          <text class="tm" x="34" y="202">Expired</text><text class="s" x="34" y="222">在庫に戻る</text>
+          <rect class="box end" x="270" y="180" width="140" height="52" rx="8"/>
+          <text class="tm" x="284" y="202">Released</text><text class="s" x="284" y="222">在庫に戻る</text>
+
+          <path class="edge" d="M160,66 L270,66" marker-end="url(#a2)"/>
+          <text class="lbl" x="172" y="56">注文確定</text>
+          <path class="edge" d="M410,66 L520,66" marker-end="url(#a2)"/>
+          <text class="lbl" x="420" y="56">請求成功</text>
+          <path class="edge end" d="M90,92 L90,180" marker-end="url(#a2)"/>
+          <text class="lbl" x="98" y="140">15 分経過</text>
+          <path class="edge end" d="M150,92 L280,180" marker-end="url(#a2)"/>
+          <text class="lbl" x="178" y="166">枚数を変えて</text>
+          <text class="lbl" x="178" y="182">開始し直し</text>
+          <path class="edge end" d="M360,92 L360,180" marker-end="url(#a2)"/>
+          <text class="lbl" x="368" y="140">請求できない</text>
+          <text class="s2" x="430" y="200">Expired と Released の Order は Void</text>
+          <text class="s2" x="430" y="220">→ 仮押さえを請求せず解放</text>
+          <text class="s" x="20" y="262">請求済み (capture time あり) の Checkout は Released にも Expired にもならない。</text>
+        </svg>
+      </div>
+      <figcaption>放置された hold は期限から 1 分以内に在庫へ戻り、仮押さえは期限から 2 分以内に解放されます。期限を 1 分過ぎてから注文確定しても拒否され、請求されません。</figcaption>
+    </figure>
+
+    <h3>抽選: <code>LotteryEntry</code> の状態</h3>
+    <figure>
+      <div class="frame" tabindex="0" role="region" aria-label="LotteryEntry の状態遷移図">
+        <svg width="700" height="250" viewBox="0 0 700 250" role="img" aria-labelledby="le-t">
+          <title id="le-t">LotteryEntry は Entered から抽選で Won か Lost になる。Won でも請求できない・請求前に中止なら Lost になる。</title>
+          <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+          <rect class="box wait" x="20" y="36" width="150" height="52" rx="8"/>
+          <text class="tm" x="34" y="58">Entered</text><text class="s" x="34" y="78">抽選待ち・仮押さえ中</text>
+          <rect class="box wait" x="290" y="36" width="150" height="52" rx="8"/>
+          <text class="tm" x="304" y="58">Won</text><text class="s" x="304" y="78">請求待ち</text>
+          <rect class="box ok" x="540" y="36" width="140" height="52" rx="8"/>
+          <text class="t" x="554" y="58" style="font-size:13px">Order Paid</text><text class="s" x="554" y="78">Ticket 発行</text>
+          <rect class="box end" x="290" y="170" width="150" height="52" rx="8"/>
+          <text class="tm" x="304" y="192">Lost</text><text class="s" x="304" y="212">Order Void・解放</text>
+
+          <path class="edge" d="M170,62 L290,62" marker-end="url(#a3)"/>
+          <text class="lbl" x="196" y="52">抽選で当選</text>
+          <path class="edge ok" d="M440,62 L540,62" marker-end="url(#a3)"/>
+          <text class="lbl" x="456" y="52">請求成功</text>
+          <path class="edge end" d="M150,88 L300,170" marker-end="url(#a3)"/>
+          <text class="lbl" x="120" y="136">落選 /</text>
+          <text class="lbl" x="120" y="154">公演中止</text>
+          <path class="edge end" d="M365,88 L365,170" marker-end="url(#a3)"/>
+          <text class="lbl" x="374" y="124">請求できない /</text>
+          <text class="lbl" x="374" y="142">請求前に公演中止</text>
+          <text class="s2" x="460" y="190">Lost の fan にはメールと push。</text>
+          <text class="s2" x="460" y="210">外れた分を他の fan に回す</text>
+          <text class="s2" x="460" y="230">繰上げ当選はない。</text>
+        </svg>
+      </div>
+      <figcaption>抽選は窓が閉じてから 1 分以内に始まり、ランダム順に並べた申込みを残り枚数に当てはめます (入らない申込みは飛ばして次へ)。抽選そのものは請求も解放もせず、当選の記録をきっかけに請求が走ります。途中で止まっても同じ順番で再開し、当選者を入れ替えません。</figcaption>
+    </figure>
+
+    <h3>公式リセール: 出品 (<code>ResaleListing</code>) と申込み (<code>ResaleEntry</code>)</h3>
+    <p>在庫が SoldOut になると、その SeatType の Ticket を持つ fan は 1 枚ずつ券面価格で出品でき、別の fan は枚数を指定して申し込めます。毎日 12:00 の抽選が、出品をランダム順の申込みに「全員分か 0 枚か」で割り当てます。出品者には券面価格から手数料 10% (円未満切り捨て) を引いた額が返金されます (5000 円なら 4500 円)。</p>
+    <figure>
+      <div class="frame" tabindex="0" role="region" aria-label="ResaleEntry と ResaleListing の状態遷移図">
+        <svg width="720" height="520" viewBox="0 0 720 520" role="img" aria-labelledby="re-t">
+          <title id="re-t">ResaleEntry は Entered から Won、Lost、Lapsed、Withdrawn のどれかになる。ResaleListing は Listed から Sold、Withdrawn、Cancelled のどれかになる。</title>
+          <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+          <text class="lane" x="20" y="22">申込み ResaleEntry (買う側)</text>
+          <rect class="box wait" x="20" y="128" width="152" height="52" rx="8"/>
+          <text class="tm" x="34" y="150">Entered</text><text class="s" x="34" y="170">抽選待ち・仮押さえ中</text>
+          <path class="edge" d="M60,128 C60,92 120,92 120,128" marker-end="url(#a4)"/>
+          <text class="lbl" x="20" y="98">割当なし (最終以外)</text>
+
+          <rect class="box ok" x="250" y="36" width="130" height="44" rx="8"/><text class="tm" x="264" y="63">Won</text>
+          <rect class="box end" x="250" y="106" width="130" height="44" rx="8"/><text class="tm" x="264" y="133">Lost</text>
+          <rect class="box end" x="250" y="176" width="130" height="44" rx="8"/><text class="tm" x="264" y="203">Lapsed</text>
+          <rect class="box neu" x="250" y="246" width="130" height="44" rx="8"/><text class="tm" x="264" y="273">Withdrawn</text>
+          <path class="edge" d="M172,146 L250,58" marker-end="url(#a4)"/>
+          <path class="edge end" d="M172,152 L250,128" marker-end="url(#a4)"/>
+          <path class="edge end" d="M172,160 L250,198" marker-end="url(#a4)"/>
+          <path class="edge" d="M172,170 L250,266" marker-end="url(#a4)"/>
+          <path class="edge end" d="M315,80 L315,106" marker-end="url(#a4)"/>
+          <text class="s2" x="400" y="54">全員分の出品がそろった。請求に成功すると</text>
+          <text class="s2" x="400" y="72">Order Paid・新しい Ticket を発行</text>
+          <text class="s2" x="400" y="124">最終抽選でも割当なし / 公演中止 /</text>
+          <text class="s2" x="400" y="142">当選後に請求できない・開演まで請求できない</text>
+          <text class="s2" x="400" y="194">仮押さえの期限が抽選の 24 時間後より前。</text>
+          <text class="s2" x="400" y="212">メールと push で再申込みを案内</text>
+          <text class="s2" x="400" y="274">fan が抽選前に取り下げた (通知なし)</text>
+          <text class="s" x="20" y="316">Won 以外の終わり方では Order は Void になり、仮押さえは請求せず解放される。</text>
+
+          <line class="grid" x1="20" y1="338" x2="700" y2="338"/>
+          <text class="lane" x="20" y="366">出品 ResaleListing (売る側)</text>
+          <rect class="box wait" x="20" y="420" width="140" height="52" rx="8"/>
+          <text class="tm" x="34" y="442">Listed</text><text class="s" x="34" y="462">Ticket はまだ有効</text>
+          <rect class="box ok" x="250" y="380" width="130" height="40" rx="8"/><text class="tm" x="264" y="405">Sold</text>
+          <rect class="box neu" x="250" y="432" width="130" height="40" rx="8"/><text class="tm" x="264" y="457">Withdrawn</text>
+          <rect class="box end" x="250" y="484" width="130" height="34" rx="8"/><text class="tm" x="264" y="506">Cancelled</text>
+          <path class="edge ok" d="M160,438 L250,400" marker-end="url(#a4)"/>
+          <path class="edge" d="M160,452 L250,452" marker-end="url(#a4)"/>
+          <path class="edge end" d="M160,464 L250,498" marker-end="url(#a4)"/>
+          <text class="s2" x="400" y="396">割り当てた fan の請求成功。旧 Ticket は Voided、</text>
+          <text class="s2" x="400" y="414">2 分以内に出品者へ券面価格 − 10% を返金</text>
+          <text class="s2" x="400" y="456">出品者が取り下げた (抽選で割り当てられる前だけ)</text>
+          <text class="s2" x="400" y="506">出品者の Order が返金された (中止・Dispute)</text>
+        </svg>
+      </div>
+      <figcaption>買う側の請求に失敗して Lost になると、その出品は次の抽選で再び割り当て可能になります (抽選の LotteryEntry と違い、出品は無駄にならない)。リセール締切までに売れなかった出品は Listed のまま期限切れになり、その Ticket で入場できます。</figcaption>
+    </figure>
+    <p class="note">リセールで買われた枚数は在庫の sold に数えません。売れた後も在庫は SoldOut のままです。Organizer への支払いは 1 席につき 1 回分で、リセールの前後で変わりません (端数は 1 枚あたり 1 円以内)。</p>
+  </section>
+
+  <!-- 4. ORDER -->
+  <section id="order" aria-labelledby="h-order">
+    <span class="sec-num">04</span>
+    <h2 id="h-order">Order とカード</h2>
+    <p><code>Order</code> は、1 アカウントが 1 つの TicketStock に出した申込みで、支払い後はそのまま購入記録になります。Order は必ずちょうど 1 つの申込み (Checkout・LotteryEntry・ResaleEntry のどれか) から作られ、金額は作成時に「SeatType の価格 × 枚数」で固定されます。カード番号・有効期限・セキュリティコードは保存せず、表示用にブランドと下 4 桁だけを持ちます。</p>
+    <figure>
+      <div class="frame" tabindex="0" role="region" aria-label="Order と CardAuthorization の状態遷移図">
+        <svg width="720" height="330" viewBox="0 0 720 330" role="img" aria-labelledby="or-t">
+          <title id="or-t">Order は Pending から Paid か Void へ、Paid から Refunded へ進む。CardAuthorization は Pending から Authorized、Captured か Released へ進む。</title>
+          <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+          <text class="lane" x="20" y="22">Order</text>
+          <rect class="box wait" x="20" y="66" width="130" height="52" rx="8"/>
+          <text class="tm" x="34" y="88">Pending</text><text class="s" x="34" y="108">申込み中</text>
+          <rect class="box ok" x="300" y="32" width="170" height="52" rx="8"/>
+          <text class="tm" x="314" y="54">Paid</text><text class="s" x="314" y="74">Ticket・Settlement と同時</text>
+          <rect class="box neu" x="550" y="32" width="150" height="52" rx="8"/>
+          <text class="tm" x="564" y="54">Refunded</text><text class="s" x="564" y="74">Ticket はすべて Voided</text>
+          <rect class="box end" x="300" y="122" width="170" height="52" rx="8"/>
+          <text class="tm" x="314" y="144">Void</text><text class="s" x="314" y="164">Ticket なし・仮押さえ解放</text>
+          <path class="edge ok" d="M150,84 L300,58" marker-end="url(#a5)"/>
+          <text class="lbl" x="182" y="60">請求成功</text>
+          <path class="edge end" d="M150,102 L300,148" marker-end="url(#a5)"/>
+          <text class="lbl" x="178" y="144">請求せず終了</text>
+          <path class="edge" d="M470,58 L550,58" marker-end="url(#a5)"/>
+          <text class="lbl" x="490" y="48">返金</text>
+
+          <line class="grid" x1="20" y1="200" x2="700" y2="200"/>
+          <text class="lane" x="20" y="226">CardAuthorization (カードの仮押さえ)</text>
+          <rect class="box q" x="20" y="250" width="140" height="52" rx="8"/>
+          <text class="tm" x="34" y="272">Pending</text><text class="s" x="34" y="292">カード認証待ち</text>
+          <rect class="box wait" x="220" y="250" width="160" height="52" rx="8"/>
+          <text class="tm" x="234" y="272">Authorized</text><text class="s" x="234" y="292">金額を確保・期限あり</text>
+          <rect class="box ok" x="450" y="236" width="120" height="38" rx="8"/>
+          <text class="tm" x="464" y="260">Captured</text>
+          <rect class="box end" x="450" y="284" width="120" height="38" rx="8"/>
+          <text class="tm" x="464" y="308">Released</text>
+          <path class="edge" d="M160,276 L220,276" marker-end="url(#a5)"/>
+          <path class="edge ok" d="M380,268 L450,256" marker-end="url(#a5)"/>
+          <path class="edge end" d="M380,284 L450,302" marker-end="url(#a5)"/>
+          <text class="s2" x="584" y="260">請求した</text>
+          <text class="s2" x="584" y="308">請求せず返した</text>
+        </svg>
+      </div>
+      <figcaption>Order が Paid になるときは、請求済みの支払い情報・人数分の Ticket・Organizer への支払い記録 (Settlement、Held) をまとめて保存し、どれか 1 つでも失敗したら何も保存しません。Paid にならずに終わった Order は Void になり、その仮押さえは請求せずに解放されます。</figcaption>
+    </figure>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th scope="col">ルール</th><th scope="col">理由・破ると何が起きるか</th></tr></thead>
+        <tbody>
+          <tr><td>Void になれるのは Pending からだけ</td><td>一度請求した Order を「払われなかった」扱いにしない</td></tr>
+          <tr><td>返金できるのは Paid の Order だけ。理由は中止 (Cancellation) か Dispute (カード会社による払い戻し)</td><td>中止の返金は、公演が CANCELLED のときしか通らない</td></tr>
+          <tr><td>中止の返金額は「まだ Issued の Ticket の分」</td><td>リセールで売れた Ticket は手数料を引いて返金済みなので、二重に返さない</td></tr>
+          <tr><td>請求の処理は止まっても途中から再開し、カードを二度請求しない。24 時間たっても終わらなければ admin に知らせる</td><td>決済代行が落ちていても、復旧後に 1 回だけ請求される</td></tr>
+          <tr><td>仮押さえの解放は、決済代行に届くまで 24 時間リトライし、失敗したら admin に知らせる</td><td>Void の Order の仮押さえが黙って残り続けない</td></tr>
+          <tr><td>抽選では American Express のカードを受け付けない (先着は受け付ける)</td><td>抽選の申込みは成立せず、仮押さえは解放される</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 5. TICKET -->
+  <section id="ticket" aria-labelledby="h-ticket">
+    <span class="sec-num">05</span>
+    <h2 id="h-ticket">Ticket と入場</h2>
+    <p><code>Ticket</code> は 1 公演への入場の権利 1 枚で、fan のアカウントに紐付く特定興行入場券です。券面には公演・利用者・「主催者の同意のない転売は禁止」を載せ、座席は指定しません。氏名と電話番号は Ticket にコピーせず、User の今の値を表示します。Ticket の user は後から変わりません。</p>
+
+    <h3>入場できるのは 4 通りのうち 1 つだけ</h3>
+    <div class="tgrid" role="table" aria-label="Ticket の status と admit time の組み合わせ">
+      <div role="row" style="display:contents">
+        <div class="h" role="columnheader"></div>
+        <div class="h" role="columnheader">admit time なし</div>
+        <div class="h" role="columnheader">admit time あり</div>
+      </div>
+      <div role="row" style="display:contents">
+        <div class="rh" role="rowheader">Issued</div>
+        <div class="tcell ok" role="cell"><b>入場できる</b>ここで初めて Admission を記録する</div>
+        <div class="tcell" role="cell"><b>入場済み</b>再スキャンは AlreadyAdmitted。前回の時刻と受付番号を表示</div>
+      </div>
+      <div role="row" style="display:contents">
+        <div class="rh" role="rowheader">Voided</div>
+        <div class="tcell end" role="cell"><b>無効</b>返金かリセールで無効化された</div>
+        <div class="tcell end" role="cell"><b>入場後に無効</b>admit time と Admission は消えない</div>
+      </div>
+    </div>
+    <p class="small">入場の記録 (Admission) は書き換えも削除もしません。入場後に Dispute で返金されても、来場した証拠として残します。</p>
+
+    <h3>会場での判定</h3>
+    <p>fan のスマホは、登録した鍵で署名した入場用 QR コード (AdmissionCode) を通信なしで作り、15 秒ごとに作り直します。1 つのコードで同行者分を含む 1〜10 枚を提示できます。スタッフはアカウントを持たず、Organizer が発行した Scanner のリンクを最初に開いた端末だけが読み取りに使えます。</p>
+    <figure>
+      <div class="frame" tabindex="0" role="region" aria-label="入場の判定フロー">
+        <svg width="700" height="590" viewBox="0 0 700 590" role="img" aria-labelledby="ad-t">
+          <title id="ad-t">入場の判定。上から順に、Scanner、入場時間帯、署名、鮮度、公演、本人の Ticket かを確認し、通れば Ticket ごとに Admitted、AlreadyAdmitted、Voided を判定する。</title>
+          <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+          <g>
+            <rect class="box q" x="20" y="16" width="360" height="54" rx="8"/>
+            <text class="t" x="34" y="38">Scanner は使える?</text>
+            <text class="s" x="34" y="58">Revoked でない・リンクを最初に開いた端末の署名</text>
+            <rect class="box end" x="440" y="16" width="240" height="54" rx="8"/>
+            <text class="tm" x="454" y="38">拒否 (PermissionDenied)</text><text class="s" x="454" y="58">何も記録しない</text>
+            <path class="edge end" d="M380,43 L440,43" marker-end="url(#a6)"/><text class="lbl" x="392" y="35">いいえ</text>
+          </g>
+          <path class="edge" d="M200,70 L200,86" marker-end="url(#a6)"/>
+          <g>
+            <rect class="box q" x="20" y="86" width="360" height="54" rx="8"/>
+            <text class="t" x="34" y="108">入場時間帯の中?</text>
+            <text class="s" x="34" y="128">開演 3 時間前から翌日 04:00 まで (会場の時刻)</text>
+            <rect class="box end" x="440" y="86" width="240" height="54" rx="8"/>
+            <text class="tm" x="454" y="108">拒否 (FailedPrecondition)</text><text class="s" x="454" y="128">何も記録しない</text>
+            <path class="edge end" d="M380,113 L440,113" marker-end="url(#a6)"/><text class="lbl" x="392" y="105">いいえ</text>
+          </g>
+          <path class="edge" d="M200,140 L200,156" marker-end="url(#a6)"/>
+          <g>
+            <rect class="box q" x="20" y="156" width="360" height="54" rx="8"/>
+            <text class="t" x="34" y="178">fan の登録済みの鍵で署名されている?</text>
+            <text class="s" x="34" y="198">機種変更前の古いスマホのコードも不可</text>
+            <rect class="box end" x="440" y="156" width="240" height="54" rx="8"/>
+            <text class="tm" x="454" y="178">Forged</text><text class="s" x="454" y="198">Ticket を特定せずに記録</text>
+            <path class="edge end" d="M380,183 L440,183" marker-end="url(#a6)"/><text class="lbl" x="392" y="175">いいえ</text>
+          </g>
+          <path class="edge" d="M200,210 L200,226" marker-end="url(#a6)"/>
+          <g>
+            <rect class="box q" x="20" y="226" width="360" height="54" rx="8"/>
+            <text class="t" x="34" y="248">署名から 30 秒以内?</text>
+            <text class="s" x="34" y="268">スマホの時計が 15 秒進んでいるまでは許容</text>
+            <rect class="box end" x="440" y="226" width="240" height="54" rx="8"/>
+            <text class="tm" x="454" y="248">Expired</text><text class="s" x="454" y="268">スクリーンショットはここで止まる</text>
+            <path class="edge end" d="M380,253 L440,253" marker-end="url(#a6)"/><text class="lbl" x="392" y="245">いいえ</text>
+          </g>
+          <path class="edge" d="M200,280 L200,296" marker-end="url(#a6)"/>
+          <g>
+            <rect class="box q" x="20" y="296" width="360" height="54" rx="8"/>
+            <text class="t" x="34" y="318">この Scanner の公演のコード?</text>
+            <text class="s" x="34" y="338">Scanner は 1 つの公演専用</text>
+            <rect class="box end" x="440" y="296" width="240" height="54" rx="8"/>
+            <text class="tm" x="454" y="318">OtherEvent</text><text class="s" x="454" y="338">提示された Ticket ごとに記録</text>
+            <path class="edge end" d="M380,323 L440,323" marker-end="url(#a6)"/><text class="lbl" x="392" y="315">いいえ</text>
+          </g>
+          <path class="edge" d="M200,350 L200,366" marker-end="url(#a6)"/>
+          <g>
+            <rect class="box q" x="20" y="366" width="360" height="54" rx="8"/>
+            <text class="t" x="34" y="388">提示した Ticket は全部本人のこの公演の物?</text>
+            <text class="s" x="34" y="408">1 枚でも違えばスキャン全体を拒否</text>
+            <rect class="box end" x="440" y="366" width="240" height="54" rx="8"/>
+            <text class="tm" x="454" y="388">Forged</text><text class="s" x="454" y="408">どの Ticket も入場させない</text>
+            <path class="edge end" d="M380,393 L440,393" marker-end="url(#a6)"/><text class="lbl" x="392" y="385">いいえ</text>
+          </g>
+          <path class="edge" d="M200,420 L200,446"/>
+          <text class="lbl" x="210" y="440">Ticket ごとに判定 (一部だけ入場もある)</text>
+          <path class="edge" d="M110,446 L570,446"/>
+          <path class="edge" d="M110,446 L110,468" marker-end="url(#a6)"/>
+          <path class="edge" d="M340,446 L340,468" marker-end="url(#a6)"/>
+          <path class="edge" d="M570,446 L570,468" marker-end="url(#a6)"/>
+          <rect class="box ok" x="20" y="468" width="190" height="62" rx="8"/>
+          <text class="tm" x="34" y="490">Admitted</text><text class="s" x="34" y="510">admit time と Admission</text><text class="s" x="34" y="524">を同時に記録</text>
+          <rect class="box end" x="245" y="468" width="190" height="62" rx="8"/>
+          <text class="tm" x="259" y="490">AlreadyAdmitted</text><text class="s" x="259" y="510">前回の時刻と受付番号</text><text class="s" x="259" y="524">(例: 18:32 受付1)</text>
+          <rect class="box end" x="470" y="468" width="210" height="62" rx="8"/>
+          <text class="tm" x="484" y="490">Voided</text><text class="s" x="484" y="510">返金・リセールで</text><text class="s" x="484" y="524">無効になった Ticket</text>
+          <text class="s2" x="20" y="562">スタッフに返すのは入場人数と拒否理由 (入場済みなら前回の時刻と受付番号) だけ。氏名・電話番号は出さない。</text>
+          <text class="s" x="20" y="582">拒否はすべて RejectedScan に残す (失われても許容)。入場の記録は Ticket と一緒に必ず残す。</text>
+        </svg>
+      </div>
+      <figcaption>同じコードを 2 つの入口で同時に読んでも、各 Ticket が入場できるのは 1 回だけです。もう一方の入口には AlreadyAdmitted と、どの受付で何時に入ったかが出ます。</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6. TIMELINE -->
+  <section id="timeline" aria-labelledby="h-timeline">
+    <span class="sec-num">06</span>
+    <h2 id="h-timeline">1 公演の時間軸</h2>
+    <p>例: 19:00 開演の公演。先行抽選の後に一般の先着販売があり、売り切れてからリセールが開く場合です。左側は数週間を縮め、当日だけを拡大しています。</p>
+    <figure>
+      <div class="frame" tabindex="0" role="region" aria-label="1 公演の時間軸">
+        <svg width="960" height="330" viewBox="0 0 960 330" role="img" aria-labelledby="tl-t">
+          <title id="tl-t">抽選受付、締切後 1 分以内の抽選、先着販売、SoldOut でリセール開始、毎日 12:00 の抽選、当日のリセール締切、開演 3 時間前から翌日 04:00 までの入場時間帯。</title>
+          <text class="lane" x="16" y="62">販売</text>
+          <text class="lane" x="16" y="150">リセール</text>
+          <text class="lane" x="16" y="232">入場</text>
+
+          <rect class="bar sale" x="96" y="40" width="200" height="34" rx="4"/>
+          <text class="s2" x="106" y="62">抽選 (Lottery) の窓 1〜14 日</text>
+          <line class="tick-strong" x1="296" y1="32" x2="296" y2="84"/>
+          <text class="s2" x="232" y="102">締切 → 1 分以内に抽選、</text>
+          <text class="s2" x="232" y="118">当選者に請求</text>
+          <rect class="bar sale" x="330" y="40" width="170" height="34" rx="4"/>
+          <text class="s2" x="340" y="62">先着 (FirstCome)</text>
+          <circle class="mark" cx="500" cy="57" r="6"/>
+          <text class="t" x="476" y="28" style="font-size:13px">SoldOut</text>
+
+          <rect class="bar resale" x="500" y="128" width="260" height="34" rx="4"/>
+          <line class="tick" x1="560" y1="122" x2="560" y2="168"/>
+          <line class="tick" x1="620" y1="122" x2="620" y2="168"/>
+          <line class="tick" x1="680" y1="122" x2="680" y2="168"/>
+          <text class="s2" x="530" y="186">毎日 12:00 に抽選</text>
+          <line class="tick-strong" x1="760" y1="118" x2="760" y2="172"/>
+          <text class="s2" x="690" y="114">最終抽選 = リセール締切</text>
+
+          <rect class="bar gate" x="808" y="210" width="136" height="34" rx="4"/>
+          <text class="s2" x="816" y="232">入場時間帯</text>
+          <line class="grid" x1="760" y1="180" x2="760" y2="276"/>
+          <line class="grid" x1="808" y1="180" x2="808" y2="276"/>
+          <line class="grid" x1="868" y1="200" x2="868" y2="276"/>
+
+          <line class="axis" x1="96" y1="276" x2="944" y2="276"/>
+          <text class="s" x="96" y="298">数週間前</text>
+          <text class="s" x="560" y="298">前日まで</text>
+          <path class="axis" d="M712,270 l6,12 M720,270 l6,12" />
+          <text class="s" x="740" y="298">当日</text>
+          <text class="s" x="740" y="316">12:00</text>
+          <text class="s" x="796" y="316">16:00</text>
+          <text class="s" x="846" y="298">19:00</text>
+          <text class="s" x="846" y="316">開演</text>
+          <text class="s" x="900" y="316">翌 04:00</text>
+        </svg>
+      </div>
+      <figcaption>リセール締切は「当日 12:00」と「開演 3 時間前 (= 入場時間帯の開始)」の早い方です。14:00 開演なら締切は 11:00 で、その日は 12:00 の抽選はありません。締切を過ぎると出品も申込みも割り当てもできず、売れ残った出品の Ticket はそのまま入場に使えます。</figcaption>
+    </figure>
+    <p class="small">一般の先着販売は、先行抽選の締切と同時に始まっても、その抽選の申込みが Entered で残っている間は開始できません。当選分を在庫から引く前に売ってしまわないためです。</p>
+  </section>
+
+  <!-- 7. CANCEL -->
+  <section id="cancel" aria-labelledby="h-cancel">
+    <span class="sec-num">07</span>
+    <h2 id="h-cancel">公演が中止になったら</h2>
+    <p>member が Event を中止にすると、Event は PUBLISHED から CANCELLED になり、元に戻せません。新しい hold・申込み・出品はすべて拒否されます。すでにある申込みと Order は、下の表のとおりに終わります。</p>
+    <div class="tbl-wrap">
+      <table class="cancel">
+        <thead><tr><th scope="col">対象</th><th scope="col">どうなるか</th><th scope="col">いつ</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><code>Checkout</code> (hold 中)</th><td>注文確定が失敗し、請求されない。hold は期限で Expired になり、仮押さえは解放</td><td>注文確定のとき</td></tr>
+          <tr><th scope="row"><code>LotteryEntry</code> <span class="pill wait">Entered</span></th><td>Lost (公演中止)、仮押さえ解放、メールと push。同じ sale の他の公演の申込みはそのまま抽選へ</td><td>中止の直後。抽選の窓の終了を待たない</td></tr>
+          <tr><th scope="row"><code>LotteryEntry</code> <span class="pill wait">Won</span></th><td>まだ請求していなければ Lost にして請求しない。請求済みなら Order は Paid になり、他の Paid の Order と一緒に返金</td><td>請求を試みるとき</td></tr>
+          <tr><th scope="row"><code>ResaleEntry</code> <span class="pill wait">Entered</span></th><td>Lost (公演中止)、仮押さえ解放、通知</td><td>次の抽選時刻</td></tr>
+          <tr><th scope="row"><span class="pill ok">Paid</span> の <code>Order</code></th><td><b>自動では返金しない。</b> admin が Artist concerts 画面の <code>Refund all</code> で返金すると Refunded になり、Ticket はすべて Voided、出品中の ResaleListing は Cancelled</td><td>admin の操作</td></tr>
+          <tr><th scope="row">fan への通知</th><td>Issued の Ticket を持つ Paid の Order の fan に、中止の連絡 (メールと push)。返金したときに金額とカードを載せた返金の連絡。全 Ticket をリセールで売った fan には送らない</td><td>中止時と返金時に各 1 回</td></tr>
+          <tr><th scope="row">Event の削除</th><td>Paid か Pending の Order が残る間は失敗する。Void と Refunded だけになれば、Event と一緒に消える (最後の Event なら Series も)</td><td>返金の後</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 8. JOURNEY -->
+  <section id="journey" aria-labelledby="h-journey">
+    <span class="sec-num">08</span>
+    <h2 id="h-journey">TicketJourney は別物</h2>
+    <p><code>TicketJourney</code> は、fan が「この公演のチケットについて自分は今どこにいるか」を記録するメモで、Timetable や公演シートに表示されます。fan が手で設定でき、実際の Order や Ticket とは照合しません。状態は 5 つで、どの状態からどの状態へも変えられます。</p>
+    <div class="journey">
+      <span class="pill neu">Tracking 販売情報を待つ</span>
+      <span class="pill neu">Applied 抽選に申込み済み</span>
+      <span class="pill neu">Lost 落選・入金期限切れ</span>
+      <span class="pill neu">Unpaid 入金待ち</span>
+      <span class="pill neu">Paid チケット確保</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th scope="col">誰が記録するか</th><th scope="col">いつ</th><th scope="col">既存の記録を上書きするか</th></tr></thead>
+        <tbody>
+          <tr><td>fan</td><td>いつでも、どの状態でも</td><td>上書きする</td></tr>
+          <tr><td>platform</td><td>LotteryEntry ができたとき → Applied</td><td>Unpaid・Paid は上書きしない。記録の失敗で申込みは失敗しない</td></tr>
+          <tr><td>platform</td><td>Order が Paid になったとき → Paid</td><td>何でも上書きする</td></tr>
+          <tr><td>アプリの推定</td><td>公演をカレンダーに追加したとき → Tracking</td><td>記録がないときだけ</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 9. PITFALLS -->
+  <section id="pitfalls" aria-labelledby="h-pit">
+    <span class="sec-num">09</span>
+    <h2 id="h-pit">取り違えやすい点</h2>
+    <div class="tbl-wrap">
+      <table class="pit">
+        <thead><tr><th scope="col">取り違え</th><th scope="col">正しくは</th><th scope="col">取り違えると</th></tr></thead>
+        <tbody>
+          <tr><td>Order の Void と Ticket の Voided は同じ</td><td>Void は「一度も払われずに終わった Order」。Voided は「無効になった Ticket」で、その Order は Paid か Refunded のまま</td><td>リセールで売れた Ticket の Order を未払い扱いにし、返金額や支払いを誤る</td></tr>
+          <tr><td>入場済みは Ticket の状態の 1 つ</td><td>状態は Issued と Voided だけ。入場は admit time と Admission で表し、Voided にしても消えない</td><td>返金で来場の証拠を消し、chargeback に反論できなくなる</td></tr>
+          <tr><td>リセールは Ticket の名義変更</td><td>旧 Ticket を Voided にし、買った fan に新しい Ticket を発行する。Ticket の user は変わらない</td><td>出品者のコードで入場できてしまう、または買った fan が入場できない</td></tr>
+          <tr><td>公演を中止すれば返金される</td><td>Paid の Order は admin が <code>Refund all</code> するまで Paid のまま</td><td>fan に返金されないまま Event を削除しようとして失敗する</td></tr>
+          <tr><td>申込みの時点で請求される</td><td>申込みでは仮押さえだけ。請求は先着の注文確定と、抽選・リセールの当選の後だけ</td><td>落選者への請求、または仮押さえの解放漏れ</td></tr>
+          <tr><td>抽選で当選が取り消されたら次点に回る</td><td>LotteryEntry に繰上げ当選はなく、その枚数は割り当てられずに在庫へ戻る。リセールでは、その出品が次の抽選で再び割り当て可能になる</td><td>抽選結果の説明や在庫の数を誤る</td></tr>
+          <tr><td>ResaleEntry の Lapsed は落選</td><td>Lapsed は仮押さえの期限が近くて抽選に参加できなかった状態。再申込みを案内する</td><td>再申込みできる fan に「落選」と伝えてしまう</td></tr>
+          <tr><td>リセールで売れた枚数も在庫の sold に入る</td><td>入らない。売れた後も在庫は SoldOut のまま</td><td>同じ席を 2 回数え、在庫と Organizer の支払いを誤る</td></tr>
+          <tr><td>TicketJourney の Paid はチケットを持っている証拠</td><td>fan が手で設定でき、実際の Ticket とは照合しない</td><td>Journey を見て入場可否や返金を判断してしまう</td></tr>
+                <tr><td>1 つの公演で、席種を変えて申し込める</td><td>1 人のアカウントが 1 つの公演で持てる、または申し込める席種は 1 つだけです。販売 (先行・一般) をまたいでも同じで、抽選は 1 公演につき 1 回しか応募できません</td><td>先行で S 席を押さえたまま、一般販売で別の席種も買えると思い込む</td></tr>
+</tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SOURCES -->
+  <section id="sources" aria-labelledby="h-src">
+    <span class="sec-num">出典</span>
+    <h2 id="h-src">出典</h2>
+    <p class="small">パスはすべて <code>openspec/specs/</code> 以下。</p>
+    <div class="tbl-wrap">
+      <table class="src">
+        <thead><tr><th scope="col">節</th><th scope="col">事実</th><th scope="col">出典</th></tr></thead>
+        <tbody>
+          <tr><td>3 つのこと</td><td>Order はちょうど 1 つの申込みから作られる</td><td>components/entity/order/spec.md (An Order has exactly one source)</td></tr>
+          <tr><td>3 つのこと</td><td>Ticket を受け取らない fan は請求されない</td><td>stories/buy-tickets-first-come/spec.md, stories/win-tickets-in-a-lottery/spec.md, stories/resell-a-ticket/spec.md</td></tr>
+          <tr><td>3 つのこと / 5</td><td>Ticket は Issued と Voided、admit time、user は変わらない</td><td>components/entity/ticket/spec.md</td></tr>
+          <tr><td>2</td><td>1 公演 × 1 SeatType に 1 つ、quantity は不変、全 sale が同じ在庫から売る</td><td>components/entity/ticket-stock/spec.md, components/entity/ticket-sale/spec.md</td></tr>
+          <tr><td>2</td><td>sold・held・remaining、SoldOut・AllHeld・Available・LowStock、リセールが開く条件、戻ったら閉じる</td><td>components/entity/ticket-stock/spec.md</td></tr>
+          <tr><td>3</td><td>抽選の窓は 1〜14 日</td><td>components/entity/ticket-sale/spec.md (A lottery window lasts 1 to 14 days)</td></tr>
+          <tr><td>3</td><td>Checkout の状態、15 分 hold、請求済みは Released・Expired にならない</td><td>components/entity/checkout/spec.md, components/entity/checkout/commit/spec.md, components/entity/checkout/revert-commit/spec.md, components/entity/checkout/release/spec.md</td></tr>
+          <tr><td>3</td><td>枚数を変えて開始し直すと旧 Checkout は Released、Order は Void</td><td>components/entity/checkout/get-or-create-held/spec.md</td></tr>
+          <tr><td>3</td><td>1 分で在庫に戻る、2 分で仮押さえ解放、期限後の注文確定は拒否</td><td>stories/buy-tickets-first-come/spec.md, components/usecase/order/place/spec.md, components/usecase/checkout/expire/spec.md</td></tr>
+          <tr><td>3</td><td>抽選の申込みはカード認証完了で成立 (ブラウザを閉じても)</td><td>components/usecase/lottery-entry/confirm/spec.md, stories/win-tickets-in-a-lottery/spec.md</td></tr>
+          <tr><td>3</td><td>LotteryEntry の状態と Lost の理由、繰上げなし</td><td>components/entity/lottery-entry/spec.md, components/entity/lottery-entry/revert-win/spec.md, components/usecase/order/issue/spec.md</td></tr>
+          <tr><td>3</td><td>締切後 1 分以内に抽選、ランダム順、入らない申込みは飛ばす、同じ順で再開、抽選は請求しない</td><td>components/usecase/lottery-entry/draw-due-sales/spec.md, components/usecase/lottery-entry/draw/spec.md, components/entity/lottery-entry/persist-draw-outcome/spec.md</td></tr>
+          <tr><td>3</td><td>ResaleEntry の状態、全員分か 0 枚か、24 時間の条件で Lapsed、取り下げは Entered の間だけ</td><td>components/entity/resale-entry/spec.md, components/usecase/resale-entry/draw/spec.md, components/usecase/resale-entry/withdraw/spec.md</td></tr>
+          <tr><td>3</td><td>当選後の Lost の理由 (請求不可・開演まで請求できず・中止・出品が Cancelled)</td><td>components/entity/resale-entry/revert-win/spec.md, components/usecase/order/issue/spec.md</td></tr>
+          <tr><td>3</td><td>ResaleListing の状態、手数料 10% 切り捨て、取り下げは割り当て前だけ、2 分以内に返金</td><td>components/entity/resale-listing/spec.md, components/entity/resale-listing/withdraw/spec.md, components/usecase/resale-listing/refund-sold/spec.md, stories/resell-a-ticket/spec.md</td></tr>
+          <tr><td>3</td><td>リセールで買われた枚数は sold に入らない、Organizer への支払いは 1 席 1 回</td><td>components/entity/ticket-stock/spec.md, stories/resell-a-ticket/spec.md, components/entity/order/issue/spec.md</td></tr>
+          <tr><td>3</td><td>per-account limit (1〜10、既定 4、全合算)、SeatType は 1 種類</td><td>components/entity/event/spec.md (Per-account limit, An account's application fits the event)</td></tr>
+          <tr><td>3</td><td>抽選 sale に 1 公演 1 回、二重操作でも 1 回</td><td>stories/win-tickets-in-a-lottery/spec.md, components/entity/lottery-entry/create/spec.md, stories/buy-tickets-first-come/spec.md</td></tr>
+          <tr><td>4</td><td>Order の状態、金額は作成時に固定、カード情報は保存しない、Void は Pending からだけ、返金は Paid だけ</td><td>components/entity/order/spec.md</td></tr>
+          <tr><td>4</td><td>Paid は Ticket・Settlement と一括</td><td>components/entity/order/issue/spec.md</td></tr>
+          <tr><td>4</td><td>請求は途中から再開・二重請求なし・24 時間で admin</td><td>components/usecase/order/issue/spec.md</td></tr>
+          <tr><td>4</td><td>Void の Order の仮押さえを解放、24 時間リトライ</td><td>components/usecase/order/release-card-authorization/spec.md</td></tr>
+          <tr><td>4</td><td>CardAuthorization の状態、期限、Amex は抽選で不可</td><td>components/entity/card-authorization/spec.md</td></tr>
+          <tr><td>4 / 7</td><td>中止の返金は CANCELLED のときだけ、返金額は Issued の Ticket 分</td><td>components/usecase/order/refund/spec.md</td></tr>
+          <tr><td>5</td><td>特定興行入場券、券面は User の今の値</td><td>components/entity/ticket/spec.md, components/usecase/order/issue/spec.md</td></tr>
+          <tr><td>5</td><td>Admission は変更・削除しない</td><td>components/entity/admission/spec.md</td></tr>
+          <tr><td>5</td><td>QR は通信なしで作り 15 秒ごとに更新、1〜10 枚、30 秒以内・15 秒の時計ずれまで</td><td>components/entity/admission-code/spec.md, stories/enter-a-venue-with-a-ticket/spec.md</td></tr>
+          <tr><td>5</td><td>Scanner は最初に開いた端末だけ、入場時間帯</td><td>components/entity/scanner/spec.md, components/entity/scanner/bind-device/spec.md</td></tr>
+          <tr><td>5</td><td>判定の順番・理由・記録・個人情報を返さない</td><td>components/usecase/ticket/admit/spec.md, components/entity/ticket/admit/spec.md, components/entity/rejected-scan/spec.md</td></tr>
+          <tr><td>6</td><td>リセール締切、毎日 12:00 の抽選、14:00 開演の例</td><td>stories/resell-a-ticket/spec.md, components/entity/resale-listing/spec.md (Close time), components/entity/resale-entry/spec.md (Draw times of an event)</td></tr>
+          <tr><td>6</td><td>抽選の Entered が残る間は先着を開始できない</td><td>components/usecase/checkout/start/spec.md</td></tr>
+          <tr><td>7</td><td>CANCELLED は終端</td><td>components/entity/event/spec.md (Publish state of an event)</td></tr>
+          <tr><td>7</td><td>中止時の LotteryEntry・Checkout・ResaleEntry</td><td>stories/win-tickets-in-a-lottery/spec.md, components/usecase/lottery-entry/end-for-cancelled-event/spec.md, components/usecase/order/place/spec.md, components/usecase/resale-entry/draw/spec.md, stories/resell-a-ticket/spec.md</td></tr>
+          <tr><td>7</td><td>Refund all、通知、削除の条件</td><td>stories/remove-a-cancelled-concert/spec.md, components/entity/order/spec.md (An Order leaves with its Event only when ended), components/entity/order/commit-refund/spec.md</td></tr>
+          <tr><td>8</td><td>TicketJourney の 5 状態、遷移の制限なし、誰が上書きできるか</td><td>components/entity/ticket-journey/spec.md, components/usecase/ticket-journey/mark-applied/spec.md, components/usecase/ticket-journey/mark-paid/spec.md, stories/track-ticket-journey/spec.md</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<footer class="wrap">この文書は openspec/specs の仕様だけを正本としてまとめています。openspec/changes にある未実装の計画は含みません。</footer>
+
+<script>
+(function () {
+  var btn = document.getElementById('themeBtn');
+  var root = document.documentElement;
+  try {
+    var saved = localStorage.getItem('lm-doc-theme');
+    if (saved === 'dark' || saved === 'light') root.setAttribute('data-theme', saved);
+  } catch (e) {}
+  btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-theme');
+    if (!cur) cur = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('lm-doc-theme', next); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

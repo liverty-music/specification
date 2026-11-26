@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>認証とテナンシー | Liverty Music 仕様ガイド</title>
+<meta name="description" content="ファン・Organizer のメンバー・管理者が、どう登録・ログインし、どこまで見られるか。パスキー、トークン、Zitadel の Organization の分け方、パスキーを失ったときの復旧。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --ink: #17212b;
+  --muted: #55626f;
+  --line: #c7d0d9;
+  --soft: #e9edf1;
+  --fan: #0a6f80;
+  --fan-bg: #e0f2f4;
+  --org: #94570a;
+  --org-bg: #fbefdc;
+  --adm: #4a52bd;
+  --adm-bg: #e9eafb;
+  --deny: #b42318;
+  --deny-bg: #fdeceb;
+  --ok: #1a7438;
+  --ok-bg: #e4f3e8;
+  --focus: #0a6f80;
+  --font-body: "IBM Plex Sans JP", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1318;
+    --surface: #161d24;
+    --ink: #e5ebf1;
+    --muted: #9ba8b5;
+    --line: #2e3a46;
+    --soft: #1c252e;
+    --fan: #57c4d3;
+    --fan-bg: #0f2c31;
+    --org: #eeb15a;
+    --org-bg: #30230e;
+    --adm: #9fa6ff;
+    --adm-bg: #1d2046;
+    --deny: #ff8f85;
+    --deny-bg: #3a1613;
+    --ok: #74d993;
+    --ok-bg: #112d1a;
+    --focus: #57c4d3;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1318;
+  --surface: #161d24;
+  --ink: #e5ebf1;
+  --muted: #9ba8b5;
+  --line: #2e3a46;
+  --soft: #1c252e;
+  --fan: #57c4d3;
+  --fan-bg: #0f2c31;
+  --org: #eeb15a;
+  --org-bg: #30230e;
+  --adm: #9fa6ff;
+  --adm-bg: #1d2046;
+  --deny: #ff8f85;
+  --deny-bg: #3a1613;
+  --ok: #74d993;
+  --ok-bg: #112d1a;
+  --focus: #57c4d3;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.75;
+}
+code { font-family: var(--font-mono); font-size: .9em; }
+code { background: var(--soft); padding: .05em .35em; border-radius: 3px; overflow-wrap: anywhere; }
+a { color: var(--fan); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+.prose { max-width: 68ch; }
+
+header.top {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; }
+.crumb { font-size: .82rem; color: var(--muted); letter-spacing: .04em; }
+.theme-btn {
+  font: inherit; font-size: .82rem; color: var(--ink);
+  background: var(--soft); border: 1px solid var(--line); border-radius: 4px;
+  padding: 4px 10px; cursor: pointer;
+}
+
+.hero { padding-block: 36px 8px; }
+.hero h1 { font-size: clamp(1.7rem, 4.5vw, 2.4rem); line-height: 1.3; margin: 0 0 10px; text-wrap: balance; }
+.hero .lede { font-size: 1.05rem; color: var(--muted); margin: 0 0 24px; max-width: 64ch; }
+
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: k; }
+.three li {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 14px 16px 16px; counter-increment: k; position: relative;
+}
+.three li::before {
+  content: counter(k); font-family: var(--font-mono); font-weight: 600;
+  font-size: .8rem; color: var(--muted); display: block; margin-bottom: 4px;
+}
+.three b { display: block; font-size: 1.02rem; line-height: 1.45; margin-bottom: 6px; }
+.three p { margin: 0; font-size: .92rem; color: var(--muted); line-height: 1.65; }
+
+nav.toc { margin: 28px 0 8px; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 8px; }
+nav.toc a {
+  display: inline-block; font-size: .86rem; text-decoration: none; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 4px; padding: 3px 10px; background: var(--surface);
+}
+nav.toc a:hover { border-color: var(--fan); }
+
+section { padding-block: 34px 6px; border-top: 1px solid var(--line); margin-top: 28px; }
+section:first-of-type { border-top: 0; }
+h2 { font-size: 1.45rem; line-height: 1.35; margin: 0 0 6px; text-wrap: balance; }
+h2 .tag { font-size: .72rem; font-weight: 600; letter-spacing: .06em; vertical-align: middle; border-radius: 3px; padding: 2px 7px; margin-left: 8px; }
+h3 { font-size: 1.08rem; margin: 26px 0 6px; }
+p { margin: 0 0 12px; }
+.tag.fan { background: var(--fan-bg); color: var(--fan); }
+.tag.org { background: var(--org-bg); color: var(--org); }
+.tag.adm { background: var(--adm-bg); color: var(--adm); }
+.tag.all { background: var(--soft); color: var(--muted); }
+
+figure { margin: 16px 0 18px; }
+.fig {
+  overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+.fig svg { display: block; width: 100%; height: auto; min-width: 760px; }
+.fig.narrow svg { min-width: 620px; max-width: 860px; margin: 0 auto; }
+figcaption { font-size: .86rem; color: var(--muted); margin-top: 8px; max-width: 80ch; line-height: 1.65; }
+.scroll-hint { display: none; font-size: .78rem; color: var(--muted); margin: 0 0 4px; }
+@media (max-width: 780px) { .scroll-hint { display: block; } }
+
+/* SVG styling */
+svg text { fill: var(--ink); font-family: var(--font-body); }
+svg .mono { font-family: var(--font-mono); }
+svg .t-muted { fill: var(--muted); }
+svg .t-fan { fill: var(--fan); }
+svg .t-org { fill: var(--org); }
+svg .t-adm { fill: var(--adm); }
+svg .t-deny { fill: var(--deny); }
+svg .t-ok { fill: var(--ok); }
+svg .b { font-weight: 700; }
+svg .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+svg .box-fan { fill: var(--surface); stroke: var(--fan); stroke-width: 1.6; }
+svg .box-org { fill: var(--surface); stroke: var(--org); stroke-width: 1.6; }
+svg .box-adm { fill: var(--surface); stroke: var(--adm); stroke-width: 1.6; }
+svg .fill-fan { fill: var(--fan-bg); stroke: var(--fan); stroke-width: 1.6; }
+svg .fill-org { fill: var(--org-bg); stroke: var(--org); stroke-width: 1.6; }
+svg .fill-adm { fill: var(--adm-bg); stroke: var(--adm); stroke-width: 1.6; }
+svg .band-fan { fill: var(--fan-bg); opacity: .5; }
+svg .band-org { fill: var(--org-bg); opacity: .55; }
+svg .band-adm { fill: var(--adm-bg); opacity: .55; }
+svg .band-soft { fill: var(--soft); }
+svg .dec { fill: var(--soft); stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 5 3; }
+svg .deny { fill: var(--deny-bg); stroke: var(--deny); stroke-width: 1.6; }
+svg .okbox { fill: var(--ok-bg); stroke: var(--ok); stroke-width: 1.6; }
+svg .note { fill: var(--soft); stroke: var(--line); stroke-width: 1; }
+svg .zbox { fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-dasharray: 7 5; }
+svg .wall { stroke: var(--deny); stroke-width: 2; stroke-dasharray: 9 6; fill: none; }
+svg .life { stroke: var(--line); stroke-width: 1.4; stroke-dasharray: 4 4; }
+svg .arr { stroke: var(--muted); stroke-width: 1.6; fill: none; marker-end: url(#ah); }
+svg .arr-d { stroke: var(--muted); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; marker-end: url(#ah); }
+svg .arr-fan { stroke: var(--fan); stroke-width: 1.8; fill: none; marker-end: url(#ah-fan); }
+svg .arr-org { stroke: var(--org); stroke-width: 1.8; fill: none; marker-end: url(#ah-org); }
+svg .arr-deny { stroke: var(--deny); stroke-width: 1.6; fill: none; marker-end: url(#ah-deny); }
+svg .arr-ok { stroke: var(--ok); stroke-width: 1.6; fill: none; marker-end: url(#ah-ok); }
+svg .ah { fill: var(--muted); }
+svg .ah-fan { fill: var(--fan); }
+svg .ah-org { fill: var(--org); }
+svg .ah-deny { fill: var(--deny); }
+svg .ah-ok { fill: var(--ok); }
+svg .lbl { paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+svg .pill { fill: var(--surface); stroke: var(--deny); stroke-width: 1.4; }
+
+/* tables */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); margin: 14px 0 18px; }
+table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: .9rem; line-height: 1.6; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+tr:last-child td, tr:last-child th { border-bottom: 0; }
+thead th { background: var(--soft); font-size: .82rem; letter-spacing: .03em; color: var(--muted); font-weight: 600; }
+tbody th { font-weight: 600; white-space: nowrap; color: var(--muted); font-size: .84rem; }
+td.fan, th.fan { border-top: 3px solid var(--fan); }
+td.org, th.org { border-top: 3px solid var(--org); }
+td.adm, th.adm { border-top: 3px solid var(--adm); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* token lifetimes */
+.lifetimes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.lifetimes > div { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; }
+.lifetimes .v { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.lifetimes .k { font-size: .84rem; color: var(--muted); line-height: 1.5; }
+
+/* boundary gates */
+.gates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 16px 0; }
+.gcol { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 12px 14px; border-top-width: 4px; }
+.gcol.fan { border-top-color: var(--fan); }
+.gcol.org { border-top-color: var(--org); }
+.gcol.adm { border-top-color: var(--adm); }
+.gcol h3 { margin: 0 0 10px; font-size: 1rem; }
+.gcol ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
+.gcol li { position: relative; border: 1px solid var(--line); border-radius: 5px; padding: 8px 10px; font-size: .88rem; line-height: 1.55; background: var(--bg); }
+.gcol li + li::before {
+  content: ""; position: absolute; left: 50%; top: -19px; width: 2px; height: 14px; background: var(--muted);
+}
+.gcol li + li::after {
+  content: ""; position: absolute; left: calc(50% - 5px); top: -8px;
+  border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 7px solid var(--muted);
+}
+.gcol .q { font-weight: 600; display: block; }
+.gcol .no { display: block; color: var(--deny); font-size: .82rem; }
+.gcol li.end { background: var(--ok-bg); border-color: var(--ok); }
+.gcol .exc { margin-top: 12px; font-size: .82rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+
+/* pitfalls */
+.pit td:first-child { font-weight: 600; width: 26%; }
+.pit td:last-child { color: var(--deny); }
+@media (max-width: 640px) {
+  table.pit { min-width: 0; }
+  .pit thead { display: none; }
+  .pit tr, .pit td { display: block; width: auto !important; }
+  .pit tr { border-bottom: 1px solid var(--line); padding: 4px 0; }
+  .pit td { border-bottom: 0; padding: 4px 12px; }
+  .pit td:nth-child(2)::before { content: "正しくは: "; font-weight: 600; color: var(--muted); }
+  .pit td:nth-child(3)::before { content: "取り違えると: "; font-weight: 600; }
+}
+
+.callout {
+  border-left: 4px solid var(--org); background: var(--surface); padding: 10px 14px; margin: 14px 0;
+  border-radius: 0 6px 6px 0; font-size: .93rem; max-width: 80ch;
+}
+.callout.fan { border-left-color: var(--fan); }
+
+.src td:first-child { width: 42%; }
+.src code { font-size: .8rem; }
+
+footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
+
+@media (max-width: 860px) {
+  .three, .gates, .lifetimes { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+@media print {
+  .theme-btn, nav.toc { display: none; }
+  .fig, .tablewrap { overflow: visible; }
+}
+</style>
+</head>
+<body>
+
+<!-- shared arrowheads for every inline diagram -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+    <marker id="ah-fan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-fan"/></marker>
+    <marker id="ah-org" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-org"/></marker>
+    <marker id="ah-deny" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-deny"/></marker>
+    <marker id="ah-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-ok"/></marker>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap topbar">
+    <span class="crumb">Liverty Music 仕様ガイド ／ 認証とテナンシー</span>
+    <button class="theme-btn" type="button" id="themeBtn" aria-label="配色を切り替える">配色: 自動</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+<div class="hero">
+  <h1>認証とテナンシー：<br>誰が、どこから入り、何が見えるか</h1>
+  <p class="lede">Liverty Music の利用者は 3 種類います。ファン、Organizer (チケットを売る事業者) のメンバー、社内の管理者です。この文書は、それぞれがどう登録・ログインし、どこまでのデータを見られるか、そしてパスキーを失ったときにどう戻るかを 1 枚にまとめたものです。サインインはすべて Zitadel (外部の identity provider) が受け持ちます。</p>
+
+  <ol class="three" aria-label="まず知っておく 3 つのこと">
+    <li>
+      <b>3 種類の利用者は、Zitadel の別々の Organization に住む</b>
+      <p>ファンは <code>liverty-music</code>、管理者は <code>admin</code>、Organizer は 1 社ごとに専用の Organization。同じメールでも Organization が違えば別のアカウントで、片方からもう片方へは入れません。</p>
+    </li>
+    <li>
+      <b>パスワードはない。パスキーを失ったときの戻り方は利用者ごとに違う</b>
+      <p>ファンは確認済みメールに届くリンクで自分で再登録、Organizer のメンバーは管理者の再招待、管理者は Google Workspace のアカウントで入ります。</p>
+    </li>
+    <li>
+      <b>「誰のデータか」はリクエストではなくトークンが決める</b>
+      <p>ファン向け API のリクエストは User id を持ちません。Organizer 向け API はトークンの Organization から自社の Organizer を引きます。URL の値は権限になりません。</p>
+    </li>
+  </ol>
+
+  <nav class="toc" aria-label="目次">
+    <ol>
+      <li><a href="#map">1. 全体図</a></li>
+      <li><a href="#compare">2. 3 者の比較</a></li>
+      <li><a href="#fan-signup">3. ファンの登録とログイン</a></li>
+      <li><a href="#session">4. ログイン状態の維持</a></li>
+      <li><a href="#passkey">5. パスキーとメール確認と復旧</a></li>
+      <li><a href="#organizer">6. Organizer の作成と初回ログイン</a></li>
+      <li><a href="#organizer-return">7. Organizer の 2 回目以降</a></li>
+      <li><a href="#admin">8. 管理者</a></li>
+      <li><a href="#boundary">9. 他人・他社のデータに入れない仕組み</a></li>
+      <li><a href="#pitfalls">10. 取り違えやすい点</a></li>
+      <li><a href="#deletion">11. 退会と削除</a></li>
+      <li><a href="#sources">出典</a></li>
+    </ol>
+  </nav>
+</div>
+
+<!-- 1 -->
+<section id="map" aria-labelledby="h-map">
+  <h2 id="h-map">1. 全体図：3 本のレーンは交わらない</h2>
+  <p class="prose">左から右へ、人がアプリを開き、Zitadel の自分の Organization でサインインし、受け取ったトークンで API を呼び、API がトークンから「自分のデータ」を決めます。レーンの間を越えるトークンはありません。</p>
+  <figure>
+    <p class="scroll-hint">図は横にスクロールできます。</p>
+    <div class="fig" role="region" aria-label="テナンシーの全体図" tabindex="0">
+      <svg viewBox="0 0 1000 560" role="img" aria-labelledby="map-t map-d">
+        <title id="map-t">3 種類の利用者と Zitadel の Organization の対応</title>
+        <desc id="map-d">ファンは fan app から liverty-music の Organization でサインインし、fan API で自分の User だけを扱う。Organizer のメンバーは organizer console から Organizer ごとの Organization でサインインし、organizer API で自社 Organizer だけを扱う。管理者は admin console から admin の Organization に Google Workspace でサインインし、admin console API で管理操作を行う。レーンの間には越えられない境界がある。</desc>
+
+        <text x="77" y="24" text-anchor="middle" class="t-muted" font-size="12">人</text>
+        <text x="235" y="24" text-anchor="middle" class="t-muted" font-size="12">アプリ</text>
+        <text x="458" y="24" text-anchor="middle" class="t-muted" font-size="12">Zitadel の Organization</text>
+        <text x="690" y="24" text-anchor="middle" class="t-muted" font-size="12">トークンを受ける API</text>
+        <text x="890" y="24" text-anchor="middle" class="t-muted" font-size="12">見られる範囲</text>
+
+        <!-- lanes -->
+        <rect x="8" y="70" width="984" height="152" rx="6" class="band-fan"/>
+        <rect x="8" y="238" width="984" height="160" rx="6" class="band-org"/>
+        <rect x="8" y="414" width="984" height="132" rx="6" class="band-adm"/>
+
+        <!-- zitadel instance -->
+        <rect x="330" y="36" width="256" height="516" rx="8" class="zbox"/>
+        <text x="458" y="56" text-anchor="middle" class="t-muted" font-size="11">1 つの Zitadel インスタンス</text>
+
+        <!-- walls -->
+        <line x1="8" y1="230" x2="992" y2="230" class="wall"/>
+        <line x1="8" y1="406" x2="992" y2="406" class="wall"/>
+        <rect x="14" y="221" width="128" height="18" rx="9" class="pill"/>
+        <text x="78" y="234" text-anchor="middle" font-size="11" class="t-deny b">越えられない境界</text>
+        <rect x="14" y="397" width="128" height="18" rx="9" class="pill"/>
+        <text x="78" y="410" text-anchor="middle" font-size="11" class="t-deny b">越えられない境界</text>
+
+        <!-- lane 1: fan -->
+        <rect x="15" y="112" width="125" height="70" rx="6" class="box-fan"/>
+        <text x="77" y="140" text-anchor="middle" font-size="14" class="b t-fan">ファン</text>
+        <text x="77" y="163" text-anchor="middle" font-size="10.5" class="mono">band@example.com</text>
+        <line x1="140" y1="147" x2="163" y2="147" class="arr-fan"/>
+        <rect x="165" y="112" width="140" height="70" rx="6" class="box"/>
+        <text x="235" y="140" text-anchor="middle" font-size="13" class="b">fan app</text>
+        <text x="235" y="162" text-anchor="middle" font-size="11" class="t-muted">PWA</text>
+        <line x1="305" y1="147" x2="343" y2="147" class="arr-fan"/>
+        <rect x="345" y="84" width="220" height="126" rx="6" class="fill-fan"/>
+        <text x="455" y="106" text-anchor="middle" font-size="12" class="b mono">liverty-music</text>
+        <text x="455" y="124" text-anchor="middle" font-size="11" class="t-muted">(product org)</text>
+        <text x="455" y="148" text-anchor="middle" font-size="12">ファンの identity</text>
+        <text x="455" y="168" text-anchor="middle" font-size="12">サインイン名 = メール</text>
+        <text x="455" y="188" text-anchor="middle" font-size="12">パスキーのみ・外部 IdP なし</text>
+        <line x1="565" y1="147" x2="613" y2="147" class="arr-fan"/>
+        <text x="589" y="139" text-anchor="middle" font-size="10.5" class="lbl t-muted">トークン</text>
+        <rect x="615" y="112" width="150" height="70" rx="6" class="box"/>
+        <text x="690" y="140" text-anchor="middle" font-size="13" class="b">fan API</text>
+        <text x="690" y="162" text-anchor="middle" font-size="11" class="t-muted">identity → User</text>
+        <line x1="765" y1="147" x2="793" y2="147" class="arr-fan"/>
+        <rect x="795" y="112" width="190" height="70" rx="6" class="box-fan"/>
+        <text x="890" y="140" text-anchor="middle" font-size="13" class="b">自分の User だけ</text>
+        <text x="890" y="162" text-anchor="middle" font-size="11" class="t-muted">フォロー・チケット・設定</text>
+
+        <!-- lane 2: organizer -->
+        <rect x="15" y="282" width="125" height="78" rx="6" class="box-org"/>
+        <text x="77" y="305" text-anchor="middle" font-size="13" class="b t-org">Organizer の</text>
+        <text x="77" y="323" text-anchor="middle" font-size="13" class="b t-org">メンバー</text>
+        <text x="77" y="345" text-anchor="middle" font-size="10.5" class="mono">band@example.com</text>
+        <line x1="140" y1="321" x2="163" y2="321" class="arr-org"/>
+        <rect x="165" y="286" width="140" height="70" rx="6" class="box"/>
+        <text x="235" y="314" text-anchor="middle" font-size="13" class="b">organizer console</text>
+        <text x="235" y="336" text-anchor="middle" font-size="10.5" class="mono t-muted">?org=&lt;short name&gt;</text>
+        <line x1="305" y1="321" x2="343" y2="321" class="arr-org"/>
+        <rect x="361" y="246" width="220" height="132" rx="6" class="fill-org" opacity=".45"/>
+        <rect x="353" y="254" width="220" height="132" rx="6" class="fill-org" opacity=".7"/>
+        <rect x="345" y="262" width="220" height="132" rx="6" class="fill-org"/>
+        <text x="455" y="284" text-anchor="middle" font-size="12" class="b">Organizer ごとの Organization</text>
+        <text x="455" y="301" text-anchor="middle" font-size="11" class="t-muted">名前 = short name (例 xx-records)</text>
+        <text x="455" y="324" text-anchor="middle" font-size="12">メンバーの identity</text>
+        <text x="455" y="343" text-anchor="middle" font-size="10.5" class="mono">band@example.com (xx-records)</text>
+        <text x="455" y="364" text-anchor="middle" font-size="12">パスキー主体・自己登録なし</text>
+        <text x="455" y="383" text-anchor="middle" font-size="12">役割: owner</text>
+        <line x1="565" y1="321" x2="613" y2="321" class="arr-org"/>
+        <text x="589" y="313" text-anchor="middle" font-size="10.5" class="lbl t-muted">トークン</text>
+        <rect x="615" y="286" width="150" height="70" rx="6" class="box"/>
+        <text x="690" y="314" text-anchor="middle" font-size="13" class="b">organizer API</text>
+        <text x="690" y="336" text-anchor="middle" font-size="10.5" class="t-muted">Organization → Organizer</text>
+        <line x1="765" y1="321" x2="793" y2="321" class="arr-org"/>
+        <rect x="795" y="286" width="190" height="70" rx="6" class="box-org"/>
+        <text x="890" y="314" text-anchor="middle" font-size="13" class="b">自社 Organizer だけ</text>
+        <text x="890" y="336" text-anchor="middle" font-size="11" class="t-muted">active の間だけ</text>
+
+        <!-- lane 3: admin -->
+        <rect x="15" y="445" width="125" height="70" rx="6" class="box-adm"/>
+        <text x="77" y="473" text-anchor="middle" font-size="14" class="b t-adm">管理者</text>
+        <text x="77" y="495" text-anchor="middle" font-size="11" class="t-muted">社内の開発者</text>
+        <line x1="140" y1="480" x2="163" y2="480" class="arr"/>
+        <rect x="165" y="445" width="140" height="70" rx="6" class="box"/>
+        <text x="235" y="473" text-anchor="middle" font-size="13" class="b">admin console</text>
+        <text x="235" y="495" text-anchor="middle" font-size="11" class="t-muted">PKCE・org スコープ</text>
+        <line x1="305" y1="480" x2="343" y2="480" class="arr"/>
+        <rect x="345" y="428" width="220" height="104" rx="6" class="fill-adm"/>
+        <text x="455" y="450" text-anchor="middle" font-size="12" class="b mono">admin</text>
+        <text x="455" y="474" text-anchor="middle" font-size="12">管理者の identity</text>
+        <text x="455" y="494" text-anchor="middle" font-size="12">Google Workspace で</text>
+        <text x="455" y="513" text-anchor="middle" font-size="12">サインイン</text>
+        <line x1="565" y1="480" x2="613" y2="480" class="arr"/>
+        <text x="589" y="472" text-anchor="middle" font-size="10.5" class="lbl t-muted">トークン</text>
+        <rect x="615" y="445" width="150" height="70" rx="6" class="box"/>
+        <text x="690" y="473" text-anchor="middle" font-size="12.5" class="b">admin console API</text>
+        <text x="690" y="495" text-anchor="middle" font-size="11" class="t-muted">admin 役割を確認</text>
+        <line x1="765" y1="480" x2="793" y2="480" class="arr"/>
+        <rect x="795" y="445" width="190" height="70" rx="6" class="box-adm"/>
+        <text x="890" y="473" text-anchor="middle" font-size="13" class="b">管理操作</text>
+        <text x="890" y="495" text-anchor="middle" font-size="11" class="t-muted">Organizer の作成・停止</text>
+        <text x="890" y="510" text-anchor="middle" font-size="11" class="t-muted">ファンの削除など</text>
+      </svg>
+    </div>
+    <figcaption>同じ <code>band@example.com</code> がファンのレーンにも Organizer のレーンにも現れます。2 つは別の identity で、パスキーも別々です。Organizer 側の identity 名は <code>&lt;メール&gt; (&lt;short name&gt;)</code> で、本人はメールだけを入力します。Organization は Zitadel にだけ存在し、Liverty Music の DB には行がありません。DB の Organizer が <code>provider organizer ID</code> で自分の Organization を指します。</figcaption>
+  </figure>
+</section>
+
+<!-- 2 -->
+<section id="compare" aria-labelledby="h-compare">
+  <h2 id="h-compare">2. 3 者の比較</h2>
+  <div class="tablewrap" role="region" aria-label="3 種類の利用者の比較表" tabindex="0">
+    <table>
+      <thead>
+        <tr><th scope="col"></th><th scope="col" class="fan">ファン</th><th scope="col" class="org">Organizer のメンバー</th><th scope="col" class="adm">管理者</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">アプリ</th><td>fan app</td><td>organizer console (fan app とも admin console とも別のアプリ)</td><td>admin console</td></tr>
+        <tr><th scope="row">Organization</th><td><code>liverty-music</code> (1 つ)</td><td>Organizer 1 社につき 1 つ。名前は short name</td><td><code>admin</code> (1 つ)</td></tr>
+        <tr><th scope="row">アカウントの作られ方</th><td>本人が hosted login で登録</td><td>管理者が Organizer を作ると、オーナーに招待メールが届く。自己登録はできない</td><td>Google Workspace のアカウント</td></tr>
+        <tr><th scope="row">サインイン</th><td>メールを入力 → パスキー</td><td>メールを入力 → パスキー。Organizer が自社の IdP を連携していればそれも使える</td><td>Google Workspace の IdP 経由</td></tr>
+        <tr><th scope="row">パスワード</th><td>なし (自動 E2E テスト用のファンだけ例外)</td><td>なし</td><td>Google Workspace 側 (この仕様の範囲外)</td></tr>
+        <tr><th scope="row">パスキーを失ったら</th><td>確認済みメールへのリンクで自分で再登録</td><td>管理者による再招待</td><td>この仕様の範囲外</td></tr>
+        <tr><th scope="row">API が扱う範囲</th><td>自分の User だけ</td><td>自社の Organizer だけ。active の間だけ</td><td>admin 役割があれば管理操作</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="fan-signup" aria-labelledby="h-fan-signup">
+  <h2 id="h-fan-signup">3. ファンの登録とログイン <span class="tag fan">ファン</span></h2>
+  <p class="prose">登録もログインも、ファンが自分で押したボタンからしか始まりません (Timetable のバナー、Concert ページ、Settings など)。閉じられないモーダルで登録を迫ることはしません。登録とログインは同じ流れで、戻ってきたあと fan app が必ず <code>UserUseCase.Create</code> を呼びます。Create は新しい identity なら User を作り、登録済みなら既存の User をそのまま返します。</p>
+  <figure>
+    <p class="scroll-hint">図は横にスクロールできます。</p>
+    <div class="fig" role="region" aria-label="ファンの登録シーケンス" tabindex="0">
+      <svg viewBox="0 0 1000 590" role="img" aria-labelledby="su-t su-d">
+        <title id="su-t">ファンの登録シーケンス</title>
+        <desc id="su-d">ファンが Sign Up を押すと fan app は PKCE で Zitadel の hosted login にリダイレクトする。ファンはメールを入れてパスキーを作る。Zitadel はパスキー追加の通知を webhook で送り、まだ User が無いので記録処理は 30 秒ごとに最大 10 分待つ。hosted login は /auth/callback に戻し、fan app は fan API の Create を呼ぶ。新しい User なら User.Created が出て確認メールが送られる。User が見つかるとパスキーが記録され、パスキー追加のメールが届く。最後にファンは始めた画面に戻る。</desc>
+
+        <!-- participants -->
+        <g font-size="12.5" text-anchor="middle">
+          <rect x="10" y="10" width="120" height="46" rx="6" class="box-fan"/><text x="70" y="38" class="b t-fan">ファン</text>
+          <rect x="160" y="10" width="130" height="46" rx="6" class="box"/><text x="225" y="38" class="b">fan app</text>
+          <rect x="320" y="10" width="150" height="46" rx="6" class="fill-fan"/><text x="395" y="30" class="b">Zitadel</text><text x="395" y="47" font-size="11">hosted login</text>
+          <rect x="500" y="10" width="130" height="46" rx="6" class="box"/><text x="565" y="38" class="b">fan API</text>
+          <rect x="660" y="10" width="170" height="46" rx="6" class="box"/><text x="745" y="30" class="b">非同期の処理</text><text x="745" y="47" font-size="11" class="t-muted">イベント・ワークフロー</text>
+          <rect x="860" y="10" width="130" height="46" rx="6" class="box"/><text x="925" y="38" class="b">ファンの受信箱</text>
+        </g>
+        <line x1="70" y1="56" x2="70" y2="578" class="life"/>
+        <line x1="225" y1="56" x2="225" y2="578" class="life"/>
+        <line x1="395" y1="56" x2="395" y2="578" class="life"/>
+        <line x1="565" y1="56" x2="565" y2="578" class="life"/>
+        <line x1="745" y1="56" x2="745" y2="578" class="life"/>
+        <line x1="925" y1="56" x2="925" y2="578" class="life"/>
+
+        <g font-size="12" text-anchor="middle">
+          <line x1="70" y1="95" x2="223" y2="95" class="arr"/>
+          <text x="147" y="88" class="lbl">Sign Up をタップ</text>
+
+          <line x1="225" y1="132" x2="393" y2="132" class="arr"/>
+          <text x="310" y="125" class="lbl">リダイレクト (PKCE)</text>
+
+          <line x1="70" y1="172" x2="393" y2="172" class="arr-fan"/>
+          <text x="300" y="165" class="lbl">名前・メール → パスキーを作成</text>
+
+          <line x1="395" y1="212" x2="743" y2="212" class="arr"/>
+          <text x="570" y="205" class="lbl">パスキー追加の通知 (署名つき webhook)</text>
+          <rect x="655" y="222" width="180" height="44" rx="4" class="note"/>
+          <text x="745" y="240" font-size="11">User がまだ無い → 30 秒ごと</text>
+          <text x="745" y="257" font-size="11">に探し直す (最大 10 分)</text>
+
+          <line x1="395" y1="295" x2="227" y2="295" class="arr"/>
+          <text x="310" y="288" class="lbl">/auth/callback へ戻す</text>
+
+          <line x1="225" y1="332" x2="563" y2="332" class="arr-fan"/>
+          <text x="395" y="325" class="lbl">Create (表示言語, ホーム ※任意)</text>
+          <rect x="478" y="342" width="174" height="44" rx="4" class="note"/>
+          <text x="565" y="360" font-size="11">新規 → User を保存</text>
+          <text x="565" y="377" font-size="11">登録済み → 既存のまま返す</text>
+
+          <line x1="565" y1="410" x2="227" y2="410" class="arr-d"/>
+          <text x="395" y="403" class="lbl">User (端末が identity ごとに覚える)</text>
+
+          <line x1="565" y1="445" x2="743" y2="445" class="arr"/>
+          <text x="654" y="438" class="lbl">User.Created</text>
+
+          <line x1="745" y1="480" x2="923" y2="480" class="arr"/>
+          <text x="834" y="473" class="lbl">確認メール (1 時間)</text>
+
+          <line x1="745" y1="515" x2="923" y2="515" class="arr"/>
+          <text x="834" y="508" class="lbl">「パスキー追加」メール</text>
+
+          <line x1="225" y1="555" x2="72" y2="555" class="arr-fan"/>
+          <text x="147" y="548" class="lbl">始めた画面へ戻る</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>パスキーは User より先にできます。だから記録処理は User を最大 10 分待ちます。10 分たっても User が無ければ記録しません。戻る先は「始めた画面が戻り先を求めていればその画面、そうでなければ Timetable」です。</figcaption>
+  </figure>
+
+  <h3>User はどう決まるか</h3>
+  <p class="prose">1 つの User は Zitadel の identity 1 つ (<code>provider user ID</code>) にひも付きます。fan app は「この identity の User はこれ」と端末で覚え、サインアウトで忘れます。忘れたあとは次のサインインでまた Create を呼びます。Create がメールとして保存するのはトークンの identity のメールで、リクエストに書かれたメールは使いません。別の identity が同じメール (大文字小文字を区別しない) を使っていれば Create は <code>AlreadyExists</code> になりますが、fan app はエラーを記録するだけで、ファンはそのままアプリを使えます。</p>
+  <p class="prose">起動のたびに、fan app はほかの個人向けリクエストより先に <code>UserUseCase.Get</code> で User を読み直します。表示言語は User の <code>preferred language</code> が勝ち、端末が覚えていた言語は捨てます。ホームが未設定なら、登録時ではなく次に Timetable か My Artists を開いたときに聞きます。</p>
+</section>
+
+<!-- 4 -->
+<section id="session" aria-labelledby="h-session">
+  <h2 id="h-session">4. ログイン状態の維持 <span class="tag fan">ファン</span></h2>
+  <p class="prose">トークンの寿命は Zitadel のインスタンス全体の設定で、コード (IaC) に固定されています。アクセストークンを短くして漏れたときの被害を小さくし、リフレッシュトークンを長くしてファンがログインし直さずに済むようにしています。</p>
+  <div class="lifetimes">
+    <div><div class="v num">30 分</div><div class="k">アクセストークン。過ぎると API が期限切れとして拒否する</div></div>
+    <div><div class="v num">30 日</div><div class="k">リフレッシュトークンを使わずにいると失効する期間</div></div>
+    <div><div class="v num">90 日</div><div class="k">使っていても、これを過ぎると再ログインが必要</div></div>
+  </div>
+  <p class="prose">fan app はトークンを<strong>タイマーで更新しません</strong>。Zitadel はリフレッシュトークンを使うたびに新しいものへ替える (rotation) ため、タイマーとサービスワーカーによる再読み込みが重なると同じトークンを 2 回使い、強制ログアウトになるからです。代わりに次の 3 つの時点で更新します。</p>
+  <figure>
+    <p class="scroll-hint">図は横にスクロールできます。</p>
+    <div class="fig" role="region" aria-label="トークン更新の流れ" tabindex="0">
+      <svg viewBox="0 0 960 300" role="img" aria-labelledby="ss-t ss-d">
+        <title id="ss-t">サイレントリフレッシュの 3 つの時点と結果</title>
+        <desc id="ss-d">起動時にアクセストークンが期限切れ、前面に戻ったときに期限切れか間近、RPC が Unauthenticated を返した、の 3 つの時点で、同時に 1 本だけのサイレントリフレッシュを行う。成功すれば何も見せずに続け、RPC なら元のリクエストを 1 回だけ再送する。失敗するか再送もまた Unauthenticated なら、セッション切れとして中立な表示を出し、サインアウトと同じ後片付けをして再ログインへ送り、ログイン後は元の場所へ戻す。</desc>
+        <g font-size="12.5">
+          <rect x="16" y="20" width="262" height="52" rx="6" class="box-fan"/>
+          <text x="30" y="43" class="b">起動時</text><text x="30" y="61" font-size="11.5" class="t-muted">アクセストークンが期限切れ</text>
+          <rect x="16" y="92" width="262" height="52" rx="6" class="box-fan"/>
+          <text x="30" y="115" class="b">前面に戻ったとき</text><text x="30" y="133" font-size="11.5" class="t-muted">期限切れか、期限が間近</text>
+          <rect x="16" y="164" width="262" height="52" rx="6" class="box-fan"/>
+          <text x="30" y="187" class="b">RPC が Unauthenticated</text><text x="30" y="205" font-size="11.5" class="t-muted">ログイン中の呼び出しのとき</text>
+          <text x="16" y="248" font-size="11.5" class="t-muted">ゲスト (セッションなし) の Unauthenticated は</text>
+          <text x="16" y="266" font-size="11.5" class="t-muted">更新もログアウトもせず、呼び出し元に返す</text>
+
+          <path d="M278 46 H300 Q312 46 312 58 V112 Q312 118 318 118 H330" class="arr"/>
+          <path d="M278 118 H330" class="arr"/>
+          <path d="M278 190 H300 Q312 190 312 178 V124 Q312 118 318 118" class="arr" marker-end="none"/>
+
+          <rect x="332" y="84" width="230" height="68" rx="6" class="fill-fan"/>
+          <text x="447" y="112" text-anchor="middle" class="b">サイレントリフレッシュ</text>
+          <text x="447" y="132" text-anchor="middle" font-size="11.5">同時に 1 本だけ (single-flight)</text>
+
+          <path d="M562 104 H590 Q600 104 600 94 V62 Q600 52 610 52 H626" class="arr-ok"/>
+          <text x="582" y="40" font-size="11" class="t-ok b lbl">成功</text>
+          <rect x="628" y="20" width="316" height="64" rx="6" class="okbox"/>
+          <text x="642" y="45" class="b">何も見せずに続ける</text>
+          <text x="642" y="66" font-size="11.5">RPC なら元のリクエストを 1 回だけ再送</text>
+
+          <path d="M562 134 H590 Q600 134 600 144 V178 Q600 188 610 188 H626" class="arr-deny"/>
+          <text x="582" y="218" font-size="11" class="t-deny b lbl">失敗</text>
+          <path d="M786 84 V146" class="arr-deny"/>
+          <text x="794" y="120" font-size="11" class="t-deny lbl">再送も 401</text>
+
+          <rect x="628" y="148" width="316" height="124" rx="6" class="deny"/>
+          <text x="642" y="172" class="b">セッション切れとして扱う</text>
+          <text x="642" y="194" font-size="11.5">生のエラー文は見せず「セッション切れ」と表示</text>
+          <text x="642" y="214" font-size="11.5">自分でサインアウトしたときと同じ後片付け</text>
+          <text x="642" y="234" font-size="11.5">再ログインへ送る</text>
+          <text x="642" y="254" font-size="11.5">ログイン後は元の場所に戻す</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>起動時の更新は、画面が「未ログイン」を一瞬でも描く前に終わらせます。同時の 1 本だけという制限はタブごとです。タブをまたいだ同時更新は起こりえますが、負けた側がもう一度更新するだけなので許容しています。</figcaption>
+  </figure>
+</section>
+
+<!-- 5 -->
+<section id="passkey" aria-labelledby="h-passkey">
+  <h2 id="h-passkey">5. パスキーとメール確認と復旧 <span class="tag fan">ファン</span></h2>
+  <p class="prose">ファンのサインイン手段はパスキーだけです。だから「パスキーを全部失ったら戻れない」状態を作らないことが、この節の目的です。戻り道は確認済みのメールアドレス 1 本なので、メール確認がその前提になります。</p>
+
+  <h3>メール確認</h3>
+  <p class="prose">新しい User ができると、User の表示言語で確認メールが届きます。リンクは 1 時間有効で、どの端末で開いてもサインインなしで確認できます。ただしリンクを開いただけでは確認されません。画面に出る「メールアドレスを確認する」ボタンを押したときだけ確認され、メールを自動で開くセキュリティソフトが勝手に確認してしまうことを防いでいます。期限切れや使用済みのリンクは拒否され、Settings から送り直せます (1 人あたり 10 分に 3 回まで)。確認リンクの検証は、送信元ごとに 60 分 10 回、同じ User id に 60 分 5 回までです。存在しない User と間違ったコードは同じエラーになり、User がいるかどうかは分かりません。</p>
+
+  <h3>パスキーを全部失ったとき</h3>
+  <figure>
+    <p class="scroll-hint">図は横にスクロールできます。</p>
+    <div class="fig" role="region" aria-label="パスキー復旧の流れ" tabindex="0">
+      <svg viewBox="0 0 1000 380" role="img" aria-labelledby="rc-t rc-d">
+        <title id="rc-t">パスキーを失ったファンの復旧</title>
+        <desc id="rc-d">ファンはサインインヘルプ画面を開いてメールアドレスを入力し、誰にでも同じ「メールを確認して」という表示を見る。裏では回数制限を確かめ、そのアドレスの User があり、アドレスが確認済みのときだけパスキー登録リンクをメールで送る。ファンは 1 時間以内にリンクを開き、手元の端末でパスキーを作り、同じアカウントでサインインする。パスキーが記録されると Passkey.Added が出て、パスキー追加のメールが届く。</desc>
+        <rect x="8" y="30" width="984" height="112" rx="6" class="band-fan"/>
+        <rect x="8" y="176" width="984" height="196" rx="6" class="band-soft"/>
+        <text x="18" y="22" font-size="12" class="b t-fan">ファンに見えること</text>
+        <text x="18" y="169" font-size="12" class="b t-muted">裏で起きること (ファンには見えない)</text>
+
+        <g font-size="12.5" text-anchor="middle">
+          <rect x="20" y="55" width="150" height="64" rx="6" class="box-fan"/>
+          <text x="95" y="82" class="b">サインインヘルプ</text><text x="95" y="101">画面を開く</text>
+          <rect x="195" y="55" width="150" height="64" rx="6" class="box-fan"/>
+          <text x="270" y="82" class="b">メールアドレス</text><text x="270" y="101">を入力</text>
+          <rect x="370" y="55" width="165" height="64" rx="6" class="box-fan"/>
+          <text x="452" y="82" class="b">誰にでも同じ答え</text><text x="452" y="101" font-size="11.5">「メールを確認して」</text>
+          <rect x="560" y="55" width="160" height="64" rx="6" class="box-fan"/>
+          <text x="640" y="82" class="b">リンクを開く</text><text x="640" y="101" font-size="11.5">1 時間以内・1 回限り</text>
+          <rect x="745" y="55" width="110" height="64" rx="6" class="box-fan"/>
+          <text x="800" y="82" class="b">手元の端末で</text><text x="800" y="101">パスキー作成</text>
+          <rect x="875" y="55" width="112" height="64" rx="6" class="okbox"/>
+          <text x="931" y="82" class="b">同じアカウント</text><text x="931" y="101">に戻る</text>
+
+          <line x1="170" y1="87" x2="193" y2="87" class="arr"/>
+          <line x1="345" y1="87" x2="368" y2="87" class="arr"/>
+          <line x1="535" y1="87" x2="558" y2="87" class="arr-d"/>
+          <line x1="720" y1="87" x2="743" y2="87" class="arr"/>
+          <line x1="855" y1="87" x2="873" y2="87" class="arr"/>
+
+          <rect x="195" y="200" width="150" height="80" rx="6" class="box"/>
+          <text x="270" y="222" class="b">回数制限 (60 分)</text>
+          <text x="270" y="244" font-size="11.5">同じアドレス 3 回</text>
+          <text x="270" y="264" font-size="11.5">同じ送信元 10 回</text>
+          <rect x="370" y="208" width="165" height="64" rx="6" class="dec"/>
+          <text x="452" y="235" class="b">そのアドレスの</text><text x="452" y="254" class="b">User はある?</text>
+          <rect x="560" y="208" width="160" height="64" rx="6" class="dec"/>
+          <text x="640" y="235" class="b">アドレスは</text><text x="640" y="254" class="b">確認済み?</text>
+          <rect x="745" y="208" width="240" height="64" rx="6" class="box"/>
+          <text x="865" y="235" class="b">Passkey.Added</text><text x="865" y="254" font-size="11.5">→「パスキー追加」メール</text>
+
+          <line x1="270" y1="119" x2="270" y2="198" class="arr"/>
+          <line x1="345" y1="240" x2="368" y2="240" class="arr"/>
+          <line x1="535" y1="240" x2="558" y2="240" class="arr-ok"/>
+          <text x="547" y="232" font-size="11" class="t-ok b lbl">ある</text>
+          <line x1="640" y1="208" x2="640" y2="121" class="arr-ok"/>
+          <text x="648" y="160" font-size="11" class="t-ok b lbl" text-anchor="start">確認済み → リンクを送る</text>
+          <line x1="800" y1="119" x2="800" y2="206" class="arr"/>
+
+          <line x1="452" y1="272" x2="452" y2="300" class="arr-deny"/>
+          <text x="452" y="318" font-size="11.5" class="t-deny">無い → 何もしない</text>
+          <line x1="640" y1="272" x2="640" y2="300" class="arr-deny"/>
+          <text x="640" y="318" font-size="11.5" class="t-deny">未確認 → 送らない</text>
+          <text x="270" y="302" font-size="11" class="t-muted">アドレス 4 回目以降:</text>
+          <text x="270" y="318" font-size="11" class="t-muted">成功を返して何もしない</text>
+          <text x="270" y="338" font-size="11" class="t-muted">送信元 11 回目:</text>
+          <text x="270" y="354" font-size="11" class="t-muted">ResourceExhausted</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>答えも応答時間も、そのアドレスに User があるかどうかで変えません。誰かがファンのアドレスを入れても、リンクはファンの受信箱にしか届かず、パスキーは増えません。リンクは手元の端末にパスキーを 1 つ足すだけで、既存のパスキーは残ります。</figcaption>
+  </figure>
+
+  <h3>パスキーの管理</h3>
+  <p class="prose">Settings のパスキー管理で、一覧・追加・削除ができます。別の端末 (例: スマホのパスキーで QR を読んでサインインした Windows ノート PC) に追加するには、直近 5 分以内にサインインしている必要があります。同じパスキー提供元に 2 つ目は作りません。最後の 1 つは削除できません。追加も削除もメールで知らせ、身に覚えのない追加なら削除するよう促します。</p>
+  <div class="callout fan">パスキーの正本は Zitadel です。Liverty Music の <code>Passkey</code> は「どの提供元で、いつ登録したか」を表示するための記録で、Zitadel からの webhook で作られます。パスキー管理の画面は、Zitadel が持つパスキーを一覧にし、この記録を id で突き合わせて提供元名と登録日を足します。記録が無いパスキー (記録を始める前に作ったもの、通知が届かなかったもの) も一覧に出ますが、名前だけで日付はありません。</div>
+</section>
+
+<!-- 6 -->
+<section id="organizer" aria-labelledby="h-org">
+  <h2 id="h-org">6. Organizer の作成と初回ログイン <span class="tag org">Organizer</span></h2>
+  <p class="prose">Organizer は管理者が作ります。作ること自体が審査の結果です。作成と同時に、その Organizer 専用の Organization が Zitadel にでき、オーナーの identity (パスワードなし、メール確認済み) と招待メールが用意されます。オーナーが行動するのは招待メール 1 通だけです。</p>
+  <figure>
+    <p class="scroll-hint">図は横にスクロールできます。</p>
+    <div class="fig" role="region" aria-label="Organizer 作成と初回ログインのシーケンス" tabindex="0">
+      <svg viewBox="0 0 1000 570" role="img" aria-labelledby="oc-t oc-d">
+        <title id="oc-t">Organizer の作成からオーナーの初回ログインまで</title>
+        <desc id="oc-d">管理者が Organizer を作成すると、OrganizerUseCase.Create は Organizer を provisioning で保存し、Zitadel に short name を名前とする Organization を作り、その ID を Organizer に記録する。Provision でログインポリシー、owner 役割を持つオーナーの identity、招待を用意し、Zitadel が招待メールを 1 通送る。Organizer は active になる。オーナーはリンクを開いてパスキーを登録し、Zitadel は既定のリダイレクトで organizer console の ?org_id= に送る。console はその Organization で OIDC サインインを行い、トークンの Organization と owner 役割を確かめて Home を出す。</desc>
+        <g font-size="12.5" text-anchor="middle">
+          <rect x="15" y="10" width="140" height="46" rx="6" class="box-adm"/><text x="85" y="30" class="b">管理者</text><text x="85" y="47" font-size="11" class="t-muted">admin console</text>
+          <rect x="185" y="10" width="170" height="46" rx="6" class="box"/><text x="270" y="30" class="b">admin console API</text><text x="270" y="47" font-size="10.5" class="t-muted">OrganizerUseCase.Create</text>
+          <rect x="385" y="10" width="170" height="46" rx="6" class="fill-org"/><text x="470" y="30" class="b">Zitadel</text><text x="470" y="47" font-size="11">Organizer の Organization</text>
+          <rect x="595" y="10" width="150" height="46" rx="6" class="box-org"/><text x="670" y="30" class="b t-org">オーナー</text><text x="670" y="47" font-size="11" class="t-muted">受信箱と端末</text>
+          <rect x="790" y="10" width="160" height="46" rx="6" class="box"/><text x="870" y="38" class="b">organizer console</text>
+        </g>
+        <line x1="85" y1="56" x2="85" y2="560" class="life"/>
+        <line x1="270" y1="56" x2="270" y2="560" class="life"/>
+        <line x1="470" y1="56" x2="470" y2="560" class="life"/>
+        <line x1="670" y1="56" x2="670" y2="560" class="life"/>
+        <line x1="870" y1="56" x2="870" y2="560" class="life"/>
+
+        <g font-size="12" text-anchor="middle">
+          <line x1="85" y1="92" x2="268" y2="92" class="arr"/>
+          <text x="177" y="85" class="lbl">Organizer を作成</text>
+          <rect x="195" y="104" width="150" height="30" rx="4" class="note"/>
+          <text x="270" y="124" font-size="11">provisioning で保存</text>
+
+          <line x1="270" y1="165" x2="468" y2="165" class="arr"/>
+          <text x="370" y="158" class="lbl">Organization を作成</text>
+          <rect x="185" y="177" width="170" height="30" rx="4" class="note"/>
+          <text x="270" y="197" font-size="11">その ID を Organizer に記録</text>
+
+          <line x1="270" y1="238" x2="468" y2="238" class="arr"/>
+          <text x="370" y="231" class="lbl">Provision</text>
+          <rect x="385" y="250" width="170" height="64" rx="4" class="note"/>
+          <text x="470" y="269" font-size="11">ログインポリシーを設定</text>
+          <text x="470" y="286" font-size="11">オーナー identity + owner</text>
+          <text x="470" y="303" font-size="11">招待を発行</text>
+
+          <line x1="470" y1="340" x2="668" y2="340" class="arr-org"/>
+          <text x="570" y="333" class="lbl">招待メール (1 通だけ)</text>
+          <rect x="185" y="352" width="170" height="44" rx="4" class="okbox"/>
+          <text x="270" y="370" font-size="11">provisioning → active</text>
+          <text x="270" y="387" font-size="11">(Organizer.Activated)</text>
+
+          <line x1="670" y1="425" x2="472" y2="425" class="arr-org"/>
+          <text x="570" y="418" class="lbl">リンクを開いてパスキー登録</text>
+
+          <line x1="470" y1="462" x2="868" y2="462" class="arr"/>
+          <text x="670" y="455" class="lbl">既定のリダイレクト /?org_id=&lt;Organization id&gt;</text>
+
+          <line x1="870" y1="497" x2="472" y2="497" class="arr"/>
+          <text x="670" y="490" class="lbl">その Organization を指定して OIDC サインイン</text>
+
+          <rect x="770" y="512" width="200" height="44" rx="4" class="okbox"/>
+          <text x="870" y="530" font-size="11">トークンの Organization と</text>
+          <text x="870" y="547" font-size="11">owner 役割を確認 → Home</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>招待のコードは Zitadel の画面の中にだけあり、console の URL には載りません。オーナーはコードを書き写さず、リンクをクリックするだけです。オーナーのメールがファンのアカウントのメールと同じでも、Organizer の Organization には別の identity が作られ、ファンのアカウントは変わりません。</figcaption>
+  </figure>
+
+  <h3>Organizer の状態と、メンバーへの応答</h3>
+  <figure>
+    <div class="fig narrow" role="region" aria-label="Organizer の状態遷移" tabindex="0">
+      <svg viewBox="0 0 900 250" role="img" aria-labelledby="ls-t ls-d">
+        <title id="ls-t">Organizer の状態遷移</title>
+        <desc id="ls-d">Organizer は provisioning から active へ、provisioning または active から deactivated へ移る。deactivated からは戻らない。provisioning の間メンバーへの応答は PermissionDenied で、Organizer があるかどうかを明かさない。active の間は使える。deactivated では FailedPrecondition になり、メンバーの identity はサインインできなくなる。</desc>
+        <g font-size="13" text-anchor="middle">
+          <path d="M140 74 C140 22, 760 22, 760 70" class="arr"/>
+          <text x="450" y="30" font-size="11.5" class="lbl t-muted">停止、または直せない失敗</text>
+
+          <rect x="40" y="76" width="200" height="56" rx="28" class="dec"/>
+          <text x="140" y="109" class="b mono">provisioning</text>
+          <rect x="350" y="76" width="200" height="56" rx="28" class="okbox"/>
+          <text x="450" y="109" class="b mono">active</text>
+          <rect x="660" y="76" width="200" height="56" rx="28" class="deny"/>
+          <text x="760" y="109" class="b mono">deactivated</text>
+
+          <line x1="240" y1="104" x2="348" y2="104" class="arr"/>
+          <text x="294" y="96" font-size="11" class="lbl t-muted">完了</text>
+          <line x1="550" y1="104" x2="658" y2="104" class="arr"/>
+          <text x="604" y="96" font-size="11" class="lbl t-muted">管理者が停止</text>
+
+          <text x="140" y="164" font-size="12" class="t-deny b">PermissionDenied</text>
+          <text x="140" y="184" font-size="11">Organizer の有無を明かさない</text>
+          <text x="140" y="214" font-size="11" class="t-muted">一時的な失敗は 5 分ごとの</text>
+          <text x="140" y="231" font-size="11" class="t-muted">ReconcileProvisioning が続きを実行</text>
+          <text x="450" y="164" font-size="12" class="t-ok b">使える</text>
+          <text x="450" y="184" font-size="11">自社のデータだけ</text>
+          <text x="760" y="164" font-size="12" class="t-deny b">FailedPrecondition</text>
+          <text x="760" y="184" font-size="11">identity は停止、戻らない</text>
+          <text x="760" y="214" font-size="11" class="t-muted">Organization は残る</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>「直せない失敗」とは、オーナーのメールを Zitadel が受け付けないなど、再試行しても直らない失敗です。作成時にこれが起きると Organizer と Organization は取り消されます。ReconcileProvisioning の中で起きると、Organizer は deactivated にされ、記録は残ります。</figcaption>
+  </figure>
+</section>
+
+<!-- 7 -->
+<section id="organizer-return" aria-labelledby="h-org-ret">
+  <h2 id="h-org-ret">7. Organizer の 2 回目以降のログイン <span class="tag org">Organizer</span></h2>
+  <p class="prose">organizer console は 1 つの OIDC クライアント (<code>organizer-console</code>) ですべての Organizer を受け持ちます。だから console は、サインインを始める前に「どの Organization か」を必ず 1 つに決めます。決めないまま始めると、同じメールのファンのアカウントに一致してしまうからです。</p>
+  <figure>
+    <p class="scroll-hint">図は横にスクロールできます。</p>
+    <div class="fig" role="region" aria-label="organizer console の入口の決まり方" tabindex="0">
+      <svg viewBox="0 0 1000 330" role="img" aria-labelledby="or-t or-d">
+        <title id="or-t">organizer console がサインインする Organization を決める流れ</title>
+        <desc id="or-d">console を開くと、URL の ?org= か ?org_id=、または端末の記憶から Organization が分かるかを確かめる。分かればその Organization でメールとパスキーでサインインする。分からなければ find-organizer 画面でメールを入れ、持っている active な Organizer ごとのリンクをメールで受け取り、そのリンクからサインインする。サインイン後、トークンの Organization が一致して owner 役割があれば、その Organization を端末に記憶して Home を出す。そうでなければアクセス拒否ページになる。</desc>
+        <g font-size="12.5" text-anchor="middle">
+          <rect x="12" y="40" width="122" height="74" rx="6" class="box-org"/>
+          <text x="73" y="82" class="b">console を開く</text>
+
+          <rect x="162" y="40" width="210" height="74" rx="6" class="dec"/>
+          <text x="267" y="66" class="b">Organization が分かる?</text>
+          <text x="267" y="88" font-size="11" class="mono">?org= / ?org_id=</text>
+          <text x="267" y="104" font-size="11">または端末の記憶</text>
+
+          <rect x="402" y="40" width="186" height="74" rx="6" class="fill-org"/>
+          <text x="495" y="70" class="b">その Organization で</text>
+          <text x="495" y="92">メール + パスキー</text>
+
+          <rect x="618" y="40" width="196" height="74" rx="6" class="dec"/>
+          <text x="716" y="66" class="b">トークンの Organization</text>
+          <text x="716" y="86" class="b">が一致し、</text>
+          <text x="716" y="104" class="b">owner 役割がある?</text>
+
+          <rect x="842" y="40" width="146" height="74" rx="6" class="okbox"/>
+          <text x="915" y="70" class="b">端末に記憶して</text>
+          <text x="915" y="92" class="b">Home へ</text>
+
+          <rect x="162" y="206" width="210" height="74" rx="6" class="box"/>
+          <text x="267" y="236" class="b">find-organizer 画面</text>
+          <text x="267" y="258">でメールを入力</text>
+
+          <rect x="402" y="206" width="186" height="74" rx="6" class="box"/>
+          <text x="495" y="236" class="b">持っている Organizer</text>
+          <text x="495" y="258">ごとのリンクが届く</text>
+
+          <rect x="618" y="206" width="196" height="74" rx="6" class="deny"/>
+          <text x="716" y="236" class="b">アクセス拒否ページ</text>
+          <text x="716" y="258">(サインアウトだけ)</text>
+
+          <line x1="134" y1="77" x2="160" y2="77" class="arr"/>
+          <line x1="372" y1="77" x2="400" y2="77" class="arr-ok"/>
+          <text x="386" y="68" font-size="11" class="t-ok b lbl">分かる</text>
+          <line x1="588" y1="77" x2="616" y2="77" class="arr"/>
+          <line x1="814" y1="77" x2="840" y2="77" class="arr-ok"/>
+          <text x="827" y="68" font-size="11" class="t-ok b lbl">はい</text>
+
+          <line x1="267" y1="114" x2="267" y2="204" class="arr"/>
+          <text x="275" y="162" font-size="11" class="lbl t-muted" text-anchor="start">分からない</text>
+          <line x1="372" y1="243" x2="400" y2="243" class="arr"/>
+          <line x1="495" y1="206" x2="495" y2="116" class="arr-org"/>
+          <text x="503" y="162" font-size="11" class="lbl mono" text-anchor="start">?org=&lt;short name&gt;</text>
+          <line x1="716" y1="114" x2="716" y2="204" class="arr-deny"/>
+          <text x="724" y="162" font-size="11" class="lbl t-deny b" text-anchor="start">いいえ</text>
+
+          <text x="495" y="306" font-size="11" class="t-muted">答えは誰にでも同じ。送信は同じアドレスに 60 分 3 通まで</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>URL の <code>org</code> や <code>org_id</code> は「どの Organization のログイン画面を開くか」の目印にすぎず、何の権限も与えません。トークンの Organization が目印と違えば 1 回だけ再認証し、それでも違えばアクセス拒否です。入れなかった目印は端末に記憶せず、それまでの記憶も上書きしません。</figcaption>
+  </figure>
+  <p class="prose">ファンのアカウントと同じメールで Organizer を運営する人は、fan app ではファンのパスキーで、console では Organizer のパスキーでサインインします。どちらも入力するのは同じメールだけです。ログイン画面には <code>&lt;メール&gt; (xx-records)</code> のように Organizer の short name が表示されます。</p>
+</section>
+
+<!-- 8 -->
+<section id="admin" aria-labelledby="h-admin">
+  <h2 id="h-admin">8. 管理者 <span class="tag adm">管理者</span></h2>
+  <p class="prose">admin console は fan app とは別のアプリです。サインイン要求に admin の Organization の id を <code>urn:zitadel:iam:org:id:&lt;id&gt;</code> スコープで入れることで、Zitadel にファン用ではなく admin のログインポリシー (Google Workspace の IdP) を使わせます。Google Workspace のサインインを通れることが、そのまま入口の条件です。認証コールバック以外のすべての画面はログイン必須で、未ログインならどの画面も表示する前にサインインへ送ります。</p>
+  <p class="prose">admin console API は、リクエストごとに有効なトークンと admin 役割を確かめます。Organizer の作成・停止・削除と、管理者がファンのアカウントを代わりに削除する操作は、ここからしかできません。ファン本人の退会は fan API で行います。</p>
+</section>
+
+<!-- 9 -->
+<section id="boundary" aria-labelledby="h-boundary">
+  <h2 id="h-boundary">9. 他人・他社のデータに入れない仕組み</h2>
+  <p class="prose">API はリクエストを読む前に、上から順に関門を通します。どこかで落ちたリクエストは何も変えません。どの API でもトークン (JWT) は Zitadel の公開鍵で検証します。</p>
+  <div class="gates">
+    <div class="gcol fan">
+      <h3>fan API</h3>
+      <ol>
+        <li><span class="q">サインインが要る呼び出しで、有効なトークンか</span><span class="no">いいえ → Unauthenticated</span></li>
+        <li><span class="q">ファン本人のための呼び出しは、トークンの identity から User を引く</span><span class="no">User が無い → NotFound</span></li>
+        <li class="end"><span class="q">リクエストは User id を持たない</span>いつも呼び出した本人の User だけを読み書きする</li>
+      </ol>
+      <p class="exc">例外:<br>公開の読み取り (Concert の <code>Get</code> と <code>ListBy…</code>、Artist の <code>ListTop</code> <code>ListSimilar</code> <code>Search</code>、TicketSale の <code>ListByEvent</code>) は、ゲストもトークンなしで呼べる。<br><code>UserService.Create</code> はトークンの identity を使うが、User はまだ無いので引かない。<br>Artist の <code>List</code> <code>Create</code> と OfficialSite の <code>Create</code> <code>Delete</code> はサインインが要るが、User は引かない。<br><code>RequestPasskeyRecovery</code> と <code>VerifyEmail</code> はトークンなしで受ける (サインインできない人のため)。代わりに送信元ごとに 60 分 10 回まで。</p>
+    </div>
+    <div class="gcol org">
+      <h3>organizer API</h3>
+      <ol>
+        <li><span class="q">有効なトークンか</span><span class="no">いいえ → Unauthenticated</span></li>
+        <li><span class="q">organizer console 向けに発行され、役割のある Organization がちょうど 1 つか</span><span class="no">いいえ → PermissionDenied</span></li>
+        <li><span class="q">Organization から Organizer を引く (ResolveCaller)</span><span class="no">無い・provisioning → PermissionDenied<br>deactivated → FailedPrecondition</span></li>
+        <li class="end"><span class="q">引けた Organizer のためだけに動く</span>他社の Organizer を指す方法がない</li>
+      </ol>
+      <p class="exc">例外: Organizer の <code>SendSignInLinks</code> はトークンなしで受ける (サインインできないメンバーのため)。送信元ごとの回数制限があり、そのメールアドレスが Organizer のものかどうかに関係なく、同じ空の成功を返す。</p>
+      <p class="exc">console の画面側でも owner 役割を確かめ、別の Organizer の URL を開くと「別の Organizer のアドレス」と表示してデータを出さない。最終判断は API。</p>
+    </div>
+    <div class="gcol adm">
+      <h3>admin console API</h3>
+      <ol>
+        <li><span class="q">有効なトークンか</span><span class="no">いいえ → Unauthenticated</span></li>
+        <li><span class="q">admin 役割があるか</span><span class="no">いいえ → PermissionDenied</span></li>
+        <li class="end"><span class="q">管理操作</span>Organizer の作成・停止・削除、ファンの検索・削除</li>
+      </ol>
+    </div>
+  </div>
+
+  <h3>Zitadel のアカウントを変えられるのは identity service だけ</h3>
+  <p class="prose">Zitadel の管理 API の資格情報を持つのは、バックエンドの identity service という 1 つのプロセスだけです。クラスタの外からは届かず、呼び出し元ごとに頼める操作が決まっています。外部のデータを処理する API サーバーやイベント処理が乗っ取られても、ファンのアカウントや Organizer の Organization を書き換えられないようにするためです。</p>
+  <div class="tablewrap" role="region" aria-label="identity service に頼める操作" tabindex="0">
+    <table>
+      <thead><tr><th scope="col">呼び出し元</th><th scope="col">identity service に頼める操作</th></tr></thead>
+      <tbody>
+        <tr><td>fan API</td><td>確認メールのコードでアドレスを確認済みにする／退会するファン本人の identity を削除する。これ以外は拒否</td></tr>
+        <tr><td>イベント処理 (event consumer)</td><td>確認コードの発行／パスキー登録リンクの発行</td></tr>
+        <tr><td>admin console API</td><td>ファンの identity の削除／Organizer の Organization の作成・Provision・停止・削除</td></tr>
+        <tr><td>それ以外 (organizer API など)</td><td>届かない</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">Zitadel からバックエンドへの webhook は 3 つあり、どれもクラスタ内からしか受けず、署名の無いものは 401 で拒否します。1 つはサインインの通知 (<code>login-events</code>) で、対話的なサインインの時刻を User に記録します。1 つはパスキーの追加・削除の通知 (<code>passkey-events</code>) で、ファンの Organization の分だけ記録します。もう 1 つ (<code>pre-access-token</code>) はアクセストークンの発行直前に呼ばれ、メールが確認済みなら <code>email</code> クレームを足します。決済の通知 (<code>payment-events</code>) は Stripe からで、別の webhook です。</p>
+</section>
+
+<!-- 10 -->
+<section id="pitfalls" aria-labelledby="h-pit">
+  <h2 id="h-pit">10. 取り違えやすい点</h2>
+  <div class="tablewrap" role="region" aria-label="取り違えやすい点の一覧" tabindex="0">
+    <table class="pit">
+      <thead><tr><th scope="col">取り違え</th><th scope="col">正しくは</th><th scope="col">取り違えると</th></tr></thead>
+      <tbody>
+        <tr><td>User と identity は同じもの</td><td>User は Liverty Music の DB の行、identity は Zitadel のアカウント。<code>provider user ID</code> で 1 対 1 にひも付く</td><td>identity だけ消して User が残る、またはその逆の不整合を作る。退会は identity を先に消し、次に User を消す</td></tr>
+        <tr><td>Organization と Organizer は同じもの</td><td>Organization は Zitadel のサインインの単位で DB に行がない。Organizer は事業者で DB にある。<code>provider organizer ID</code> でつながる</td><td>Organizer の停止で Organization も消えると思い込む。停止では identity が止まるだけで Organization は残る</td></tr>
+        <tr><td>同じメールなら同じ人のアカウント</td><td>Organization が違えば別の identity・別のパスキー。どちらからも他方へは入れない</td><td>ファンのアカウントで Organizer の画面に入れる穴を作る。console が Organization を指定せずにサインインを始めると、ファンのアカウントに一致する</td></tr>
+        <tr><td>URL の <code>?org=</code> や <code>?org_id=</code> で Organizer が決まる</td><td>決めるのはトークンの Organization。URL はログイン画面を選ぶ目印だけ</td><td>URL を書き換えるだけで他社のデータが見える</td></tr>
+        <tr><td>メール確認はおまけ</td><td>パスキー復旧のリンクは確認済みのアドレスにしか送らない</td><td>未確認のファンはパスキーを失うと戻れない。しかも画面は誰にでも同じ答えなので、本人は送られないことに気付けない</td></tr>
+        <tr><td>「該当なし」を知らせないのはバグ</td><td>パスキー復旧と Organizer のリンク送信は、アドレスの有無で答えも時間も変えない仕様</td><td>「このメールは未登録です」と出すと、誰が会員かを第三者に教えてしまう</td></tr>
+        <tr><td>パスキーと <code>WalletPublicKey</code> は似たもの</td><td><code>WalletPublicKey</code> は入場 QR を署名する端末の鍵。1 User に 1 つで、新しい端末で登録すると置き換わる。サインインには使わない</td><td>端末を替えると古い端末の入場コードが会場で拒否されることを見落とす</td></tr>
+        <tr><td>トークンはタイマーで早めに更新するもの</td><td>起動時・前面復帰時・401 のときだけ、1 本ずつ更新する</td><td>rotation の競合で <code>RefreshTokenInvalid</code> になり、ファンが強制ログアウトされる</td></tr>
+        <tr><td>パスワードを禁じるにはローカル認証を切ればよい</td><td>ローカル認証 (<code>UserLogin</code> / <code>allowUsernamePassword</code>) はパスキーのサインインも兼ねるので有効のまま。パスワードを設定するページを not-found にし、identity にパスワードを付けない</td><td>ログイン画面に入力欄が出ず、誰もサインインできなくなる</td></tr>
+        <tr><td>Organizer の Organization でも、未知のメールは隠すべき</td><td>Organizer の Organization では未知のメールを「不明」と知らせる設定にしている。ファンの Organization では隠す</td><td>隠す設定にすると、メールを入力してパスキーでサインインする流れが壊れる (本番で確認済み)</td></tr>
+        <tr><td>Passkey の提供元名と登録日は、通知が届いたときだけ付く</td><td>一覧そのものは Zitadel の現状を映す。webhook が 500 を返した通知は Zitadel が再送しない</td><td>その追加・削除は記録もメールもされない。追加したパスキーは名前だけで日付なしで一覧に出て、本人にはメールが届かない</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">ほかに、時間の条件が 2 つあります。パスキーの追加と退会には直近 5 分以内のサインインが必要です。そして最後の 1 つのパスキーは削除できません。</p>
+</section>
+
+<!-- 11 -->
+<section id="deletion" aria-labelledby="h-del">
+  <h2 id="h-del">11. 退会と削除 <span class="tag fan">ファン</span> <span class="tag org">Organizer</span></h2>
+  <p class="prose">消すと元に戻せないので、ファンの退会も Organizer の削除も「終わっていないものがあれば消せない」作りです。</p>
+
+  <h3>ファンの退会</h3>
+  <p class="prose">ファンは Settings の退会画面から、確認し、もう一度パスキーでサインインして、自分のアカウントを消せます。次のどれかが残っていると、退会画面にその項目が出て、消す操作は出ません。</p>
+  <ul class="prose">
+    <li>開催日が今日以降 (当日を含む。日付は会場の現地時間) の公演のチケットを持っている</li>
+    <li>リセールに出品中のチケットがある</li>
+    <li>抽選の結果待ちの応募がある</li>
+    <li>支払い中の購入がある</li>
+  </ul>
+  <p class="prose">消すときは identity を先に、次に User を消します。消えたあとは、そのパスキーではどのアカウントにも入れません。注文とチケットは記録として残ります。同じメールアドレスで登録し直すと、フォローもチケットも本人確認の結果も無い、新しいアカウントになります。管理者がファンの依頼を受けて消すことも、同じ条件のもとでできます。</p>
+
+  <h3>Organizer の停止と削除</h3>
+  <p class="prose">Organizer は、管理者が <strong>停止</strong> してから <strong>削除</strong> します。停止すると、メンバーはサインインできなくなり、その Organizer が代表していた Artist は別の Organizer に付け替えられるようになります。停止しても Zitadel の Organization は消えません。</p>
+  <p class="prose">削除は、ファイル、Zitadel の Organization、その Organizer の記録をすべて消します。ただし、次のどれかがあると、何も消さずに失敗します (<code>FailedPrecondition</code>)。</p>
+  <ul class="prose">
+    <li>その Organizer の公演に、返金済みでない注文がある</li>
+    <li>その Organizer の公演に、取り消されていない精算 (Settlement) がある</li>
+    <li>支払い先口座 (PayoutAccount) の記録がある</li>
+  </ul>
+</section>
+
+<!-- sources -->
+<section id="sources" aria-labelledby="h-src">
+  <h2 id="h-src">出典</h2>
+  <p class="prose">パスはすべて <code>openspec/specs/</code> からの相対パスです。</p>
+  <div class="tablewrap" role="region" aria-label="出典の一覧" tabindex="0">
+    <table class="src">
+      <thead><tr><th scope="col">事実</th><th scope="col">出典</th></tr></thead>
+      <tbody>
+        <tr><td>Organization の種類 (product・admin・Organizer ごと)、DB に行がない、同じメールを複数の Organization で使える</td><td><code>components/entity/organization/spec.md</code></td></tr>
+        <tr><td>Organizer の属性 (short name の規則と予約語、owner email、provider organizer ID)、状態遷移、active のときだけメンバーに応える</td><td><code>components/entity/organizer/spec.md</code></td></tr>
+        <tr><td>User と identity の 1 対 1、メールの一意性 (大文字小文字を区別しない、165 文字以内)</td><td><code>components/entity/user/spec.md</code>, <code>components/entity/user/create/spec.md</code></td></tr>
+        <tr><td>登録は自分で選んだボタンからだけ、戻り先、Create で User を決める、サインアウトで忘れる</td><td><code>stories/sign-up-or-sign-in/spec.md</code></td></tr>
+        <tr><td>Create が既存の User を返す、AlreadyExists、確認メールの送信と再試行</td><td><code>components/usecase/user/create/spec.md</code></td></tr>
+        <tr><td>Create はメールをトークンの identity から取る、User id を持たない per-user 呼び出し、トークン不要の 2 つの呼び出し、退会の 5 分ルール</td><td><code>components/adapter/fan/api/rpc/user/spec.md</code></td></tr>
+        <tr><td>起動時に User と言語を復元する、起動時のサイレントリフレッシュ</td><td><code>stories/restore-session-on-cold-start/spec.md</code></td></tr>
+        <tr><td>タイマーなし、3 つの更新時点、single-flight、再送は 1 回、セッション切れの扱い、ゲストの 401</td><td><code>stories/maintain-authenticated-session/spec.md</code></td></tr>
+        <tr><td>トークン寿命 30 分・30 日・90 日、パスキーのみのポリシー、パスワード設定ページの not-found、ログイン画面の言語、登録リンクと追加の条件</td><td><code>components/infrastructure/fan/web/global/hosted-login/spec.md</code></td></tr>
+        <tr><td>確認メールのリンク 1 時間、Settings から再送</td><td><code>stories/verify-email-address/spec.md</code>, <code>components/entity/user/send-verification/spec.md</code>, <code>components/entity/user/verify-email/spec.md</code></td></tr>
+        <tr><td>再送は 1 人 10 分に 3 回、確認の試行は送信元 10 回・User id 5 回 (60 分)、未知の User と誤コードを同じエラーにする</td><td><code>components/usecase/user/resend-email-verification/spec.md</code>, <code>components/usecase/user/verify-email/spec.md</code></td></tr>
+        <tr><td>パスキー復旧の流れ、答えを変えない、回数制限</td><td><code>stories/recover-sign-in-after-losing-passkeys/spec.md</code>, <code>components/usecase/user/request-passkey-recovery/spec.md</code>, <code>components/usecase/user/send-passkey-recovery-link/spec.md</code></td></tr>
+        <tr><td>登録リンクは確認済みアドレスだけ、1 時間・1 回限り、既存パスキーは残る</td><td><code>components/entity/user/send-passkey-registration-link/spec.md</code></td></tr>
+        <tr><td>パスキー管理 (別端末への追加、最後の 1 つは削除不可、変更のメール)</td><td><code>stories/manage-passkeys/spec.md</code>, <code>components/entity/user/send-passkey-change-email/spec.md</code>, <code>components/usecase/user/notify-passkey-change/spec.md</code></td></tr>
+        <tr><td>Passkey は表示用の記録で正本は Zitadel、一覧は Zitadel を読まない</td><td><code>components/entity/passkey/spec.md</code>, <code>components/usecase/passkey/list/spec.md</code></td></tr>
+        <tr><td>パスキー記録は User を 30 秒ごと最大 10 分待つ</td><td><code>components/usecase/passkey/record-change/spec.md</code></td></tr>
+        <tr><td>passkey-events webhook (署名、クラスタ内、product org だけ、500 は再送されない)</td><td><code>components/adapter/fan/api/webhook/passkey-events/spec.md</code></td></tr>
+        <tr><td>pre-access-token webhook (確認済みメールを <code>email</code> クレームに足す、署名検証)</td><td><code>components/adapter/fan/api/webhook/pre-access-token/spec.md</code></td></tr>
+        <tr><td>Organizer の作成手順、失敗時の扱い</td><td><code>components/usecase/organizer/create/spec.md</code>, <code>components/usecase/organizer/reconcile-provisioning/spec.md</code></td></tr>
+        <tr><td>Provision の内容 (オーナー identity、identity 名、招待メール)</td><td><code>components/entity/organization/provision/spec.md</code></td></tr>
+        <tr><td>招待メール 1 通、コードを URL に載せない、管理者の再招待</td><td><code>stories/bootstrap-owner-credentials-on-first-sign-in/spec.md</code></td></tr>
+        <tr><td>1 つの OIDC クライアント、目印は権限にならない、不一致は 1 回再認証して拒否、同じメールでファンと Organizer</td><td><code>stories/sign-in-as-organizer/spec.md</code></td></tr>
+        <tr><td>Organizer の Organization のログインポリシー (自己登録なし、外部 IdP 可、未知のメールを知らせる、既定のリダイレクト)、必ず 1 つの Organization を指定、端末への記憶</td><td><code>components/infrastructure/organizer/web/global/hosted-login/spec.md</code></td></tr>
+        <tr><td>find-organizer 画面へのリンク送信と回数制限</td><td><code>components/usecase/organizer/send-sign-in-links/spec.md</code>, <code>components/entity/organizer/send-sign-in-links/spec.md</code>, <code>components/entity/organizer/list-by-owner-email/spec.md</code></td></tr>
+        <tr><td>ResolveCaller の応答 (PermissionDenied・FailedPrecondition)</td><td><code>components/usecase/organizer/resolve-caller/spec.md</code></td></tr>
+        <tr><td>停止で identity が止まり Organization は残る、削除で Organization も消える</td><td><code>components/usecase/organizer/deactivate/spec.md</code>, <code>components/entity/organization/deactivate-identities/spec.md</code>, <code>components/usecase/organizer/delete/spec.md</code></td></tr>
+        <tr><td>admin console のサインイン (org スコープ、Google Workspace、全画面ログイン必須)</td><td><code>stories/sign-in-to-admin-console/spec.md</code></td></tr>
+        <tr><td>fan API の ResolveCaller</td><td><code>components/usecase/user/resolve-caller/spec.md</code>, <code>components/adapter/fan/api/rpc/passkey/spec.md</code></td></tr>
+        <tr><td>organizer API の関門 (console 向けトークン、Organization ちょうど 1 つ)</td><td><code>components/adapter/organizer/api/rpc/organizer/spec.md</code></td></tr>
+        <tr><td>admin API の関門 (admin 役割)</td><td><code>components/adapter/admin/api/rpc/organizer/spec.md</code>, <code>components/adapter/admin/api/rpc/user/spec.md</code></td></tr>
+        <tr><td>console 画面の owner 役割の確認、別の Organizer の URL</td><td><code>components/infrastructure/organizer/web/global/organizer-shell/spec.md</code></td></tr>
+        <tr><td>identity service だけが資格情報を持つ、呼び出し元ごとの操作、トークンは公開鍵で検証</td><td><code>components/infrastructure/backend/process/identity-provider-credentials/spec.md</code></td></tr>
+        <tr><td>退会で identity を先に消す</td><td><code>components/usecase/user/delete/spec.md</code></td></tr>
+        <tr><td><code>WalletPublicKey</code> は 1 User に 1 つ、置き換えで旧端末のコードが拒否される</td><td><code>components/entity/wallet-public-key/spec.md</code>, <code>components/usecase/wallet-public-key/register/spec.md</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">現行の仕様 (openspec/specs) だけをもとに書いています。openspec/changes にある計画中の変更は含みません。</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('themeBtn');
+  var modes = ['auto', 'light', 'dark'];
+  var names = { auto: '自動', light: 'ライト', dark: 'ダーク' };
+  var mode = 'auto';
+  try { mode = localStorage.getItem('auth-doc-theme') || 'auto'; } catch (e) {}
+  function apply(m) {
+    if (m === 'auto') { root.removeAttribute('data-theme'); } else { root.setAttribute('data-theme', m); }
+    btn.textContent = '配色: ' + names[m];
+  }
+  apply(mode);
+  btn.addEventListener('click', function () {
+    mode = modes[(modes.indexOf(mode) + 1) % modes.length];
+    apply(mode);
+    try { localStorage.setItem('auth-doc-theme', mode); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
