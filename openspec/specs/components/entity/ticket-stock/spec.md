@@ -70,7 +70,7 @@ A TicketStock SHALL be, at a time: SoldOut when its sold count equals its quanti
 
 ### Requirement: Resale open at a time
 
-A TicketStock's resale SHALL be open at a time, given its event's resale deadline, when it is SoldOut at that time and the time is before the deadline.
+A TicketStock's resale SHALL be open at a time, given its event, when the event is not cancelled and has a resale deadline (entity/resale-listing "Close time"), the stock is SoldOut at that time and the time is before the deadline.
 
 #### Scenario: Sold out a week before the event
 - **WHEN** a SoldOut TicketStock is checked a week before its event's resale deadline
@@ -78,6 +78,11 @@ A TicketStock's resale SHALL be open at a time, given its event's resale deadlin
 
 #### Scenario: After the deadline
 - **WHEN** a SoldOut TicketStock is checked at its event's resale deadline
+- **THEN** its resale is not open
+
+#### Scenario: Cancelled event
+
+- **WHEN** a SoldOut TicketStock of a cancelled event is checked before the resale deadline
 - **THEN** its resale is not open
 
 #### Scenario: A ticket came back

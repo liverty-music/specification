@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Removes a fan User from the platform, together with the User's sign-in identity, at an admin's request. It is exposed only through the admin UserService (`components/adapter/admin/api/rpc/user`); no fan or organizer interface exposes it.
+Removes a fan User from the platform, together with the User's sign-in identity, at the fan's own request (`components/adapter/fan/api/rpc/user`) or at an admin's (`components/adapter/admin/api/rpc/user`). No organizer interface exposes it.
 
 ## Requirements
 
