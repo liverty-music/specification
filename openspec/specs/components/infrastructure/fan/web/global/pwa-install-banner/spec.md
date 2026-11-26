@@ -156,20 +156,20 @@ The banner SHALL trigger the appropriate install action based on platform and av
 
 ### Requirement: Banner Disappears Permanently After Installation
 
-The system SHALL remove the banner permanently once the app is installed.
+The system SHALL stop showing the banner permanently once the app is installed.
 
 #### Scenario: App installed via native dialog
 
 - **WHEN** the browser fires the `appinstalled` event
 - **THEN** the system SHALL determine the banner should no longer be shown
-- **AND** the banner SHALL be removed from the DOM
+- **AND** the banner SHALL slide out and stay hidden and inert
 - **AND** the banner SHALL NOT reappear in subsequent sessions
 
 #### Scenario: App installed confirmed manually (iOS)
 
 - **WHEN** the user confirms manual installation
 - **THEN** the system SHALL determine the banner should no longer be shown
-- **AND** the banner SHALL be removed from the DOM
+- **AND** the banner SHALL slide out and stay hidden and inert
 - **AND** the banner SHALL NOT reappear in subsequent sessions
 
 ### Requirement: Banner Suppressed While Post-Signup Dialog Is Open
@@ -180,13 +180,13 @@ The banner SHALL NOT be visible while the post-signup dialog is open to avoid vi
 
 - **WHEN** the post-signup dialog is open
 - **THEN** the system SHALL suppress the banner
-- **AND** the banner SHALL NOT be rendered in the DOM
+- **AND** the banner SHALL be hidden and inert
 
 #### Scenario: Post-signup dialog closed — banner visible
 
 - **WHEN** the post-signup dialog is closed (user taps Later/Close)
 - **AND** the system determines the install banner should be shown
-- **THEN** the banner SHALL be rendered
+- **THEN** the banner SHALL be rendered visible, neither hidden nor inert
 
 ### Requirement: Banner visibility state and installed confirmation
 
@@ -215,7 +215,31 @@ The system SHALL expose a reactive property and a method to support the install 
 - **THEN** the system SHALL persist that the app has been installed
 - **AND** the install banner SHALL hide
 
-### Requirement: Install banner presentation and attention cue
+### Requirement: Showing the banner and installing are reported
+
+The fan app SHALL send one usage analytics event each time the install banner is shown, one with the fan's answer when the fan starts the install from the banner (accepted or dismissed in the device's install request, or the manual guide opened where the device offers no request), and one when the app is installed, whatever started the install.
+
+#### Scenario: Install from the banner
+- **WHEN** the banner is shown and the fan installs the app from the device's install request
+- **THEN** a banner-shown event, an accepted answer and an installed event are sent
+
+### Requirement: The install banner is accessible
+
+The banner SHALL be accessible to keyboard and assistive technology users.
+
+#### Scenario: Banner element has an accessible label
+
+- **WHEN** the banner is rendered
+- **THEN** the root `<aside>` element SHALL have an `aria-label` identifying it as the install prompt
+
+#### Scenario: Banner is hidden, not rendered, when it is not visible
+
+- **WHEN** the banner is not visible (installed, or a post-signup surface is open)
+- **THEN** the banner element SHALL carry the `hidden` and `inert` attributes, and once its exit motion has ended it SHALL NOT be rendered (`display: none`), so it is not in the accessibility tree
+- **AND** its install button SHALL NOT be reachable via keyboard navigation, during the exit motion as well as after it
+- **AND** the banner SHALL stay in the DOM so that its exit motion can play
+
+### Requirement: Install banner presentation, attention cue and reduced motion
 
 The `pwa-install-banner` SHALL use the same presentation and attention cue as `signup-prompt-banner`. A banner is persistent, so it SHALL sit on a dark surface marked by a brand-gradient line and SHALL NOT use the brand-gradient fill of the transient snack bar. It SHALL show one row, the message followed by the install button, with no icon and no close control. The install button SHALL be the filled button at the compact size of the snack bar's action. The message's text size SHALL follow the banner's width, between 12px and 16px, so that the message and the button label both fit on one line without truncation on every screen from 320px to 412px wide, in Japanese and English. While the banner is visible, a light SHALL run along its top brand line and then across the install button, once when the banner appears and then every 12 seconds, at most 5 times per route the fan opens; the banner and the button SHALL keep their position and size while it runs.
 
@@ -264,37 +288,14 @@ The `pwa-install-banner` SHALL use the same presentation and attention cue as `s
 - **AND** opening another route SHALL let the cue play again, at most 5 times there
 - **AND** the banner and the install button SHALL keep their position and size while the cue plays
 
-#### Scenario: Reduced motion — no animation
+#### Scenario: Reduced motion — a short fade, no cue
 
 - **WHEN** `prefers-reduced-motion: reduce` is set
 - **THEN** the attention cue SHALL NOT play
-- **AND** the banner SHALL appear without a slide-up animation
+- **AND** the banner SHALL fade in over at most 100 ms, without a slide-up
 
 #### Scenario: Banner slides in on appearance
 
 - **WHEN** the banner becomes visible
 - **AND** `prefers-reduced-motion` is not set to `reduce`
 - **THEN** the banner SHALL animate in with a slide-up from below and a fade-in over 350ms (the app's medium motion duration), the same entrance as `signup-prompt-banner`
-
-### Requirement: Install banner accessibility
-
-The banner SHALL be accessible to keyboard and assistive technology users.
-
-#### Scenario: Banner element has an accessible label
-
-- **WHEN** the banner is rendered
-- **THEN** the root `<aside>` element SHALL have an `aria-label` identifying it as the install prompt
-
-#### Scenario: Banner is removed from DOM when hidden
-
-- **WHEN** the banner is not visible (installed, or a post-signup surface is open)
-- **THEN** the banner element SHALL be removed from the DOM (`if.bind`, not `show.bind`)
-- **AND** its install button SHALL NOT be reachable via keyboard navigation
-
-### Requirement: Showing the banner and installing are reported
-
-The fan app SHALL send one usage analytics event each time the install banner is shown, one with the fan's answer when the fan starts the install from the banner (accepted or dismissed in the device's install request, or the manual guide opened where the device offers no request), and one when the app is installed, whatever started the install.
-
-#### Scenario: Install from the banner
-- **WHEN** the banner is shown and the fan installs the app from the device's install request
-- **THEN** a banner-shown event, an accepted answer and an installed event are sent

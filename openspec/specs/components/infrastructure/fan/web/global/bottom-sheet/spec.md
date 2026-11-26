@@ -76,7 +76,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **WHEN** the sheet is rendered
 - **THEN** the CE host (`<bottom-sheet>`) SHALL contain a native `<dialog popover="manual">` element as the Top-Layer host
 - **AND** the popover host SHALL have an accessible name (`aria-label` or `aria-labelledby`) and SHALL carry `aria-modal="true"`; the `<dialog>` element gives it the dialog role without an explicit `role` attribute
-- **AND** the internal DOM SHALL be `[popover] > .scroll-area > .dismiss-zone + sheet-surface > section.sheet-body`, where the `sheet-surface` element takes no box of its own (`display: contents`), so the sheet body is laid out and snaps as the scroll area's child
+- **AND** the internal DOM SHALL be `[popover] > .scroll-area > .dismiss-zone + sheet-surface > section.sheet-body`, where the `sheet-surface` element is a block box that clips its overflow (`display: block; overflow: clip`) and serves as the clipping box of the entry slide, and the sheet body inside it snaps as the scroll area's descendant
 - **AND** `.scroll-area` SHALL be a `<div>` element serving as the scroll-snap container (`overflow-y: auto`, `scroll-snap-type: y mandatory`, `block-size: 100svh`, `overscroll-behavior: none`)
 - **NOTE** `.scroll-area` MUST use viewport-relative height (`100svh`, not `100%`) because percentage block-size does not resolve against the popover's fixed-position height inside the Top Layer — the scroll container would expand to content size, preventing overflow and disabling scroll-snap. `svh` (not `dvh`/`vh`) is used so the height does not jump when the iOS Safari address bar resizes mid-swipe.
 - **AND** `.sheet-body` SHALL be a `<section>` element (semantic content container) with `contain: layout`
@@ -236,8 +236,8 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Reduced motion
 - **WHEN** `prefers-reduced-motion: reduce` is active
-- **THEN** the open/close SHALL resolve to an instant (or near-instant) transition with no smooth dismiss scroll animation
-- **AND** the scroll-driven backdrop fade SHALL likewise resolve to an instant open/close
+- **THEN** the sheet SHALL fade in over at most 100 ms with no movement, and the close SHALL resolve at once, with no smooth dismiss scroll animation
+- **AND** the scroll-driven backdrop fade SHALL likewise clear at once on close
 
 #### Scenario: Detach cleanup
 - **WHEN** the CE is detached from the DOM while the sheet is open
@@ -353,3 +353,28 @@ A bottom sheet with a heading SHALL show it directly below the handle bar, in th
 
 - **WHEN** a sheet has no heading
 - **THEN** its content starts directly below the handle bar area, and the sheet is still named for assistive technology
+
+### Requirement: The sheet rises from the bottom edge on entry
+
+A bottom sheet SHALL enter by moving up from below the bottom edge of the screen into its resting place over the `md.sys.motion.duration.medium4` duration (400 ms) with the `md.sys.motion.easing.emphasized-decelerate` easing, and SHALL NOT fade in. The backdrop of a sheet that cannot be dismissed, and of any sheet in a browser without scroll-driven animations, fades in over the same duration; a dismissable sheet's backdrop follows the scroll position. The close stays the dismiss scroll described in "Close animation completes within 160ms". Under reduced motion the sheet fades in over at most 100 ms, with no movement.
+
+#### Scenario: The sheet enters by moving, not by fading
+
+- **WHEN** a bottom sheet opens
+- **THEN** the sheet starts one sheet-height below its resting place and moves to it
+- **AND** its opacity is 1 from the first frame
+
+#### Scenario: Entry under reduced motion
+
+- **WHEN** a bottom sheet opens while `prefers-reduced-motion: reduce` is active
+- **THEN** the sheet is at its resting place in the first frame and fades in over at most 100 ms
+
+### Requirement: A long artist name on a filter chip is truncated
+
+An artist chip in the filter sheet SHALL NOT be wider than its row. A name longer than the room it has SHALL end in an ellipsis instead of running past the chip or the sheet (M3 chips: avoid labels longer than 20 characters; an artist's name cannot be shortened, so it is truncated), and the chip's checkbox SHALL keep the whole name as its accessible name.
+
+#### Scenario: A long artist name is truncated
+
+- **WHEN** the filter sheet lists an artist whose name is longer than a row on a 320 px phone
+- **THEN** the chip stays inside the row and the name ends in an ellipsis
+- **AND** the chip's checkbox is named with the whole name

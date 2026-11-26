@@ -82,7 +82,7 @@ On the post-signup tier the overlay SHALL also:
 
 The sound and the vibration SHALL be given only where the browser allows them, which is once the fan has interacted with the page. A fan who arrives straight from the sign-up redirect, without a tap on the page since, SHALL see the confetti and the headline without sound or vibration; a fan who chose the home area on arrival has tapped and SHALL get both.
 
-With a reduced-motion preference the overlay SHALL show no confetti, no scaling and no vibration, and SHALL appear and disappear without transition. Tier gating, once-per-tier behaviour and tap-to-dismiss are defined by "Two-Tier Celebration Overlay".
+With a reduced-motion preference the overlay SHALL show no confetti, no scaling and no vibration, and SHALL fade in and out over at most 100 ms. Tier gating, once-per-tier behaviour and tap-to-dismiss are defined by "Two-Tier Celebration Overlay".
 
 #### Scenario: Empty-state text behind the post-signup celebration cannot be read
 
@@ -132,7 +132,7 @@ With a reduced-motion preference the overlay SHALL show no confetti, no scaling 
 
 - **WHEN** the user has a reduced-motion preference
 - **THEN** no confetti, no headline scaling and no vibration SHALL occur
-- **AND** the overlay SHALL appear and disappear without transition animation
+- **AND** the overlay SHALL fade in and out over at most 100 ms, without movement
 
 ### Requirement: The celebration opens once no sheet is on screen
 
@@ -143,3 +143,12 @@ The system SHALL open a celebration overlay only when no bottom sheet is on scre
 - **WHEN** a guest in onboarding who follows 3 artists chooses a home area in the home-area sheet on arrival at the Timetable, and the Timetable's data loads while the sheet is still closing
 - **THEN** the celebration overlay is not active while the sheet is on screen
 - **AND** the overlay opens, with its entrance animation, once the sheet has closed
+
+### Requirement: The scrim fades in with the celebration
+
+The celebration's dark, blurred scrim SHALL fade in over the `md.sys.motion.duration.medium4` duration (400 ms) with the `md.sys.motion.easing.standard` easing when the celebration opens, in step with its fade-out on exit, instead of appearing at full strength while its text animates in. Under reduced motion the scrim fades over at most 100 ms.
+
+#### Scenario: The celebration opens
+
+- **WHEN** the celebration opens
+- **THEN** the scrim starts transparent and reaches its full strength over 400 ms while the text animates in
