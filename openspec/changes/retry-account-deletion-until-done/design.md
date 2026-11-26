@@ -21,7 +21,7 @@ See proposal.md. Facts (backend `origin/main`, 2026-11-26):
 - **Every failure ends the run in ERROR**, a blocker included, so the existing report tells an admin. The awaiting Delete returns that error. An admin finishes it by deleting the User on the Users screen once the cause is gone.
 - **Workflow id `delete-user:<user id>:<new uuid>`.** A fixed id per User would return an earlier failed run and never try again. Concurrent runs serialize on the lock.
 - **Deadline 24 hours**, as the other workflows that retry an external call.
-- **Retry classification.** `IdentityRemover.DeleteIdentity` maps an unreachable provider to Unavailable instead of Internal, so the step retries it.
+- **Retry classification.** `IdentityRemover.DeleteIdentity` maps an unreachable provider to Unavailable instead of Internal. `rdb.toAppErr` today classifies only PostgreSQL error codes and leaves a failed connection (`pgconn.ConnectError`, a network error) unclassified; it maps those to Unavailable too, which covers `User.Delete`, the lock and the blocker reads. Without this the step would not retry a database outage.
 - **Permission moves to the worker.** `DeleteIdentity` joins the port 9100 list and leaves the fan and admin console API lists. The worker also processes external data (concert discovery), which the identity spec wanted kept away from identity deletion; this is accepted so that the removal can be retried. The two internet-facing APIs lose the permission. Alternative: retry only the record removal in the worker; rejected because a DeleteIdentity that succeeded with a lost answer would still be left behind. Rename `EventConsumerProcedures` to `WorkflowWorkerProcedures`.
 
 ## Risks / Trade-offs

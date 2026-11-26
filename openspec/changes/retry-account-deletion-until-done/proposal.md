@@ -22,11 +22,12 @@ None.
 
 - `components/usecase/user/delete`: the deletion completes on its own.
 - `components/entity/user/delete-identity`: fails with Unavailable when the identity provider cannot be reached.
-- `components/infrastructure/backend/process/identity-provider-credentials`: who may delete a fan identity; the workflow worker as the caller.
+- `components/entity/user/delete`: fails with Unavailable when the store cannot be reached.
+- `components/infrastructure/backend/process/identity-provider-credentials` (Purpose): who may delete a fan identity; the workflow worker as the caller.
 - `stories/delete-my-account`: a started deletion completes.
 - `stories/sign-up-or-sign-in`: a failed Create no longer promises an account regardless of the cause.
 
-`entity/user/get`, `entity/user/delete` and `usecase/user/list-deletion-blockers` are used as they are.
+`entity/user/get` and `usecase/user/list-deletion-blockers` are used as they are.
 
 ## Impact
 
