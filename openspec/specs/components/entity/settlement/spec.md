@@ -9,7 +9,7 @@ A Settlement is the payout record for one Order's captured money under the ÂèéÁ¥
 | id | the settlement's identity | required, assigned on creation |
 | order | the Order whose money it pays out | required; every Paid Order has exactly one Settlement, created when it becomes Paid |
 | organizer | the Organizer receiving the payout | required |
-| event | the event whose start gates the release | required |
+| event | the event whose start gates the release and whose cancellation blocks it | required |
 | provider charge ID | the payment provider's ID for the captured charge the payouts are tied to | empty until resolved at release |
 | splits | the payees' shares | at least one |
 | split payee | the Organizer receiving the split | required |
@@ -75,7 +75,7 @@ A Settlement SHALL have at least one split, every split amount SHALL be greater 
 
 ### Requirement: Release eligibility
 
-A Settlement SHALL be eligible for release at an instant, given its event's current start time and a dispute buffer, only when the start time is known and the instant is after the start time plus the buffer.
+A Settlement SHALL be eligible for release at an instant, given its event's publish state, its event's current start time and a dispute buffer, only when the event is not CANCELLED, the start time is known and the instant is after the start time plus the buffer. A Settlement of a CANCELLED Event is therefore never eligible for release.
 
 #### Scenario: Start time unknown
 
@@ -89,8 +89,13 @@ A Settlement SHALL be eligible for release at an instant, given its event's curr
 
 #### Scenario: Buffer elapsed
 
-- **WHEN** the instant is after the start time plus the buffer
+- **WHEN** the event is PUBLISHED and the instant is after the start time plus the buffer
 - **THEN** the Settlement is eligible for release
+
+#### Scenario: Cancelled event
+
+- **WHEN** the event is CANCELLED and the instant is after the start time plus the buffer
+- **THEN** the Settlement is not eligible for release
 
 ### Requirement: Released only from Held
 

@@ -1,7 +1,7 @@
 # stories/remove-a-cancelled-concert Specification
 
 ## Purpose
-An Organizer's Concert is called off: a member cancels its Event, then an admin refunds every fan who bought a ticket and, when the Event should no longer exist at all, deletes it from the admin console. Test Events of a test Organizer are retired the same way.
+An Organizer's Concert is called off: a member cancels its Event, then an admin refunds every fan who bought a ticket and, when the Event should no longer exist at all, deletes it from the admin console. The Organizer is never paid out for a cancelled Event. Test Events of a test Organizer are retired the same way.
 
 ```mermaid
 eventmodeling
@@ -20,6 +20,8 @@ tf 12 cmd OrderUseCase_Refund
 tf 13 evt Order_Refunded
 tf 14 cmd NotificationUseCase_SendOrderRefunded
 rf 15 cmd ConcertUseCase_Delete ->> 11
+rf 16 pcr Schedule_SettlementDue
+tf 17 cmd SettlementUseCase_ReleaseDueSettlements
 ```
 
 ## Requirements
@@ -62,3 +64,17 @@ A lottery entry that is Entered when an Event's cancellation is announced SHALL 
 #### Scenario: Deleted during the window
 - **WHEN** a member cancels the only Event of a Series whose lottery window is open, with one fan Entered and no Paid Order, and an admin uses `Delete` on the Artist concerts screen after the entry has ended
 - **THEN** the Event, the Series, the entry and its Void Order no longer exist
+
+### Requirement: A cancelled concert is never paid out
+
+After a member cancels an Event with SeriesUseCase.Cancel, a run of SettlementUseCase.ReleaseDueSettlements that starts after the cancellation SHALL pay the Organizer nothing for that Event's Orders, however long after the event's start it runs and whether or not an admin has refunded them. A Settlement of the Event that is Held stays Held until its Order is refunded, as by `Refund all`, which makes it Reversed.
+
+#### Scenario: Release date passes before the refunds
+
+- **WHEN** a member cancels an Event with two Paid Orders of an Organizer whose payout account is Active, and the release runs 8 days after the event's start before any refund
+- **THEN** nothing is paid to the Organizer and both Settlements stay Held
+
+#### Scenario: Refunded after the release date
+
+- **WHEN** the release has run 8 days after the start of a cancelled Event with two Paid Orders, and an admin then uses `Refund all` on the Artist concerts screen
+- **THEN** both Orders are Refunded, both Settlements are Reversed and no payout was made or reversed
