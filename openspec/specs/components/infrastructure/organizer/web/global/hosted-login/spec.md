@@ -25,7 +25,7 @@ Every Organizer's Organization SHALL be given an **explicit** login policy — i
 - `hidePasswordReset = true` — the hosted login offers no password reset, its only self-service path to set a password while local authentication must stay enabled for passkeys.
 - Check lifetimes set explicitly to the identity provider's instance defaults (Zitadel v4.19.4 `cmd/defaults.yaml`): password check 240h, external login check 240h, MFA init skip 720h, second factor check 18h, multi-factor check 12h. Omitted lifetimes are stored as 0, and the identity provider's console then refuses to save the policy ("Form contains invalid value(s).").
 
-A **recovery path MUST exist** — passkey-only with **no** recovery is prohibited. Recovery SHALL be an **admin-initiated re-invite** (the system re-issues the person's invitation after out-of-band verification), optionally with an email magic-link/OTP self-serve fallback; any non-passkey fallback lane SHALL be step-up protected so it is not a weaker bypass. The policy SHALL NOT rely on a hard `allowLocalAuthentication=false` lockdown.
+A **recovery path MUST exist** — passkey-only with **no** recovery is prohibited. Recovery SHALL be **admin-initiated**: after out-of-band verification, an admin removes the lost passkeys and has the identity provider send a passkey registration link to the person's verified email; optionally with an email magic-link/OTP self-serve fallback; any non-passkey fallback lane SHALL be step-up protected so it is not a weaker bypass. The policy SHALL NOT rely on a hard `allowLocalAuthentication=false` lockdown.
 
 Synced passkeys (iCloud Keychain / Google Password Manager) survive single-device loss, so a second **hardware** authenticator is NOT mandated.
 
@@ -54,8 +54,7 @@ Synced passkeys (iCloud Keychain / Google Password Manager) survive single-devic
 #### Scenario: A recovery path exists for a lost passkey
 
 - **WHEN** a person loses access to their passkey(s)
-- **THEN** an admin SHALL be able to re-invite them (re-issue the invitation) after out-of-band verification
-- **AND** a policy with no recovery path (passkey-only, no re-invite / no fallback) SHALL be rejected
+- **THEN** after out-of-band verification, an admin SHALL be able to remove the lost passkeys and send the person a passkey registration link
 - **AND** any non-passkey fallback lane SHALL be step-up protected
 
 #### Scenario: Organization is resolved by org-pinned entry for every member

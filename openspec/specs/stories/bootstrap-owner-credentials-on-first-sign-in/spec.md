@@ -4,8 +4,8 @@
 
 The owner of a newly created Organizer sets up a passkey from a single
 invitation email and lands in the organizer console signed in to their own
-Organizer, without ever typing a code; an admin re-invites them when they lose
-access.
+Organizer, without ever typing a code; when they lose their passkeys, an
+admin sends them a passkey registration link.
 
 ```mermaid
 eventmodeling
@@ -39,9 +39,12 @@ normal single-entry flow). The credential (invite/verification code) SHALL
 remain on the identity-provider surface and SHALL NOT be exposed in a
 console/application URL.
 
-Recovery SHALL be an **admin-initiated re-invite** (the system re-issues the
-owner's invitation), consistent with the Organization's passkey-primary policy
-that Organization.Provision sets up. Organization resolution is bound to the
+Recovery from lost passkeys SHALL be **admin-initiated**: after verifying the
+person through a channel that does not depend on their mailbox, an admin
+removes the lost passkeys at the identity provider and has it send a passkey
+registration link to the owner's verified email, consistent with the
+Organization's passkey-primary policy that Organization.Provision sets up. The
+product offers no screen or RPC for this. Organization resolution is bound to the
 owner identity by the invitation itself — the owner cannot be routed to a
 different Organization by supplying a different email (no cross-Organization
 access).
@@ -70,8 +73,9 @@ access).
 - **THEN** the invite/verification code SHALL appear only on the identity
   provider surface and SHALL NOT appear in any console/application URL
 
-#### Scenario: Recovery is an admin re-invite
+#### Scenario: Recovery is an admin's registration link
 
-- **WHEN** the owner cannot sign in (e.g. lost all authenticators)
-- **THEN** recovery SHALL be an admin-initiated re-invite that re-issues the
-  owner's invitation, not a weaker password/self-registration lane
+- **WHEN** the owner cannot sign in because every passkey is lost
+- **THEN** after verifying the owner, an admin removes the lost passkeys and
+  a passkey registration link is sent to the owner's verified email, with no
+  password or self-registration lane

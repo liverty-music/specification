@@ -13,7 +13,7 @@ Draw SHALL run on a schedule every minute with the scheduled time. For every Tic
 - read the listings free for a draw at that time, oldest first, and go through the other candidates in a random order, giving each, all-or-nothing, as many listings as its ticket count while enough remain;
 - at the last draw of the event, end as losing every candidate that won nothing, with the lost reason "no ticket left";
 - record the outcome with ResaleEntry.PersistDrawOutcome.
-Draw SHALL start no other work itself: ResaleEntry.PersistDrawOutcome announces each entry it records, and the work that follows runs from that announcement: OrderUseCase.Issue for each Won entry's Order, and for each Lapsed or Lost entry OrderUseCase.ReleaseCardAuthorization for its Order and NotificationUseCase.SendResaleEntryEnded. When the event of a TicketStock with Entered entries is no longer PUBLISHED at a scheduled draw time of that stock, as for a 中止 (cancelled) concert, Draw SHALL allocate nothing and end every candidate as losing, as at the last draw, with the lost reason "concert cancelled". The schedule does not run a scheduled time that passed while it was stopped, so a stock that still has Entered entries after its event's resale deadline missed its last draw: at the next scheduled time Draw SHALL draw that stock as its last draw that allocates nothing, since every listing expired at the deadline, ending every candidate as losing with the lost reason "no ticket left", or "concert cancelled" when the event is no longer PUBLISHED.
+A draw runs whether or not the stock is still SoldOut: when a ticket has come back to a stock that had sold out, its Listed listings are still allocated to its Entered entries, and only new listings and new applications are refused (entity/ticket-stock "Resale open at a time"). Draw SHALL start no other work itself: ResaleEntry.PersistDrawOutcome announces each entry it records, and the work that follows runs from that announcement: OrderUseCase.Issue for each Won entry's Order, and for each Lapsed or Lost entry OrderUseCase.ReleaseCardAuthorization for its Order and NotificationUseCase.SendResaleEntryEnded. When the event of a TicketStock with Entered entries is no longer PUBLISHED at a scheduled draw time of that stock, as for a 中止 (cancelled) concert, Draw SHALL allocate nothing and end every candidate as losing, as at the last draw, with the lost reason "concert cancelled". The schedule does not run a scheduled time that passed while it was stopped, so a stock that still has Entered entries after its event's resale deadline missed its last draw: at the next scheduled time Draw SHALL draw that stock as its last draw that allocates nothing, since every listing expired at the deadline, ending every candidate as losing with the lost reason "no ticket left", or "concert cancelled" when the event is no longer PUBLISHED.
 
 #### Scenario: More applications than listings
 - **WHEN** at 12:00 a stock has 3 free listings and Entered entries for 2, 2 and 1 tickets, all with card authorizations valid for a week
@@ -22,6 +22,11 @@ Draw SHALL start no other work itself: ResaleEntry.PersistDrawOutcome announces 
 #### Scenario: Card authorization about to lapse
 - **WHEN** at 12:00 an Entered entry's card authorization expires at 09:00 the next day
 - **THEN** the entry is Lapsed, its Order Void, its card authorization released and the fan told to apply again
+
+#### Scenario: No longer sold out
+
+- **WHEN** a stock that sold out has one ticket back at 12:00 and has a free listing and an Entered entry for 1 ticket
+- **THEN** the listing is allocated to the entry
 
 #### Scenario: Last draw
 - **WHEN** the event's last draw allocates every free listing and an entry for 2 tickets gets none
