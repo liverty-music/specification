@@ -10,7 +10,7 @@
 
 - [ ] 2.3 Map a failed database connection to Unavailable in `rdb.toAppErr`; verify a test for every scenario of `entity/user/delete`, with the database stopped for "Store unreachable"
 
-- [ ] 2.4 Add the `deleted_user_identities` migration with its grants, make `User.Delete` record the provider user id and `User.Create` refuse a recorded one; verify one test per added or modified scenario of `entity/user/delete` and `entity/user/create`, including a Create that runs while the removal commits, `scripts/check-migration-drift.sh` and `make lint-schema`
+- [ ] 2.4 Add the `deleted_user_identities` migration, make `User.Delete` record the provider user id and `User.Create` refuse a recorded one; verify one test per added or modified scenario of `entity/user/delete` and `entity/user/create`, including a Create that runs while the removal commits, `scripts/check-migration-drift.sh` and `make lint-schema`
 
 ## 3. backend: usecase and story (components/usecase/user/delete)
 
