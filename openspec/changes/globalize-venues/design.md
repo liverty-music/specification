@@ -277,7 +277,7 @@ The place search words its query with the area code, but the catalog does not re
 4. Frontend release 1 (same day): organizer venue confirmation with name, country, area and zone; admin area and zone inputs and map link; ListByLocation by area; `JP_PREFECTURE_CENTROIDS` and `level2` removed.
 5. Backfill Job, owner review, Migration B, Migration C.
 6. Proto release 2, BSR generation.
-7. Backend release 2: Migration D, wall-clock times everywhere (Decisions 12, 13, 15). Read-only check: every Event's local times equal its old instants in its Venue's zone, and every sale's window equals its old instants in its zone.
+7. Backend release 2: Migration D, wall-clock times everywhere (Decisions 12, 13, 15). Read-only check: every Event's local times equal its old instants in its Venue's zone, and every sale's window equals its old instants in its zone cut to the minute.
 8. Frontend release 2 (same day): time display (Decision 14) in both apps, organizer time and sale inputs in the venue's and sale's zones, `Asia/Tokyo` constants removed.
 9. Backend release 3: migration E drops the old time columns, `users.home_id` and `homes`.
 

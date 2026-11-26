@@ -18,7 +18,11 @@ SearchPublishedSales SHALL take the artist, the artist's official site, and the 
 
 ### Requirement: Times are read in the time zone of the page
 
-Every milestone time SHALL be returned as the local date-time the source page states, with the IANA time zone the page states or implies, such as Asia/Taipei for a time given as Taipei time; it SHALL NOT be converted to another zone. When the page implies no time zone, the sale SHALL take the time zone given with its series; when the series was given without one, the sale SHALL be discarded. Whether a sale has opened SHALL be judged by the instant of its start time in its time zone. When a page omits the year of a date, the year SHALL be the one that places the date before the end of the series' event period.
+Every milestone time SHALL be returned as the local date-time the source page states, with the IANA time zone the page states or implies, such as Asia/Taipei for a time given as Taipei time; it SHALL NOT be converted to another zone. When the page implies no time zone, the sale SHALL take the time zone given with its series; when the series was given without one, the sale SHALL be discarded. Whether a sale has opened SHALL be judged by the instant of its start time in its time zone. When a page omits the year of a date, the year SHALL be the one that places the date before the end of the series' event period. A time the page states with seconds SHALL be returned cut to the minute.
+
+#### Scenario: Seconds are cut
+- **WHEN** a page states that a sale ends at 20:00:30
+- **THEN** the discovered sale ends at 20:00
 
 #### Scenario: Sale abroad
 - **WHEN** a page for a Taipei show states that a sale opens on 1 November at 12:00 local time
