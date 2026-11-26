@@ -319,33 +319,6 @@ arc SHALL maintain strong contrast between its items and the dimmed page behind 
 - **WHEN** the action arc is open
 - **THEN** each item SHALL be visually distinct (strong contrast) from the dimmed page behind it
 
-### Requirement: Launcher accessibility contract
-
-The action menu SHALL be an accessible disclosure control, not an ARIA menu: it SHALL expose
-its expanded/collapsed state and reference the panel it controls. When the panel
-opens, keyboard focus SHALL move into the panel; when it closes, focus SHALL return
-to the action menu. The panel SHALL be dismissible by pressing Escape and by activating
-outside it (light dismiss).
-
-#### Scenario: action menu exposes disclosure state
-
-- **WHEN** the action menu is rendered
-- **THEN** it SHALL expose an expanded/collapsed state to assistive technology
-- **AND** it SHALL reference the panel element it controls
-- **AND** it SHALL NOT be exposed as an ARIA `menu` with `menuitem` children
-
-#### Scenario: Focus moves into the panel and back
-
-- **WHEN** the user opens the launcher
-- **THEN** keyboard focus SHALL move into the panel (first action item)
-- **WHEN** the user closes the launcher
-- **THEN** focus SHALL return to the action menu
-
-#### Scenario: Escape and outside activation dismiss the panel
-
-- **WHEN** the panel is open and the user presses Escape or activates outside the panel
-- **THEN** the panel SHALL close
-
 ### Requirement: The action menu shows its collapsed state after navigation
 
 Whenever the action menu is shown after a navigation, it SHALL be collapsed: the action arc SHALL be closed, the glyph SHALL be the collapsed glyph, and the action menu SHALL expose the collapsed state to assistive technology. This SHALL hold even if the arc was open when the user left the previous route, including when the action menu stays shown from one route to the next (each tab page ends with the Settings item).
@@ -442,3 +415,47 @@ On the pages of the four navigation tabs (Home, Discover, My Artists, Tickets), 
 
 - **WHEN** the Settings route, a Concert page or an order detail is displayed
 - **THEN** the launcher offers no Settings item
+
+### Requirement: The launcher grows in
+
+The launcher (the FAB) SHALL grow from nothing when it first shows (the screen's launcher appears, or edit mode ends), on the spatial spring it already uses to sink, instead of appearing at once. It SHALL NOT shrink or grow again when the arc opens, and it keeps its place above the arc's scrim. Under reduced motion it fades in over at most 100 ms, without growing. While a tab switches, the launcher stays in its place and does not fade.
+
+#### Scenario: Edit mode ends
+
+- **WHEN** the fan leaves edit mode and the launcher shows again
+- **THEN** the launcher grows from nothing to its size on the spatial spring
+
+#### Scenario: The launcher stays whole and on top while the arc opens
+
+- **WHEN** the fan taps the launcher and the arc opens
+- **THEN** the launcher keeps its size through the whole opening and is the topmost element at its own centre, above the arc's scrim
+
+### Requirement: The launcher is an accessible disclosure that keeps focus
+
+The action menu SHALL be an accessible disclosure control, not an ARIA menu: it SHALL expose
+its expanded/collapsed state and reference the panel it controls. When the panel
+opens, keyboard focus SHALL stay on the action menu, which is then the close control,
+and the panel's items SHALL come next in the focus order (M3 FAB menu: focus stays on
+the close button; the disclosure pattern keeps focus on its button); when it closes,
+focus SHALL return to the action menu. The panel SHALL be dismissible by pressing Escape and by activating
+outside it (light dismiss).
+
+#### Scenario: action menu exposes disclosure state
+
+- **WHEN** the action menu is rendered
+- **THEN** it SHALL expose an expanded/collapsed state to assistive technology
+- **AND** it SHALL reference the panel element it controls
+- **AND** it SHALL NOT be exposed as an ARIA `menu` with `menuitem` children
+
+#### Scenario: Focus stays on the action menu, and Tab reaches the panel
+
+- **WHEN** the user opens the launcher from the keyboard
+- **THEN** keyboard focus SHALL stay on the action menu
+- **AND** pressing Tab SHALL move focus to the panel's first item
+- **WHEN** the user closes the launcher
+- **THEN** focus SHALL return to the action menu
+
+#### Scenario: Escape and outside activation dismiss the panel
+
+- **WHEN** the panel is open and the user presses Escape or activates outside the panel
+- **THEN** the panel SHALL close

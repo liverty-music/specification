@@ -73,7 +73,7 @@ A sign-up that the fan started on a Concert page SHALL NOT show the celebration 
 
 ### Requirement: Post-signup dialog asks one thing per step
 
-The system SHALL display a dialog after the first successful **sign-up** that asks for at most one thing per step: first to turn on notifications, then to add the app to the home screen. Each step SHALL show exactly one primary action and a 「あとで」 text action that moves on. A step whose question is already answered on this device SHALL be skipped, and when no step remains the dialog SHALL NOT open.
+The system SHALL display a dialog after the first successful **sign-up** that asks for at most one thing per step: first to turn on notifications, then to add the app to the home screen. Each step SHALL show exactly one primary action and a 「あとで」 text action that moves on, except the iPhone and iPad add-to-home-screen steps, whose one action is 「わかった」 (the requirement for those steps). A step whose question is already answered on this device SHALL be skipped, and when no step remains the dialog SHALL NOT open.
 
 Whether an authenticated callback is treated as a first sign-up SHALL be determined by the **flow the user initiated** — the sign-up flow versus the sign-in flow — carried as a signal that round-trips through the authorization request and back to the auth-callback. It SHALL NOT be inferred solely from the absence of a locally cached user identifier, because a returning user can arrive with an empty local cache (new browser or device, cleared storage, or a prior guest session that never cached an identifier) and MUST NOT be treated as a new sign-up.
 
@@ -166,13 +166,14 @@ The install step SHALL be shown only when the browser can install the app and th
 
 ### Requirement: iOS and iPadOS show the add-to-home-screen steps instead
 
-On iOS and iPadOS when the app is not installed, the dialog SHALL show a single step instead of both steps, because notifications there work only for an app added to the home screen. The step SHALL show the title 「新着ライブをいち早くお知らせ」, the body 「iPhone では、ホーム画面に追加すると通知を受け取れます。」, 3 numbered steps (tap the share button, choose 「ホーム画面に追加」, open the app from the new icon) and the text action 「あとで」. It SHALL NOT show a 「通知をオンにする」 action.
+On iOS and iPadOS when the app is not installed, the dialog SHALL show a single step instead of both steps, because notifications there work only for an app added to the home screen. The step SHALL show the title 「新着ライブをいち早くお知らせ」, the body 「iPhone では、ホーム画面に追加すると通知を受け取れます。」, 3 numbered steps (tap the share button, choose 「ホーム画面に追加」, open the app from the new icon) and the text action 「わかった」, which acknowledges the message: the steps are done in the browser, not in the dialog, so a dismissive 「あとで」 would be the only answer otherwise (M3 dialogs: a single action acknowledges). It SHALL NOT show a 「通知をオンにする」 action.
 
 #### Scenario: iPhone without the app installed
 
 - **WHEN** the dialog opens on an iPhone in Safari and the app is not on the home screen
 - **THEN** the dialog SHALL show the title, the body and the 3 numbered steps
 - **AND** no 「通知をオンにする」 action SHALL be shown
+- **AND** its only action SHALL be 「わかった」
 
 #### Scenario: iPhone with the app installed
 
