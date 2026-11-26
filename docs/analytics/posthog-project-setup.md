@@ -87,7 +87,7 @@ Set **all of the following toggles OFF** on every project (dev, staging, prod):
 | Autocapture frontend interactions | OFF | Our typed catalogue (`frontend/src/services/analytics-events.ts`) enforces `Events.X` + `EventProps<E>` at compile time. Autocapture bypasses this and captures user-entered DOM text as event props — PII leak risk. SDK-side `autocapture: false` is the primary defense; project-level OFF is belt-and-suspenders. |
 | Heatmaps | OFF | Coupled with autocapture (data source). Mouse-move / scroll batches blow through the 1M events/month free tier without contributing to catalogue funnels. |
 | Web vitals autocapture | OFF | LCP / INP are valuable signals but emit as `$web_vitals` side-channel events, outside the typed catalogue. If we want them later, integrate via a typed `AnalyticsService.captureWebVital(...)` method so the single-source-of-truth architecture stays intact. |
-| Session Replay | OFF | PII redaction prerequisites (introduce-analytics-tool Section 8 tasks 8.1–8.3: input masking, `data-pii` tagging, `.ph-no-capture` on payment + ZK regions) are not yet implemented. Recording without redaction would capture form inputs / addresses / ZK proof entry / ticket QR as raw video — PII leak. Also contradicts the consent screen's "anonymous, aggregated" framing. Revisit once Section 8 tasks ship. |
+| Session Replay | OFF | PII redaction prerequisites (introduce-analytics-tool Section 8 tasks 8.1–8.3: input masking, `data-pii` tagging, `.ph-no-capture` on payment + ZK regions) are not yet implemented. Recording without redaction would capture form inputs / addresses / ZK proof entry / ticket QR as raw video — PII leak. Revisit once Section 8 tasks ship. |
 
 ## 5. Project token handoff
 

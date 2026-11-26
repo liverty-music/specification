@@ -75,7 +75,7 @@ Each recipient's announcement SHALL be the message the Notification entity rende
 
 ### Requirement: The announcement opens the recipient's tracked event
 
-Each recipient's announcement SHALL link to the concert page of that recipient's linked event, as returned by TicketJourney.ListUserIDsTrackingSeries, so that tapping it opens that event's detail sheet. The link and the grouping tag do not depend on the language. Repeated deliveries of the same sale's announcement SHALL replace each other on the device.
+Each recipient's announcement SHALL link to that recipient's linked event as the Notification entity renders it, as returned by TicketJourney.ListUserIDsTrackingSeries (the event's entry on the timetable for a discovered concert, which has no concert page), so that tapping it opens that event's detail sheet. The link and the grouping tag do not depend on the language. Repeated deliveries of the same sale's announcement SHALL replace each other on the device.
 
 #### Scenario: Two fans tracking different shows
 - **WHEN** fan A tracks the series' Osaka event and fan B tracks its Tokyo event

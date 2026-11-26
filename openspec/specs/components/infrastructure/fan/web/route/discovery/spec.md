@@ -935,7 +935,7 @@ Discovery SHALL show a swap tile beside the orb to a signed-in fan, and no swap 
 
 The tile's icon SHALL draw two arrows in a loop, one magenta and one cyan. The glyph of the view on screen SHALL be drawn large over the arrows, and the glyph of the other view SHALL be drawn as a small badge in the tile's bottom corner: the artist bubbles are three bubbles (purple, teal and gold) with small sparkles, and the Concerts view is a ticket marked LIVE with a white location pin. The tile SHALL show no text label. Its accessible name SHALL name the view a tap leads to: 「ライブ」 on the artist bubbles and 「アーティスト」 on the Concerts view (English: "Concerts" and "Artists").
 
-A tap SHALL switch the view. The arrows SHALL make a half turn, always in the same direction, while the two glyphs trade places and sizes with a spring motion, and the new view SHALL appear as a circle growing out of the tile; the whole motion SHALL end within 700 ms. With a reduced-motion preference the view and the icon SHALL change at once, without motion.
+A tap SHALL switch the view. The arrows SHALL make a half turn, always in the same direction, while the two glyphs trade places and sizes with a spring motion, and the view SHALL turn over like a card (the old view turns edge-on, then the new one turns in); the whole motion SHALL end within 700 ms. With a reduced-motion preference the view and the icon SHALL change through a fade of at most 100 ms, without movement.
 
 #### Scenario: A guest sees no swap tile
 - **WHEN** a guest opens Discovery
@@ -958,7 +958,7 @@ A tap SHALL switch the view. The arrows SHALL make a half turn, always in the sa
 
 #### Scenario: Reduced motion
 - **WHEN** a fan with a reduced-motion preference taps the swap tile
-- **THEN** the view and the icon change at once, without the half turn or the growing circle
+- **THEN** the view and the icon change through a fade of at most 100 ms, and neither the tile's arrows nor the view turns
 
 #### Scenario: Left-handed mode
 - **WHEN** the fan has turned on left-handed mode
@@ -1355,3 +1355,31 @@ The first time the Concerts view shows its list, or its empty state, on a device
 #### Scenario: Empty list
 - **WHEN** a signed-in fan opens the Concerts view for the first time on this device and no concert is found
 - **THEN** the moment is shown with the empty state
+
+### Requirement: The search results fade in and out
+
+The search results SHALL fade in when search starts and fade out when it ends, over the `md.sys.spring.effects` duration (200 ms) with the effects spring's curve, instead of appearing and vanishing at once. Under reduced motion they fade over at most 100 ms.
+
+#### Scenario: Starting a search
+
+- **WHEN** the fan starts a search
+- **THEN** the results list fades in over 200 ms
+- **AND** when the search ends it fades out and is then not rendered
+
+### Requirement: The swap tile stays put while the view turns
+
+While the swap tile switches the Discovery view, the tile SHALL stay where it is, as the control that does the switching, and SHALL NOT turn with the body of the view.
+
+#### Scenario: Switching to the Concerts view
+
+- **WHEN** the fan presses the swap tile and the view turns over
+- **THEN** the swap tile is not part of the turning view; it keeps its place and size while the old view turns edge-on and the new one turns in
+
+### Requirement: The search bar is 56 px tall
+
+The search bar SHALL be 56 px tall on every phone, the M3 search bar's height (`md.comp.search-bar.container.height`), with its input's 48 px touch target inside it. It SHALL NOT shrink below its input on a small phone.
+
+#### Scenario: The search bar is 56 px tall
+
+- **WHEN** Discovery is shown on a 320 px wide phone
+- **THEN** the search bar is 56 px tall

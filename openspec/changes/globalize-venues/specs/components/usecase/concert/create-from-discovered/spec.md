@@ -2,7 +2,7 @@
 
 ### Requirement: Venue resolution
 
-For any other event that has an admin area and a time zone, CreateFromDiscovered SHALL look up the places for the venue's listed name and admin area (Venue.SearchPlace), at most once per name and admin area within the batch, and choose one with Venue.SelectPlace: the first place whose canonical name is the same listed venue as the listed name, otherwise the most relevant. When a place is chosen, the Venue SHALL be found or created in this order: by place id (Venue.GetByPlaceID); by listed venue name and admin area (Venue.GetByListedName), giving that Venue the place id when it has none (Venue.BackfillPlaceID); otherwise created (Venue.Create) named by the listed venue name, with the place id, the place's coordinates with the time they were read, the listed venue name, the discovered admin area and the discovered time zone. The place's canonical name SHALL be used only to choose the place and SHALL NOT be stored. Any lookup failure other than no match SHALL fail the whole batch.
+For any other event that has an admin area and a time zone, CreateFromDiscovered SHALL look up the places for the venue's listed name and admin area (Venue.SearchPlace), at most once per name and admin area within the batch, and choose one with Venue.SelectPlace, which counts only the places that can be inside the event's admin area and picks the first whose canonical name is the same listed venue as the listed name, otherwise the most relevant. When a place is chosen, the Venue SHALL be found or created in this order: by place id (Venue.GetByPlaceID); by listed venue name and admin area (Venue.GetByListedName), giving that Venue the place id when it has none (Venue.BackfillPlaceID); otherwise created (Venue.Create) named by the listed venue name, with the place id, the place's coordinates with the time they were read, the listed venue name, the discovered admin area and the discovered time zone. The place's canonical name SHALL be used only to choose the place and SHALL NOT be stored. Any lookup failure other than no match SHALL fail the whole batch.
 
 #### Scenario: Known place
 - **WHEN** the place is found and a Venue holds its place id
@@ -26,11 +26,15 @@ For any other event that has an admin area and a time zone, CreateFromDiscovered
 
 ### Requirement: Unresolved venue is staged
 
-When the event has no admin area or no time zone, CreateFromDiscovered SHALL stage it (ConcertCandidate.Upsert) without looking up the venue. When the venue lookup chooses no place (the search finds none), it SHALL stage the event without a resolved place id. In both cases it SHALL NOT create a Venue and SHALL NOT publish the event.
+When the event has no admin area or no time zone, CreateFromDiscovered SHALL stage it (ConcertCandidate.Upsert) without looking up the venue. When the venue lookup chooses no place (the search finds none, or none inside the event's admin area, see Venue.SelectPlace), it SHALL stage the event without a resolved place id. In both cases it SHALL NOT create a Venue and SHALL NOT publish the event.
 
 #### Scenario: Venue not found
 - **WHEN** no place is chosen
 - **THEN** a ConcertCandidate without a resolved place id is stored and nothing is published
+
+#### Scenario: Only places elsewhere
+- **WHEN** an event's admin area is US-CA and every place found for its venue lies in another country or admin area
+- **THEN** a ConcertCandidate without a resolved place id is stored, no Venue is created and nothing is published
 
 #### Scenario: Area unknown
 - **WHEN** an event comes without an admin area

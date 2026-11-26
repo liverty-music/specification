@@ -107,7 +107,7 @@ Each page-help sheet (Discovery, Timetable, My Artists) SHALL be composed of one
 ### Requirement: Hype tier table is a 3-column grid
 
 The My Artists help sheet's hype tier explanation SHALL render as a list of four rows laid out on one shared 3-column grid, where:
-- Column 1 is sized to its widest cell and contains the tier icon (`👀`, `🔥`, `🔥🔥`, `🔥🔥🔥`), centered and hidden from assistive technology.
+- Column 1 is sized to its widest cell and contains the tier icon (`👀`, `🔥`, `🔥🔥`, `🔥🔥🔥`), centered. The eyes are hidden from assistive technology; each set of flames is an image named with its count.
 - Column 2 is sized to its widest cell and contains the invariant English tier label (`Watch`, `Home`, `Nearby`, `Away`), start-aligned.
 - Column 3 takes the remaining width and contains the notification-scope description sentence, start-aligned.
 
@@ -133,7 +133,7 @@ The My Artists help sheet's hype tier explanation SHALL render as a list of four
 
 - **WHEN** a screen reader reads the hype tier grid
 - **THEN** it reads a list of four items, each item giving the tier label and its description
-- **AND** it does not read the decorative tier icons
+- **AND** it does not read the Watch tier's eyes, and reads each set of flames as its count ("The flame count is read out")
 
 ### Requirement: Help sheet visual readability
 
@@ -165,3 +165,12 @@ The system SHALL clear the per-level flags that record which hype snacks My Arti
 
 - **WHEN** a guest who saw the hype dots' guide moment completes sign-up and opens My Artists
 - **THEN** the hype dots' guide moment does not appear again
+
+### Requirement: The flame count is read out
+
+In the hype tier table of the My Artists help, each tier's flames SHALL be an image named with how many flames there are (for example "炎 2 つ" in Japanese and "2 flames" in English), because the count ranks the tier. The eyes of the Watch tier add nothing to its label and SHALL stay hidden from assistive technology.
+
+#### Scenario: The flame count is read out
+
+- **WHEN** a screen reader reads the hype tier table
+- **THEN** the Home, Nearby and Away rows' icons are read as one, two and three flames

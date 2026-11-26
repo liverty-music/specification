@@ -45,7 +45,7 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 #### Scenario: Reduced motion preference
 - **WHEN** `prefers-reduced-motion: reduce` is active
 - **THEN** the snack SHALL still be dismissed and removed correctly
-- **AND** a `@media (prefers-reduced-motion: reduce)` CSS rule SHALL set `transition-duration: 0s` on `.snack-item` to suppress animation
+- **AND** the snack SHALL fade in and out over at most 100 ms with no movement, in place of its usual entry and exit motion
 
 #### Scenario: CSS entry animation
 - **WHEN** a snack popover is opened via `showPopover()`
@@ -261,4 +261,19 @@ A fan SHALL be able to dismiss any snack by swiping it left or right. While a fi
 
 #### Scenario: Swipe under reduced motion
 - **WHEN** `prefers-reduced-motion: reduce` is active and the fan swipes a snack past the dismiss point
-- **THEN** the snack SHALL be dismissed and removed without an exit motion
+- **THEN** the snack SHALL be dismissed, and SHALL fade out over at most 100 ms without moving before it is removed
+
+### Requirement: A snack waits while the fan is reading or using it
+
+The display time of a snack SHALL NOT run while the fan holds a pointer over the snack or while keyboard focus is inside it, and SHALL start again from the remaining time when the pointer leaves or focus moves out. A snack the fan has not touched keeps the display times stated in "Snack Bar Component". Under reduced motion this is unchanged.
+
+#### Scenario: Pointer over a snack with an action
+
+- **WHEN** a snack with an action has been shown for 6 seconds and the fan moves a pointer over it
+- **THEN** the snack stays shown for as long as the pointer is over it
+- **AND** when the pointer leaves, the snack hides after the 4 seconds that were left
+
+#### Scenario: Focus inside a snack
+
+- **WHEN** the fan moves keyboard focus onto the action of a snack
+- **THEN** the snack is not hidden while the focus is there

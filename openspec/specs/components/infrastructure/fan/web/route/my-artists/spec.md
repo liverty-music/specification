@@ -322,12 +322,12 @@ The My Artists page SHALL display a persistent fixed banner above the bottom nav
 #### Scenario: Banner not shown for authenticated users
 
 - **WHEN** an authenticated user views the My Artists page
-- **THEN** the signup banner SHALL NOT be rendered
+- **THEN** the signup banner SHALL NOT be shown: it is hidden and inert
 
 #### Scenario: Banner disappears after signup
 
 - **WHEN** the user completes signup (isAuthenticated becomes true) while on the My Artists page
-- **THEN** the signup banner SHALL be removed from the DOM
+- **THEN** the signup banner SHALL slide out and stay hidden and inert
 
 ### Requirement: Each artist has a stable color
 
@@ -481,3 +481,18 @@ When My Artists lists at least one followed artist and no followed artist has a 
 #### Scenario: A fan who set a level before
 - **WHEN** a signed-in fan with one artist at Away opens My Artists on a new device
 - **THEN** the hype dots' moment does not appear
+
+### Requirement: Edit mode and the list's edits are animated
+
+Entering and leaving edit mode, removing an artist and restoring it with "undo" SHALL each run as one View Transition on the artists' rows and the Done bar, so a row fades out or in, the rows around it move to their new places, the dots and the remove button cross-fade, and the Done bar fades in and out, instead of changing in one frame. The header and the bottom navigation SHALL NOT dip in opacity during it. Where the browser has no View Transitions, and under reduced motion, the edit is made at once.
+
+#### Scenario: Undo restores a row without a jump
+
+- **WHEN** the fan presses "undo" after removing an artist
+- **THEN** the artist's row fades in at its old place while the rows below move down to make room
+- **AND** edit mode is back on, as before
+
+#### Scenario: Entering edit mode
+
+- **WHEN** the fan enters edit mode
+- **THEN** each row's dots cross-fade to its remove button and the Done bar fades in

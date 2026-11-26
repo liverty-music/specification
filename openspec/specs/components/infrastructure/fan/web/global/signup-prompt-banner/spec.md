@@ -22,7 +22,22 @@ The system SHALL display a non-modal signup prompt banner to guest users after o
 - **THEN** the banner SHALL display: "Get new concert alerts!"
 - **AND** the banner SHALL include a [Sign Up] CTA button
 
-### Requirement: Shared banner presentation and attention cue
+### Requirement: A banner slides out when it goes
+
+The signup prompt and the install banner SHALL leave the way they arrive: when the banner stops being visible it SHALL slide down out of the window and fade out over the `md.sys.motion.duration.short4` duration (200 ms) with the `md.sys.motion.easing.emphasized-accelerate` easing, and only then stop being rendered. The space the banner held (the route area's bottom padding and the snack bar's offset) SHALL be released when the exit starts. Under reduced motion the banner SHALL fade out over at most 100 ms, without sliding.
+
+#### Scenario: A banner is hidden after signup
+
+- **WHEN** a banner is visible and then stops being visible
+- **THEN** the banner moves down out of the window over 200 ms, then is no longer rendered
+- **AND** its action cannot be focused or pressed from the moment it starts to go
+
+#### Scenario: A banner goes under reduced motion
+
+- **WHEN** a banner stops being visible while `prefers-reduced-motion: reduce` is active
+- **THEN** the banner fades out over at most 100 ms without sliding, and is then no longer rendered
+
+### Requirement: Shared banner presentation, attention cue and reduced motion
 
 The signup prompt banner SHALL be implemented as a shared component reusable across pages. The banner SHALL NOT offer the user any UI affordance to dismiss it; visibility is entirely controlled by the host page via the `visible` bindable. A banner is persistent, so it SHALL sit on a dark surface marked by a brand-gradient line, with the same surface, placement, layout, button, message text and attention cue as `pwa-install-banner`, and SHALL NOT use the brand-gradient fill of the transient snack bar. It SHALL show one row, the message followed by the Sign Up button. The Sign Up button SHALL be the filled button at the compact size of the snack bar's action. The message's text size SHALL follow the banner's width, between 12px and 16px, so that the message and the button label both fit on one line without truncation on every screen from 320px to 412px wide, in Japanese and English. While the banner is visible, a light SHALL run along its top brand line and then across the Sign Up button, once when the banner appears and then every 12 seconds, at most 5 times per route the fan opens; the banner and the button SHALL keep their position and size while it runs.
 
@@ -84,8 +99,8 @@ The signup prompt banner SHALL be implemented as a shared component reusable acr
 - **AND** the user has not set `prefers-reduced-motion: reduce`
 - **THEN** the banner SHALL animate in from below with a slide-up and fade-in transition over 350ms (the app's medium motion duration), the same entrance as `pwa-install-banner`
 
-#### Scenario: Banner appears instantly for reduced motion
+#### Scenario: Banner fades in for reduced motion
 
 - **WHEN** the signup-prompt-banner becomes visible
 - **AND** the user has set `prefers-reduced-motion: reduce`
-- **THEN** the banner SHALL appear immediately without animation
+- **THEN** the banner SHALL fade in over at most 100 ms, without sliding

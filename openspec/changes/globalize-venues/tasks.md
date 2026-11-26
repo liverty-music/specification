@@ -36,6 +36,7 @@
 - [ ] 6.1 Validate the admin area and the time zone in `Venue.Create`, write coordinates with their fetch time, add `Venue.Location()`, and make `GetByListedName` require an admin area; verify one test per scenario of `entity/venue` "Admin area format" and the time zone requirement, `entity/venue/create` and `entity/venue/get-by-listed-name`
 - [ ] 6.2 Resolve Gemini's admin area with `Area.Resolve` and its `time_zone` against the country's zones in the searcher; verify one test per scenario of `entity/concert/search` for areas and zones
 - [ ] 6.3 In `CreateFromDiscovered`, stage an event without an admin area or zone without a venue lookup, name a new Venue by its listed name with its zone, and keep only the resolved place id on a candidate; verify one unit test per scenario of `usecase/concert/create-from-discovered`
+- [ ] 6.4 Treat "private" and "private event" as names of no venue in `NormalizeVenueName`, and leave private events and shows on a ship or at sea out of the searcher's instruction (Decision 18); verify one test per scenario of `entity/venue` "Venue not yet announced is missing" and the instruction check in the searcher test, with the two `entity/concert/search` scenarios recorded as `@spec-manual` in design.md
 
 ## 7. backend: coordinate refresh (usecase/venue/refresh-coordinates and its entity operations; Decision 9)
 
@@ -72,9 +73,10 @@
 ## 12. backend: complete the existing Venues (Decision 16 steps 2 to 4)
 
 - [ ] 12.1 Add the `backfill-venue-areas` subcommand to the `concert-discovery` job (listed venue name and one source page in; area, zone and their validation out as a CSV row; no database write); verify its unit test with the Gemini client mocked
-- [ ] 12.2 Run it once in production as a Kubernetes Job, collect the CSV from its log, and hand it to the owner with, for each of the 5 shared listed names, both Venues' place ids, coordinates and Events
-- [ ] 12.3 Write migration B from the owner's reviewed CSV and duplicate decisions (merging only the pairs confirmed as one venue); verify the migration test and, after deploy, a read-only query showing no Venue without an area or zone
+- [ ] 12.2 Run it once in production as a Kubernetes Job, collect the CSV from its log, and hand it to the owner with, for each of the 5 shared listed names, both Venues' place ids, coordinates and Events Name the Venues that are no place a fan can go to (a private event, a cruise ship) in the hand-over, so the owner marks them `NONE` in `resolved_code`.
+- [ ] 12.3 Write migration B from the owner's reviewed CSV and duplicate decisions (merging only the pairs confirmed as one venue); verify the migration test and, after deploy, a read-only query showing no Venue without an area or zone Migration B also deletes each Venue the owner marked `NONE` in `resolved_code` (Decision 16, step 3): its listed name's ConcertCandidates, its Events, the discovered Series left empty, then the Venue; RejectedConcerts stay. Before merging, the read-only query finds no TicketStock, Order, Ticket, Settlement or Scanner on those Events and no TicketSale, TicketSaleReminder or TicketSaleSearch on those Series; the rows found on 2026-11-26 are `Carnival Panorama Pool Deck` (1 Event) and `PRIVATE` (2 Events), all past.
 - [ ] 12.4 Write migration C setting `venues.admin_area`, `time_zone` and `country_code` NOT NULL; verify AtlasMigration status `Ready` in production after deploy
+- [ ] 12.5 Return each found place's country and first-level Area from the place search and pick only places inside the event's admin area (Decision 19); verify one test per scenario of `entity/venue/select-place`, `entity/venue/search-place` "Country and area of each place" and `usecase/concert/create-from-discovered` "Only places elsewhere"
 
 ## 13. specification: proto release 2 (Decision 17, release 2)
 
