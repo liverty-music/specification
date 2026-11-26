@@ -13,11 +13,11 @@ import "liverty_music/entity/v1/user.proto";
 // UserService changes a fan's identity at the identity provider on behalf of
 // another backend workload. It is cluster-internal: it takes no requests from
 // outside the cluster and carries no sign-in. Each calling workload reaches
-// only the procedures it uses; the event consumer calls
-// SendEmailVerification, ResendEmailVerification and
-// IssuePasskeyRegistrationLink, the fan API calls VerifyEmail, and the admin
-// console API calls DeleteIdentity. A call to any other procedure is refused with
-// PERMISSION_DENIED and changes nothing.
+// only the procedures it uses; the workflow worker calls
+// SendEmailVerification, ResendEmailVerification,
+// IssuePasskeyRegistrationLink and DeleteIdentity, and the fan API calls
+// VerifyEmail. A call to any other procedure is refused with PERMISSION_DENIED
+// and changes nothing.
 //
 // Every request names the identity by the identity provider's ID for the
 // User, because the caller is a workload, not the fan.
