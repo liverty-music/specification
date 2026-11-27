@@ -50,7 +50,7 @@ When the Artist has an Event on an event's date listed under the event's listed 
 - when the event has no start time and one of them, listed under the event's name, has one, nothing SHALL be stored, since the event adds nothing;
 - when the event has no start time and one of them, not listed under the event's name, has one, the event SHALL be staged (ConcertCandidate.Upsert) and not published;
 - when one of them has the same start time (or both have none) and is not listed under the event's name, the event SHALL be staged (ConcertCandidate.Upsert) and not published;
-- when the event brings a start time and one of them has none, the check of "Same Artist at another venue at the same time" SHALL come first and stage the event when it applies; otherwise the time SHALL be filled onto that Event (Concert.FillEventStartTimes) and nothing else stored, unless that Event has a publish state (an Organizer's Event is never filled: when no other Event holds that slot, nothing is stored if it is listed under the event's name, and the event is staged otherwise) or another Event holds that slot (see "Start time held by another Event"); one unknown-start Event SHALL be filled by at most one event of the batch;
+- when the event brings a start time and one of them has none, the check of "Same Artist at another venue at the same time" SHALL come first and stage the event when it applies; otherwise the time SHALL be filled onto that Event (Concert.FillEventStartTimes) and nothing else stored, unless that Event has a publish state (an Organizer's Event is never filled: when no other Event holds that slot, nothing is stored if it is listed under the event's name, and the event is staged otherwise) or another Event holds that slot (see "Start time held by another Event"); one unknown-start Event SHALL be filled, or, for an Organizer's, matched, by at most one event of the batch;
 - otherwise the event SHALL go on to "Same Artist at another venue at the same time" and then to the collision check.
 
 #### Scenario: Exact re-discovery
@@ -76,6 +76,10 @@ When the Artist has an Event on an event's date listed under the event's listed 
 #### Scenario: Organizer's unknown-start event under another name
 - **WHEN** the Artist's Organizer's Event at Venue V without a start time is listed under another name, and the event starts at 18:00 with no other Event at that time
 - **THEN** the event is staged and the Organizer's Event is unchanged
+
+#### Scenario: Two start times beside an Organizer's unknown-start event
+- **WHEN** the Artist's Organizer's Event at Venue V without a start time is listed under the events' name, and the batch brings 13:00 and 18:00 at that venue and date
+- **THEN** nothing is stored for 13:00 and 18:00 is handled as a new event
 
 #### Scenario: Same show under another name
 - **WHEN** the Artist's Event at Venue V on 2026-12-19 is listed as "京セラドーム大阪" at 17:00, and the event lists "Kyocera Dome Osaka" at 17:00 and resolves to V

@@ -15,7 +15,8 @@
 - [ ] 3.3 Declare and implement `Concert.AddOtherListedVenueName` (read under lock, decide with `ListedUnder`, append), and make `UpdateEventListedVenueName` keep the replaced name in the same statement; verify one contract test per scenario of `components/entity/concert/add-other-listed-venue-name` and `components/entity/concert/update-event-listed-venue-name`
 - [ ] 3.4 Declare and implement `Concert.Merge` as in design D3; verify one contract test per scenario of `components/entity/concert/merge`, plus one that a ticket journey inserted for the source while the merge holds its lock fails instead of being removed
 - [ ] 3.5 Declare and implement `Series.ListUpcomingToursByArtist`; verify one contract test per scenario of `components/entity/series/list-upcoming-tours-by-artist`
-- [ ] 3.6 Make `Concert.Create` leave an Event with a publish state unchanged (design D6a); verify one contract test per scenario of `components/entity/concert/create` "Create merges into an existing slot"
+- [ ] 3.6 Make `Concert.Create` fail when an Event with a publish state holds a slot (design D6a); verify one contract test per scenario of `components/entity/concert/create` "Create merges into an existing slot"
+- [ ] 3.7 Make `Series.DeleteOrphaned` keep a Series that has a TicketSale; verify one contract test per scenario of `components/entity/series/delete-orphaned`
 
 ## 4. backend: shared decision and CreateFromDiscovered (design D5, D6, D7)
 
@@ -35,8 +36,8 @@
 
 - [ ] 7.1 Rewrite the conflict dialog lede in `admin/approval-queue/approval-queue-route.html`; verify the component test for `components/infrastructure/admin/web/route/approval-queue` "Dialog explains the choices"
 - [ ] 7.2 Run the approval flow with Playwright against a local build with the RPCs mocked: approve a candidate, get a conflict, read the lede, choose Keep existing, and see the row leave the queue
-- [ ] 7.4 Show copy of its own when Approve refuses adopt the candidate with FailedPrecondition, keeping the dialog and the row; verify the component test for `components/infrastructure/admin/web/route/approval-queue` "Adopt refused"
-- [ ] 7.3 Open the PR citing the change, merge it and release the frontend
+- [ ] 7.3 Show copy of its own when Approve refuses adopt the candidate with FailedPrecondition, keeping the dialog and the row; verify the component test for `components/infrastructure/admin/web/route/approval-queue` "Adopt refused"
+- [ ] 7.4 Open the PR citing the change, merge it and release the frontend
 
 ## 8. backend: data migration (design D10, after 6.1 is live)
 
