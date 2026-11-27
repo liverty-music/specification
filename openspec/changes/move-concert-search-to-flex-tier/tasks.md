@@ -36,4 +36,3 @@
 
 - [ ] 4.1 After the first 18:00 JST run following the rollout, confirm in prod that the job finished within 5 minutes, that each Artist due for a search has a `search-concerts` workflow, that `$ai_generation` events carry `service_tier = flex`, and that at least one search reached completed or failed
 - [ ] 4.2 After 3 days, collect the observation of design.md (success and 503/429 counts, latency, attempts per search, time from search time to end, searches that gave up at 20 hours) and write it with a recommendation on the standard-tier fallback and the freshness window into design.md Results
-- [ ] 4.3 Update the held change `measure-official-page-change-detection` (its plan worktree) to the new structure: its D1 (where the check runs), D5 and D6 (searches now end hours after 18:00 JST and the outcome comes from `record-end`), then resume it with plan-change step 4

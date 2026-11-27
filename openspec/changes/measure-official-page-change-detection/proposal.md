@@ -8,7 +8,7 @@ What the probe cannot show is whether a text change predicts a new concert, and 
 
 ## What Changes
 
-- The backend concert-discovery job gains a second mode, official-page-check. It fetches, for every followed Artist with an OfficialSite, the official top page and the links the concert search lists from it, and logs one analytics line per page: the artist, the page URL, whether it is the top page or a linked one, the SHA-256 and length of the page's normalized visible text, and the fetch outcome. It never calls Gemini and writes nothing to the database.
+- The backend concert-discovery job gains a second mode, official-page-check. It fetches, for every followed Artist with an OfficialSite, the official top page and the links the concert search lists from it, and logs one line per page: the artist, the page URL, whether it is the top page or a linked one, the SHA-256 and length of the page's normalized visible text, and the fetch outcome. It never calls Gemini and writes nothing to the database.
 - cloud-provisioning adds a temporary CronJob that runs that mode daily at 17:00 JST, one hour before the daily concert search, for 8 days.
 - After the 8th run, the results are compared with the `concert.search.completed` events of the daily searches in the same period, and the findings are written into this change's design.md.
 - Then the CronJob and the mode are removed.
@@ -26,6 +26,6 @@ None. The measurement changes no product behavior: no fan, organizer or admin se
 
 ## Impact
 
-- backend: a new mode of `cmd/job/concert-discovery` and a page-text hashing function next to the official top page fetch in `internal/infrastructure/gcp/gemini`; one new analytics log topic. Both are removed at the end.
+- backend: a new mode of `cmd/job/concert-discovery` and a page-text hashing function next to the official top page fetch in `internal/infrastructure/gcp/gemini`; no new analytics topic. Both are removed at the end.
 - cloud-provisioning: a new CronJob under `k8s/namespaces/backend` that reuses the concert-discovery image and its ConfigMap; removed at the end.
-- Production: about 1,900 extra HTTP GETs to official sites per day (around 80 sites, a median of 22 listed links each), sequential per site. No Gemini or database cost; a few thousand log lines a day in the analytics log bucket.
+- Production: about 1,900 extra HTTP GETs to official sites per day (around 80 sites, a median of 22 listed links each), sequential per site. No Gemini or database cost; a few thousand operational log lines a day.
