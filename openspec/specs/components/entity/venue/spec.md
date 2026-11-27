@@ -171,7 +171,7 @@ A Venue's name SHALL be the name its source listed (its listed venue name) or th
 - **WHEN** a member picks a place the map catalog names "Gocheok Sky Dome", changes the name to "高尺スカイドーム" and saves
 - **THEN** the Venue's name is "高尺スカイドーム"
 
-### Requirement: Coordinates at most 30 days old
+### Requirement: Coordinates expire before the 30 day limit
 
 A Venue's coordinates SHALL carry their fetch time, the moment they were read from the map catalog; a Venue SHALL have both or neither. Coordinates SHALL be expired at an instant when their fetch time is more than 28 days before it, two days before the 30 days the map catalog's terms allow, because they are removed once a day.
 
@@ -179,9 +179,13 @@ A Venue's coordinates SHALL carry their fetch time, the moment they were read fr
 - **WHEN** a Venue's coordinates were fetched at 2026-11-01 04:00 UTC and the instant is 2026-11-24 04:00 UTC
 - **THEN** the coordinates are not expired
 
-#### Scenario: Coordinates older than 30 days
-- **WHEN** a Venue's coordinates were fetched at 2026-10-20 04:00 UTC and the instant is 2026-11-24 04:00 UTC
+#### Scenario: Coordinates older than 28 days
+- **WHEN** a Venue's coordinates were fetched at 2026-10-26 04:00 UTC and the instant is 2026-11-24 04:00 UTC, 29 days later
 - **THEN** the coordinates are expired
+
+#### Scenario: Coordinates 27 days old
+- **WHEN** a Venue's coordinates were fetched at 2026-10-28 04:00 UTC and the instant is 2026-11-24 04:00 UTC
+- **THEN** the coordinates are not expired
 
 #### Scenario: Coordinates without a fetch time
 - **WHEN** a Venue has coordinates and no fetch time

@@ -17,6 +17,10 @@ ClearExpiredCoordinates SHALL take an instant and remove the coordinates and fet
 - **WHEN** a Venue's coordinates were fetched at 2026-10-30 04:00 UTC and the instant is 2026-11-24 04:00 UTC
 - **THEN** the Venue keeps its coordinates and fetch time
 
+#### Scenario: Coordinates on either side of 28 days
+- **WHEN** one Venue's coordinates were fetched 29 days before the instant and another's 27 days before it
+- **THEN** only the first Venue loses its coordinates
+
 #### Scenario: Nothing expired
 - **WHEN** no Venue has coordinates fetched more than 28 days before the instant
 - **THEN** no Venue changes
