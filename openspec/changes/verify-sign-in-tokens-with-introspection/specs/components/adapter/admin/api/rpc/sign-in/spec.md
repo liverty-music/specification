@@ -8,7 +8,7 @@ Which sign-in the admin console API accepts on a call that needs one: an active 
 
 ### Requirement: Only an active access token is a sign-in
 
-On a call that needs a sign-in, the admin console API SHALL accept only an access token that is signed by the sign-in service, unexpired and reported active by it. It SHALL refuse every other token with Unauthenticated, an ID token included, and SHALL read and change nothing.
+On a call that needs a sign-in, the admin console API SHALL accept only an access token that is signed by the sign-in service, unexpired and reported active by it. It SHALL refuse with Unauthenticated, reading and changing nothing, a token that the sign-in service did not sign or that has expired, and a token issued for the app's project that is not an active access token, an ID token included. A token issued for another app, and a token that cannot be checked, fail as the requirements below say.
 
 #### Scenario: Access token
 

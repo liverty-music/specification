@@ -5,7 +5,7 @@
 
 ## 2. measurement
 
-- [ ] 2.1 Through a port-forward to `zitadel-api` with the two host headers, introspect a test account's access token and ID token for each audience and fetch a token and the keys; verify the access token is active, the ID token is not, and record the p50 and p95 of 100 introspections in design.md. Stop and ask when any expectation fails or p95 exceeds 300 ms
+- [ ] 2.1 Through a port-forward to `zitadel-api` with the two host headers, introspect a test account's access token and ID token for each audience, fetch a token and the keys, and make one read-only gRPC call (get the test account's identity); then sign up a throwaway fan account, delete it in the app and introspect its still unexpired access token. Verify the access token is active, the ID token and the removed account's token are not, the gRPC call resolves the instance, and record the p50 and p95 of 100 introspections in design.md. Stop and ask when any expectation fails or p95 exceeds 300 ms
 
 ## 3. cloud-provisioning: manifests
 
