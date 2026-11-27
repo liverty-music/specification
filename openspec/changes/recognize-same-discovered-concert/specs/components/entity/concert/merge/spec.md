@@ -14,7 +14,7 @@ Merge SHALL take a source Event and a target Event and, all together or not at a
 - add the source's listed venue name and other listed venue names to the target's other listed venue names, where the target is not already listed under them;
 - remove the source, leaving its Series in place.
 
-It SHALL announce nothing (no Concert.Created). It SHALL fail with InvalidArgument when the two Events are the same Event or are at different Venues or dates, with NotFound when either is not an Event that is not DRAFT, and with FailedPrecondition when either has a publish state, or when the source is the last Event of its Series and that Series has a TicketSale, whose sales would otherwise be left on a Series without Events. It SHALL fail with Unavailable, changing nothing, while another change is writing the source's Series.
+It SHALL announce nothing (no Concert.Created). It SHALL fail with InvalidArgument when the two Events are the same Event or are at different Venues or dates, with NotFound when either is not an Event that is not DRAFT, and with FailedPrecondition when either has a publish state, or when the source is the last Event of its Series and that Series has a TicketSale, whose sales would otherwise be left on a Series without Events. It SHALL fail with Unavailable, changing nothing, rather than wait for another change that is writing the source's Series.
 
 #### Scenario: Unknown-start event joins a shared bill
 
@@ -48,7 +48,7 @@ It SHALL announce nothing (no Concert.Created). It SHALL fail with InvalidArgume
 
 #### Scenario: Series being written
 
-- **WHEN** a TicketSale is being stored for the source's Series while Merge runs
+- **WHEN** a TicketSale that names neither Event is being stored for the source's Series while Merge runs
 - **THEN** Merge fails with Unavailable and nothing changes
 
 #### Scenario: First-party target
