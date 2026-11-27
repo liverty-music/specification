@@ -33,4 +33,4 @@ DeleteOrphaned SHALL remove every discovered Series (one without an Organizer) c
 ### Requirement: Remove only empty candidates
 
 **Reason**: Removing a caller's given Series right after the caller emptied them raced with writes to those Series. DeleteOrphaned now removes Series by age.
-**Migration**: Replaced by "Remove empty discovered Series created before a time"; the only caller is SeriesUseCase.RemoveEmptyDiscovered.
+**Migration**: Replaced by "Remove empty discovered Series created before a time"; the only caller is ConcertCreationUseCase.RemoveEmptyDiscoveredSeries.

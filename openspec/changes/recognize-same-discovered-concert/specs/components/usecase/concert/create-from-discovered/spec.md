@@ -216,5 +216,5 @@ When filling fails with AlreadyExists because another Event took the slot meanwh
 ### Requirement: Empty new series are removed
 
 **Reason**: Removing a batch's emptied Series at its end raced with writes to those Series (a TicketSale being stored, a Merge) and missed the Series of a batch that failed after a Merge. An empty Series row is harmless for a day.
-**Migration**: Replaced by SeriesUseCase.RemoveEmptyDiscovered ("Empty discovered Series are removed daily"), which removes every empty discovered Series once it is a day old.
+**Migration**: Replaced by ConcertCreationUseCase.RemoveEmptyDiscoveredSeries ("Empty discovered Series are removed daily"), which removes every empty discovered Series once it is a day old.
 

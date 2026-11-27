@@ -19,7 +19,7 @@ Concert discovery does not recognize that two found events are one concert, or t
 ### New Capabilities
 - `components/entity/concert/merge`: merges a discovered Event into another discovered Event at the same Venue and date, moving its performers and its fans' ticket journeys and sale links, without announcing anything.
 - `components/entity/concert/add-other-listed-venue-name`: records a listed venue name an Event is also known by.
-- `components/usecase/series/remove-empty-discovered`: removes empty discovered Series once a day.
+- `components/usecase/concert/remove-empty-discovered-series`: removes empty discovered Series once a day.
 - `components/entity/series/list-upcoming-tours-by-artist`: lists an Artist's discovered TOUR Series that still have an Event on or after the current date at its Venue, with their titles.
 
 ### Modified Capabilities
