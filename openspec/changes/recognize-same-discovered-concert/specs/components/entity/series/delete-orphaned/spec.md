@@ -2,7 +2,7 @@
 
 ### Requirement: Remove only empty candidates
 
-DeleteOrphaned SHALL remove each given Series that has no Event, no ConcertCandidate and no TicketSale, SHALL leave every other Series — given or not — unchanged, and SHALL return how many it removed. An empty set SHALL remove nothing. Repeating it SHALL remove nothing more.
+DeleteOrphaned SHALL remove each given Series that has no Event, no ConcertCandidate and no TicketSale, SHALL leave every other Series — given or not — unchanged, and SHALL return how many it removed. A Series that another change is writing at that moment SHALL be left. An empty set SHALL remove nothing. Repeating it SHALL remove nothing more.
 
 #### Scenario: Empty series removed
 - **WHEN** a given Series has no Event, no ConcertCandidate and no TicketSale
