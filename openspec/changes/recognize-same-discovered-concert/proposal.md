@@ -12,17 +12,19 @@ Concert discovery does not recognize that two found events are one concert, or t
 - A discovered TOUR joins the Artist's TOUR Series of the same title that has an upcoming Event, so dates announced later stay in their tour; a series also joins through an Event at the same Venue, not only the same listed name. Venues are resolved before the series is chosen.
 - The approval queue's conflict dialog says that either choice keeps one Event and lists the candidate's Artist as its performer.
 - A one-off data migration merges the 9 duplicate pairs and folds the 29 split TOUR Series into 13.
+- Discovery processes one batch at a time, so two Artists of one concert found at the same time no longer race. Empty discovered Series are removed by a daily run instead of right after they are emptied.
 
 ## Capabilities
 
 ### New Capabilities
 - `components/entity/concert/merge`: merges a discovered Event into another discovered Event at the same Venue and date, moving its performers and its fans' ticket journeys and sale links, without announcing anything.
 - `components/entity/concert/add-other-listed-venue-name`: records a listed venue name an Event is also known by.
+- `components/usecase/series/remove-empty-discovered-series`: removes empty discovered Series once a day.
 - `components/entity/series/list-upcoming-tours-by-artist`: lists an Artist's discovered TOUR Series that still have an Event on or after the current date at its Venue, with their titles.
 
 ### Modified Capabilities
-- `components/usecase/concert/create-from-discovered` (and Purpose diagram at archive): series joining by Venue and by tour title, matching the Artist's Events by Venue and by other listed names, the same Artist at another Venue at the same time, another Artist's slot, a start time held by another Event, and no failed batch on a collision.
-- `components/usecase/concert-candidate/approve` (and Purpose diagram at archive): collision with the Artist's Event at another Venue, a non-colliding candidate fills only its own Artist's Event, both resolutions add the Artist as performer of another Artist's Event (merging the Artist's start-time-less Event), and the name not chosen is recorded on the Event.
+- `components/usecase/concert/create-from-discovered` (and Purpose diagram at archive): series joining by Venue and by tour title, matching the Artist's Events by Venue and by other listed names, the same Artist at another Venue at the same time, another Artist's slot, a start time held by another Event, no failed batch on a collision, one batch at a time, and no Series removal at the end of a batch.
+- `components/usecase/concert-candidate/approve` (and Purpose diagram at archive): collision with the Artist's Event at another Venue, a non-colliding candidate fills only its own Artist's Event, both resolutions add the Artist as performer of another Artist's Event (merging the Artist's start-time-less Event), and the name not chosen is recorded on the Event; the emptied Series is no longer removed.
 - `components/entity/concert/fill-event-start-times`: fails with AlreadyExists, changing nothing, when another Event holds the slot.
 - `components/entity/concert/update-event-listed-venue-name`: keeps the replaced name among the Event's other listed venue names.
 - `components/entity/concert/find-events-by-artist-and-date`, `components/entity/concert/find-events-by-venue-and-date`: also return the Event's other listed venue names, publish state and performers.
@@ -31,7 +33,8 @@ Concert discovery does not recognize that two found events are one concert, or t
 - `stories/review-concert-candidates`: approving a shared bill.
 - `components/entity/event` (Purpose and a new requirement): new attribute "other listed venue names"; an Event is listed under a name when its listed venue name or one of its other listed venue names is that name.
 - `components/entity/concert/create`: fails when an Event with a publish state holds a slot, so an Organizer who publishes while a discovery or an approval is storing a Concert keeps the Event as published.
-- `components/entity/series/delete-orphaned` (and Purpose at archive): keeps a Series that has a TicketSale.
+- `components/entity/series/delete-orphaned` (and Purpose at archive): removes empty discovered Series by age, keeping one with a TicketSale or being written.
+- `components/usecase/concert-candidate/reject` (and Purpose diagram at archive): no longer removes the emptied Series.
 - Relied on and unchanged: ConcertCandidate.Upsert, Series.Create, Venue lookups, RejectedConcert.Append (keep existing still records the candidate; the log still never suppresses — the other listed names do, and only for the Event they belong to).
 
 ## Impact

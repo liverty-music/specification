@@ -16,7 +16,7 @@
 - [ ] 3.4 Declare and implement `Concert.Merge` as in design D3; verify one contract test per scenario of `components/entity/concert/merge`, plus one that a ticket journey inserted for the source while the merge holds its lock fails instead of being removed
 - [ ] 3.5 Declare and implement `Series.ListUpcomingToursByArtist`; verify one contract test per scenario of `components/entity/series/list-upcoming-tours-by-artist`
 - [ ] 3.6 Make `Concert.Create` fail when an Event with a publish state holds a slot (design D6a); verify one contract test per scenario of `components/entity/concert/create` "Create merges into an existing slot"
-- [ ] 3.7 Make `Series.DeleteOrphaned` keep a Series that has a TicketSale; including one being written at that moment; verify one contract test per scenario of `components/entity/series/delete-orphaned`
+- [ ] 3.7 Make `Series.DeleteOrphaned` keep a Series that has a TicketSale, including one being written at that moment; verify a contract test for each of the two (the age-based removal that replaces the given set, with its scenarios, is task 8.2)
 
 ## 4. backend: shared decision and CreateFromDiscovered (design D5, D6, D7)
 
@@ -39,8 +39,15 @@
 - [ ] 7.3 Show copy of its own when Approve refuses adopt the candidate with FailedPrecondition, keeping the dialog and the row; verify the component test for `components/infrastructure/admin/web/route/approval-queue` "Adopt refused"
 - [ ] 7.4 Open the PR citing the change, merge it and release the frontend
 
-## 8. backend: data migration (design D10, after 6.1 is live)
+## 8. backend: one discovery batch at a time and daily removal of empty Series (design D11, D12)
 
-- [ ] 8.1 Collect, with a read-only prod query, the ids of the 9 duplicate pairs (older and newer event, the agreed listed venue name) and of the 29 split discovered TOUR Series in 13 groups with their ticket sales, excluding Ayron Jones' "TOUR DATES"; record the query and its result in the PR description, not in the issue (public repository)
-- [ ] 8.2 Write the Atlas data migration with those ids, a backup table, skips for rows that no longer exist, and the ticket sale steps of design D10; verify a migration test with a fixture of one duplicate pair (with a ticket journey on the newer event) and one split tour (with a discovered ticket sale on each Series, two of them on the same method and start date) shows one event with both names, the journey moved, one Series and one sale per method and start date
-- [ ] 8.3 Re-run the 8.1 query against prod right before merging, merge the PR (it applies to prod), and verify read-only: AtlasMigration `Ready`, no remaining pair of one Artist's discovered events at one venue and date where only one has a start time, and no Artist with two upcoming discovered TOUR Series of the same tour title other than the excluded one
+- [ ] 8.1 Start `create-from-discovered` on a queue of global concurrency 1, registered beside `ConcertSearchQueue`; verify a unit test for `components/usecase/concert/create-from-discovered` "Two Artists of one concert found together" that the workflow is started on that queue
+- [ ] 8.2 Make `Series.DeleteOrphaned` take a creation time and remove the empty discovered Series created before it (`uuid_extract_timestamp(id)`), keeping the `SKIP LOCKED`; verify one contract test per scenario of `components/entity/series/delete-orphaned`
+- [ ] 8.3 Add `ConcertCreationUseCase.RemoveEmptyDiscoveredSeries` on a daily DBOS schedule, and remove the `DeleteOrphaned` calls of `CreateFromDiscovered`, `Approve` and `Reject` with the tests annotated with their removed scenarios; verify one unit test per scenario of `components/usecase/series/remove-empty-discovered-series` and the "Last staged row of an empty series" scenario of `components/usecase/concert-candidate/approve`
+- [ ] 8.4 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: the rollout finished, the next 09:00 JST discovery runs its batches one at a time with no `create-from-discovered` ERROR, and the first daily run of `RemoveEmptyDiscoveredSeries` succeeds
+
+## 9. backend: data migration (design D10, after 6.1 and 8.4 are live)
+
+- [ ] 9.1 Collect, with a read-only prod query, the ids of the 9 duplicate pairs (older and newer event, the agreed listed venue name) and of the 29 split discovered TOUR Series in 13 groups with their ticket sales, excluding Ayron Jones' "TOUR DATES"; record the query and its result in the PR description, not in the issue (public repository)
+- [ ] 9.2 Write the Atlas data migration with those ids, a backup table, skips for rows that no longer exist, and the ticket sale steps of design D10; verify a migration test with a fixture of one duplicate pair (with a ticket journey on the newer event) and one split tour (with a discovered ticket sale on each Series, two of them on the same method and start date) shows one event with both names, the journey moved, one Series and one sale per method and start date
+- [ ] 9.3 Re-run the 9.1 query against prod right before merging, merge the PR (it applies to prod), and verify read-only: AtlasMigration `Ready`, no remaining pair of one Artist's discovered events at one venue and date where only one has a start time, and no Artist with two upcoming discovered TOUR Series of the same tour title other than the excluded one
