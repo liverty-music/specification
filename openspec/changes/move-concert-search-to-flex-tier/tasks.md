@@ -17,7 +17,7 @@
 
   Verify with usecase unit tests for these scenarios:
   - "The search runs in the background": "Daily run starts searches and ends" and "Cannot be started";
-  - "Artist data required": "Artist without MBID" (the check stays in SearchNewConcerts, which fails with Internal and starts no attempt; design D1);
+  - "Artist data required": "Artist without MBID" (the check runs in SearchNewConcerts before the upsert, which fails with Internal, leaves the ConcertSearch unchanged and starts no attempt; design D1);
   - "Skip when recently searched or discovered": "Searched 2 hours ago", "New concert found 3 days ago", "Another search running", "Abandoned search" and "Previous search failed".
 - [ ] 2.3 Register `search-concerts` and the `concert-search` queue (concurrency 8) in the workflow worker, and build the concert searcher there (design D1, D4).
 

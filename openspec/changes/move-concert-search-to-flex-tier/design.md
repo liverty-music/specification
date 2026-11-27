@@ -51,7 +51,7 @@ See proposal.md for why. The current code this design changes (backend `main`, 2
 
 SearchNewConcerts keeps its skip rules, the pending upsert and the Artist data check.
 
-The data check is `artist.CheckSearchable`, which today runs at the top of `executeSearch`, after the upsert. It stays in SearchNewConcerts, after the upsert and before the start: an Artist with no name or no MBID fails SearchNewConcerts with Internal and the ConcertSearch becomes failed, as today (spec "Artist data required"). No attempt is started for it.
+The data check is `artist.CheckSearchable`. Today it runs at the top of `executeSearch`, after the upsert, so the ConcertSearch of such an Artist ends as failed. The living spec's sequence diagram puts the check before `Upsert "pending"`, and "Artist data required" says only "fail with Internal, before any external search". The check moves into SearchNewConcerts, after the skip rules and before the upsert, as the diagram shows. An Artist with no name or no MBID then fails SearchNewConcerts with Internal, its ConcertSearch is left as it was, and no attempt is started. The next daily run fails the same way until an admin fixes the Artist, as today.
 
 SearchNewConcerts then starts the first attempt of the workflow `search-concerts` with:
 - id `search-concerts:<artist>:<search time µs>:1`;
