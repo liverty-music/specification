@@ -86,7 +86,15 @@ openspec workset create <change> --tool code \
 openspec workset open <change>
 ```
 
-Clean up after archive: remove each worktree (`git -C "$L/<repo>" worktree remove .claude/worktrees/<change>`, and for proto `git -C "$L/specification" worktree remove .claude/worktrees/<change>-proto`), then `openspec workset remove <change> --yes`.
+Clean up after the archive PR merges and this checkout is synced:
+
+```bash
+cd "$L/specification"
+python3 scripts/sweep-worktrees.py          # report what it would remove and why it keeps the rest
+python3 scripts/sweep-worktrees.py --apply  # remove
+```
+
+It sweeps every repository, so it also catches what earlier changes left behind. It removes a worktree only when its pull request is merged, its change is archived, nothing in it would be lost and nobody is using it, then removes the worksets whose worktrees are all gone. It keeps branches. A window or session still open on the change keeps its worktrees until a later run.
 
 ### Cloud: Claude Code on the web
 

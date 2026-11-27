@@ -41,3 +41,4 @@ operations:
     guidance:
       - Confirm every implementing PR is merged and cite them before archiving.
       - Archive in a worktree on a <change>-archive branch cut from origin/main (git worktree add .claude/worktrees/<change>-archive -b <change>-archive origin/main), after copying the change's latest progress from the store's working tree into it; stage only openspec/changes/<change>, openspec/changes/archive and openspec/specs, then push and open one PR. After it merges, sync the store's working tree for that change only (README "Branch work in this repository").
+      - After the archive PR merges and the store is synced, on a local machine run `python3 scripts/sweep-worktrees.py --apply` from the store's main checkout. It removes the finished worktrees and worksets of this and earlier changes; report each worktree it keeps or fails to remove, with the printed reason.
