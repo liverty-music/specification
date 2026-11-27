@@ -30,7 +30,8 @@ Concert discovery does not recognize that two found events are one concert, or t
 - `components/infrastructure/admin/web/route/approval-queue`: the conflict dialog's wording.
 - `stories/review-concert-candidates`: approving a shared bill.
 - `components/entity/event` (Purpose and a new requirement): new attribute "other listed venue names"; an Event is listed under a name when its listed venue name or one of its other listed venue names is that name.
-- Relied on and unchanged: Concert.Create (it already merges into an existing slot, adds performers and announces Concert.Created for a newly listed Artist), ConcertCandidate.Upsert, Series.Create and Series.DeleteOrphaned, Venue lookups, RejectedConcert.Append (keep existing still records the candidate; the log still never suppresses — the other listed names do, and only for the Event they belong to).
+- `components/entity/concert/create`: leaves an Event with a publish state unchanged, so an Organizer who publishes while a discovery or an approval is storing a Concert keeps the Event as published.
+- Relied on and unchanged: ConcertCandidate.Upsert, Series.Create and Series.DeleteOrphaned, Venue lookups, RejectedConcert.Append (keep existing still records the candidate; the log still never suppresses — the other listed names do, and only for the Event they belong to).
 
 ## Impact
 
