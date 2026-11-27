@@ -11,7 +11,7 @@ A Venue is a physical place where Events are held, known by the name its source 
 | admin area | the first-level Area the venue lies in | required; the code of a first-level Area (e.g. `JP-13`, `HK`) |
 | time zone | the IANA time zone in which the venue's dates and times are read | required; the Area's time zone when it has one, otherwise one of the time zones of the Area's country |
 | place id | map place identity | optional; at most one Venue per place id |
-| coordinates | location, cached from the map catalog | optional Coordinates; expired more than 30 days after their fetch time |
+| coordinates | location, cached from the map catalog | optional Coordinates; expired more than 28 days after their fetch time |
 | coordinates fetch time | when the coordinates were read from the map catalog | present exactly when the coordinates are |
 | listed venue name | the name as first listed by a source or Organizer, normalized | optional; with the admin area, identifies the Venue |
 
@@ -173,7 +173,7 @@ A Venue's name SHALL be the name its source listed (its listed venue name) or th
 
 ### Requirement: Coordinates at most 30 days old
 
-A Venue's coordinates SHALL carry their fetch time, the moment they were read from the map catalog; a Venue SHALL have both or neither. Coordinates SHALL be expired at an instant when their fetch time is more than 30 days before it.
+A Venue's coordinates SHALL carry their fetch time, the moment they were read from the map catalog; a Venue SHALL have both or neither. Coordinates SHALL be expired at an instant when their fetch time is more than 28 days before it, two days before the 30 days the map catalog's terms allow, because they are removed once a day.
 
 #### Scenario: Recent coordinates
 - **WHEN** a Venue's coordinates were fetched at 2026-11-01 04:00 UTC and the instant is 2026-11-24 04:00 UTC

@@ -1,7 +1,7 @@
 # components/usecase/venue/refresh-coordinates Specification
 
 ## Purpose
-VenueUseCase.RefreshCoordinates keeps each Venue's coordinates, which are a cache of the map catalog, no older than the catalog's terms allow: once a day it reads again the coordinates that are missing or older than 20 days and removes every coordinate older than 30 days.
+VenueUseCase.RefreshCoordinates keeps each Venue's coordinates, which are a cache of the map catalog, no older than the catalog's terms allow: once a day it reads again the coordinates that are missing or older than 20 days and removes every coordinate older than 28 days.
 
 ## Requirements
 
@@ -13,7 +13,7 @@ RefreshCoordinates SHALL take the instant the run starts and list the Venues due
 - when the map catalog has no such place (NotFound), remove the Venue's coordinates (Venue.SetCoordinates with no coordinates);
 - when the place has no coordinates, or on any other failure, leave the Venue unchanged and continue with the next Venue.
 
-Nothing but the coordinates and their fetch time SHALL change on the Venue. After the listed Venues, and also when listing failed, RefreshCoordinates SHALL remove every coordinate fetched more than 30 days before the run's start (Venue.ClearExpiredCoordinates). It SHALL fail when listing, removing expired coordinates or reading any Venue's coordinates failed other than with NotFound, after doing the rest.
+Nothing but the coordinates and their fetch time SHALL change on the Venue. After the listed Venues, and also when listing failed, RefreshCoordinates SHALL remove every coordinate fetched more than 28 days before the run's start (Venue.ClearExpiredCoordinates). It SHALL fail when listing, removing expired coordinates or reading any Venue's coordinates failed other than with NotFound, after doing the rest.
 
 #### Scenario: Coordinates refreshed
 - **WHEN** a Venue's coordinates were fetched 21 days before the run and the map catalog returns its place's coordinates
@@ -41,4 +41,4 @@ Once a day at 04:00 Japan time, RefreshCoordinates SHALL run with the run's star
 
 #### Scenario: Retried the next day
 - **WHEN** a run fails to read the coordinates of a Venue whose coordinates were fetched 21 days before it
-- **THEN** the next day's run lists that Venue again and keeps its coordinates until they are more than 30 days old
+- **THEN** the next day's run lists that Venue again and keeps its coordinates until they are more than 28 days old
