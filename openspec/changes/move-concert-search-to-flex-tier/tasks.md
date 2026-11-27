@@ -25,15 +25,14 @@
   - "Same attempt started twice";
   - "Eight at once";
   - "Waiting retries hold no place": 8 delayed attempts and a ninth that runs at once.
-- [ ] 2.4 Update the daily job and the first-follow consumer for the error-only SearchNewConcerts and keep their tests passing; release backend once the image built from the merge exists, and record the version for task 3.2
+- [ ] 2.4 Update the daily job and the first-follow consumer for the error-only SearchNewConcerts and keep their tests passing; release backend once the image built from the merge exists and task 3.1 is merged (the release goes live through task 3.2)
 
 ## 3. cloud-provisioning: pins and rollout
 
-- [ ] 3.1 Move `GCP_GEMINI_SEARCH_MODEL_EXTRACT` and `GCP_GEMINI_SEARCH_THINKING_EXTRACT` from the prod `concert-discovery` ConfigMap to the prod `fan-api` ConfigMap the worker reads, add `GCP_GEMINI_CONCERT_SEARCH_SERVICE_TIER=flex` beside them, keep `GCP_GEMINI_SEARCH_CACHE_TTL` in the job (design D8), and verify with `kustomize build` of the prod overlay that the worker's ConfigMap carries the three values and the job's carries the cache TTL only
-- [ ] 3.2 Bump the prod release pins of the backend images to the release of task 2.4 in the same PR and merge (ArgoCD syncs it to prod); say so in the report
+- [ ] 3.1 Move `GCP_GEMINI_SEARCH_MODEL_EXTRACT` and `GCP_GEMINI_SEARCH_THINKING_EXTRACT` from the prod `concert-discovery` ConfigMap to the prod `fan-api` ConfigMap the worker reads, add `GCP_GEMINI_CONCERT_SEARCH_SERVICE_TIER=flex` beside them, keep `GCP_GEMINI_SEARCH_CACHE_TTL` in the job (design D8), and verify with `kustomize build` of the prod overlay that the worker's ConfigMap carries the three values and the job's carries the cache TTL only; merge it before the release of task 2.4 (the current code ignores the tier variable, and the moved pins equal the code defaults, so the merge changes nothing that runs)
+- [ ] 3.2 Confirm that `bump-prod-pin.yml` in cloud-provisioning wrote the release of task 2.4 into every backend prod pin on main and that ArgoCD synced it (the prod pins are CI-written, never edited by hand; `k8s/namespaces/backend/overlays/prod/kustomization.yaml`, "Bumping on release"); say in the report that the release reached prod
 
 ## 4. Production check and observation (read-only)
 
 - [ ] 4.1 After the first 18:00 JST run following the rollout, confirm in prod that the job finished within 5 minutes, that each Artist due for a search has a `search-concerts` workflow, that `$ai_generation` events carry `service_tier = flex`, and that at least one search reached completed or failed
 - [ ] 4.2 After 3 days, collect the observation of design.md (success and 503/429 counts, latency, attempts per search, time from search time to end, searches that gave up at 20 hours) and write it with a recommendation on the standard-tier fallback and the freshness window into design.md Results
-- [ ] 4.3 Update the held change `measure-official-page-change-detection` (its plan worktree) to the new structure: its D1 (where the check runs), D5 and D6 (searches now end hours after 18:00 JST and the outcome comes from `record-end`), then resume it with plan-change step 4

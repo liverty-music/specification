@@ -23,7 +23,7 @@ This change moves the search into background attempts that retry a busy refusal 
   - a fallback to the standard tier after some hours;
   - a shorter search interval than the prod 96 hours;
   - the ticket sale search, which never succeeded on Flex in the trial;
-  - change detection of official pages (change measure-official-page-change-detection, held until this one is in prod).
+  - change detection of official pages (change measure-official-page-change-detection, planned on its own; its comparison holds whether or not this change is live).
 
   The first two are decided from this change's observation.
 
@@ -60,8 +60,8 @@ Unchanged, and why:
   - the generation report carries the service tier;
   - the daily job and the first-follow consumer finish in seconds.
 - **cloud-provisioning:**
-  - the prod release pin;
-  - the search model, thinking level and service tier are pinned in the prod ConfigMap the workflow worker reads, and removed from the job's.
+  - the search model, thinking level and service tier are pinned in the prod ConfigMap the workflow worker reads, and removed from the job's;
+  - the backend release reaches prod through the CI-written prod pins, with no hand-edited pin.
 - **Production:**
   - concert-search token cost roughly halves;
   - new concerts may reach fans up to some hours later on a busy day;
