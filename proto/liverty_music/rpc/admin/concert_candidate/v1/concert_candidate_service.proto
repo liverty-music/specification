@@ -50,7 +50,8 @@ service ConcertCandidateService {
   // start time (or both have none), with any event there that has a start time
   // when the ConcertCandidate has none, and, when it has a start time, with an
   // event of its own artist on that date with the same start time at another
-  // venue. When it collides and the request's `resolution` is unset, the
+  // venue, and, when it has a start time, with an Organizer's event of its
+  // artist at the venue and date that has none. When it collides and the request's `resolution` is unset, the
   // response carries a `DuplicateConflict` (the existing event's display fields
   // plus the ConcertCandidate) and NO state is mutated; the reviewer then
   // re-invokes Approve with a `resolution` of `RESOLUTION_KEEP_EXISTING` or

@@ -50,7 +50,7 @@ When the Artist has an Event on an event's date listed under the event's listed 
 - when the event has no start time and one of them, listed under the event's name, has one, nothing SHALL be stored, since the event adds nothing;
 - when the event has no start time and one of them, not listed under the event's name, has one, the event SHALL be staged (ConcertCandidate.Upsert) and not published;
 - when one of them has the same start time (or both have none) and is not listed under the event's name, the event SHALL be staged (ConcertCandidate.Upsert) and not published;
-- when the event brings a start time and one of them has none, the time SHALL be filled onto that Event (Concert.FillEventStartTimes) and nothing else stored, unless that Event has a publish state (an Organizer's Event, never filled: the event is staged), unless the Artist has an Event with that start time at another Venue (see "Same Artist at another venue at the same time") or another Event holds that slot (see "Start time held by another Event"); one unknown-start Event SHALL be filled by at most one event of the batch;
+- when the event brings a start time and one of them has none, the time SHALL be filled onto that Event (Concert.FillEventStartTimes) and nothing else stored, unless that Event has a publish state (an Organizer's Event is never filled: nothing is stored when it is listed under the event's name, and the event is staged otherwise), unless the Artist has an Event with that start time at another Venue (see "Same Artist at another venue at the same time") or another Event holds that slot (see "Start time held by another Event"); one unknown-start Event SHALL be filled by at most one event of the batch;
 - otherwise the event SHALL go on to "Same Artist at another venue at the same time" and then to the collision check.
 
 #### Scenario: Exact re-discovery
@@ -159,7 +159,7 @@ For each series, CreateFromDiscovered SHALL publish every event it decides to pu
 
 ### Requirement: Same Artist at another venue at the same time
 
-When the event brings a start time and the Artist has an Event on its date with the same start time at another Venue, an Event already stored or one this series publishes, CreateFromDiscovered SHALL stage the event (ConcertCandidate.Upsert) and not publish it, since one Artist cannot play two venues at once.
+When the event brings a start time and the Artist has an Event on its date with the same start time at another Venue, an Event already stored, one this series publishes, or one it has filled or merged into earlier in the batch, CreateFromDiscovered SHALL stage the event (ConcertCandidate.Upsert) and not publish it, since one Artist cannot play two venues at once.
 
 #### Scenario: Renamed hall
 - **WHEN** the Artist's Event on 2027-08-28 at 18:00 is at the Venue listed "日本ガイシホール", and the event lists "クロコくんホール (旧 日本ガイシホール)" at 18:00 and resolves to another Venue

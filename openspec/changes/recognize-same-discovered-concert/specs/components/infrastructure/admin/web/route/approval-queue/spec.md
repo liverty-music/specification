@@ -8,3 +8,11 @@ The conflict dialog's lede SHALL say that both choices keep one event and list t
 
 - **WHEN** approval detects a duplicate and presents the conflict dialog
 - **THEN** the lede states that either choice keeps one event with the candidate's artist as a performer (an Organizer's event keeps its performers and only Keep existing applies to it), which listed venue name Keep existing and Adopt candidate each show, and that a different concert is to be rejected
+
+### Requirement: Adopt refused for an Organizer's event
+
+When Approve refuses adopt the candidate with FailedPrecondition (the existing event is an Organizer's), the conflict dialog SHALL stay open with the row kept in the queue and SHALL say that the event keeps its listed venue name and times and that Keep existing or rejecting the candidate remains.
+
+#### Scenario: Adopt refused
+- **WHEN** the admin chooses Adopt candidate and Approve fails with FailedPrecondition
+- **THEN** the dialog stays open, says to choose Keep existing or reject the candidate, and the row stays in the queue

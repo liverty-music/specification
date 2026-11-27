@@ -2,7 +2,7 @@
 
 ### Requirement: Collision is detected before any change
 
-After resolving the Venue, Approve SHALL look up the Events at that Venue and date (Concert.FindEventsByVenueAndDate) and the Events of the ConcertCandidate's Artist on its date (Concert.FindEventsByArtistAndDate). The ConcertCandidate collides with an Event at the Venue and date that has the same start time (or both have none); when the ConcertCandidate has no start time, with any Event there that has one; and, when it has a start time, with an Event of its Artist on its date with the same start time at another Venue. Detection SHALL be repeated on every call.
+After resolving the Venue, Approve SHALL look up the Events at that Venue and date (Concert.FindEventsByVenueAndDate) and the Events of the ConcertCandidate's Artist on its date (Concert.FindEventsByArtistAndDate). The ConcertCandidate collides with an Event at the Venue and date that has the same start time (or both have none); when the ConcertCandidate has no start time, with any Event there that has one; when it has a start time, with an Event of its Artist on its date with the same start time at another Venue, and with an Organizer's Event (one with a publish state) of its Artist at the Venue and date that has no start time. Detection SHALL be repeated on every call.
 
 #### Scenario: Same slot
 - **WHEN** an Event exists at the Venue, date and start time of the ConcertCandidate
@@ -11,6 +11,10 @@ After resolving the Venue, Approve SHALL look up the Events at that Venue and da
 #### Scenario: Unknown start next to a known start
 - **WHEN** the ConcertCandidate has no start time and an Event there starts at 18:00
 - **THEN** the ConcertCandidate collides with it
+
+#### Scenario: Organizer's event without a start time
+- **WHEN** the ConcertCandidate starts at 18:00 and its Artist's Organizer's PUBLISHED Event at the Venue and date has no start time
+- **THEN** the ConcertCandidate collides with that Event, which is not filled
 
 #### Scenario: Same artist at another venue
 - **WHEN** the ConcertCandidate starts at 18:00 on 2027-08-28 and its Artist's Event on that date starts at 18:00 at another Venue
@@ -47,7 +51,7 @@ When the ConcertCandidate collides and the resolution is adopt the candidate, Ap
 ### Requirement: Publish a non-colliding concert candidate
 
 When the ConcertCandidate does not collide, Approve SHALL ignore any resolution and:
-- when it brings a start time and an Event of its Artist at the Venue and date has none, fill that Event's times (Concert.FillEventStartTimes) and add nothing; an Organizer's Event is never filled this way: the ConcertCandidate collides with it instead;
+- when it brings a start time and an Event of its Artist at the Venue and date has none, fill that Event's times (Concert.FillEventStartTimes) and add nothing; an Organizer's Event is never filled this way (see "Collision is detected before any change");
 - otherwise add it as a Concert under the ConcertCandidate's Series with its Artist as performer (Concert.Create), never creating a Series. Concert.Create announces the new concert to the Artist's followers; when it fails, Approve SHALL fail with its error and keep the ConcertCandidate.
 
 An Event at the Venue and date that its Artist does not perform at SHALL never be filled by Approve. It SHALL then remove the ConcertCandidate, and, when nothing was added, remove the ConcertCandidate's Series if it is left with no Event and no ConcertCandidate (Series.DeleteOrphaned; a failure here does not fail Approve).
