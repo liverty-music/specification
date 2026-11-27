@@ -30,11 +30,15 @@ When the ConcertCandidate collides and the resolution is keep existing, Approve 
 
 ### Requirement: Adopt the candidate
 
-When the ConcertCandidate collides and the resolution is adopt the candidate, Approve SHALL replace the Event's listed venue name with the ConcertCandidate's, keeping the replaced name among its other listed venue names (Concert.UpdateEventListedVenueName), fill the Event's unknown start and open time from it (Concert.FillEventStartTimes), make its Artist a performer of the Event (see "Another Artist's Event becomes a shared bill"), leave its Venue, place id and Series title unchanged, remove the ConcertCandidate, and return no conflict.
+When the ConcertCandidate collides and the resolution is adopt the candidate, Approve SHALL replace the Event's listed venue name with the ConcertCandidate's, keeping the replaced name among its other listed venue names (Concert.UpdateEventListedVenueName), fill the Event's unknown start and open time from it (Concert.FillEventStartTimes), make its Artist a performer of the Event (see "Another Artist's Event becomes a shared bill"), leave its Venue, place id and Series title unchanged, remove the ConcertCandidate, and return no conflict. Against an Event with a publish state (an Organizer's Event), adopt the candidate SHALL fail with FailedPrecondition and change nothing.
 
 #### Scenario: Admin adopts the candidate's details
 - **WHEN** an admin approves a colliding ConcertCandidate choosing adopt the candidate
 - **THEN** the Event lists the ConcertCandidate's venue name, is still listed under its former name, gains any unknown time, and the ConcertCandidate is removed
+
+#### Scenario: Organizer's event not adopted onto
+- **WHEN** an admin chooses adopt the candidate for a ConcertCandidate colliding with an Organizer's PUBLISHED Event
+- **THEN** Approve fails with FailedPrecondition, the Event keeps its listed venue name and times, and the ConcertCandidate is kept
 
 #### Scenario: Known start time kept
 - **WHEN** the Event starts at 18:00 and the ConcertCandidate has no start time and adopt the candidate is chosen

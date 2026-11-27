@@ -58,7 +58,8 @@ service ConcertCandidateService {
   // and make the ConcertCandidate's artist one of its performers, unless the
   // event belongs to an Organizer, whose performers stay as they are; the
   // listed venue name that the event does not show is kept as one of its other
-  // listed venue names. A non-duplicate approval publishes normally regardless
+  // listed venue names. An Organizer's event keeps its listed venue name and
+  // times, so only RESOLUTION_KEEP_EXISTING (or Reject) applies to it. A non-duplicate approval publishes normally regardless
   // of the `resolution` value.
   //
   // Approve also settles the venue's area and time zone: the request's
