@@ -6,6 +6,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/type/datetime.proto";
+import "liverty_music/entity/v1/area.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/series.proto";
 
@@ -180,6 +181,12 @@ message TicketSale {
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).repeated.min_items = 1
   ];
+
+  // The sale's time zone, the one sale_start_time and sale_end_time name, with
+  // the names a screen shows for it, from the reference data. Present on every
+  // sale the server returns, so a client names the sale's zone without a list
+  // of its own.
+  optional TimeZoneOption time_zone_option = 21 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // Fields 2, 6 to 9 and 11 to 13 were the per-event sale's event, price,
   // per-account limit, quantity, sold count, held count, state and low stock,

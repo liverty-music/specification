@@ -3,6 +3,8 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/area.proto";
 import "liverty_music/entity/v1/coordinates.proto";
 import "liverty_music/entity/v1/user.proto";
 
@@ -36,6 +38,12 @@ message Venue {
   // whole Area has one zone; it always belongs to the venue's country. Absent
   // only for a venue stored before time zones were recorded.
   TimeZone time_zone = 6;
+
+  // time_zone with the names a screen shows for it, from the reference data;
+  // its time_zone equals time_zone. Present whenever time_zone is present, so
+  // a client names the venue's zone without a list of its own. Output only:
+  // the server fills it in on the venues it returns.
+  optional TimeZoneOption time_zone_option = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // VenueId is a globally unique identifier for a concert venue.
