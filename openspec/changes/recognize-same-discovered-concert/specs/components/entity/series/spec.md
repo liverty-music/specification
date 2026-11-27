@@ -2,7 +2,7 @@
 
 ### Requirement: Same tour title
 
-Two Series titles SHALL be the same tour title when they are equal once full-width and half-width forms are folded to one form (a half-width katakana with a voicing mark becoming the one voiced katakana), the case of Latin-script letters is ignored, and every character that is neither a letter nor a decimal digit (spaces, punctuation, quotation marks, symbols, circled or Roman numerals) is removed. No other rule, such as a year or a word that differs, SHALL make two titles the same.
+Two Series titles SHALL be the same tour title when they are equal once full-width and half-width forms are folded to one form (a half-width katakana with a voicing mark becoming the one voiced katakana), the case of Latin-script letters is ignored, and every character that is neither a letter nor a number (spaces, punctuation, quotation marks, symbols) is removed. Numbers of every form, such as Roman or circled numerals, SHALL be kept as they are. No other rule, such as a year, a numeral or a word that differs, SHALL make two titles the same.
 
 #### Scenario: Quotation marks and case differ
 
@@ -24,9 +24,9 @@ Two Series titles SHALL be the same tour title when they are equal once full-wid
 - **WHEN** one title is "CAFÉ TOUR" and the other is "café tour"
 - **THEN** they are the same tour title
 
-#### Scenario: Roman numeral is not a letter or digit
+#### Scenario: Sequel numbered with a Roman numeral
 
-- **WHEN** one title is "TOUR Ⅱ" and the other is "TOUR II"
+- **WHEN** one title is "ARENA TOUR Ⅰ" and the other is "ARENA TOUR Ⅱ"
 - **THEN** they are not the same tour title
 
 #### Scenario: Different year
