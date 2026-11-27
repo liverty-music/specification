@@ -70,7 +70,7 @@ When Create stores a new User, it SHALL announce the User as created (User.Creat
 
 ### Requirement: Create refuses the identity of a removed User
 
-Create SHALL fail with FailedPrecondition, storing and announcing nothing, when a User with the same provider user ID was removed (User.Delete), also when that removal completes while Create runs. The email of a removed User SHALL be free for another provider user ID.
+Create SHALL fail with FailedPrecondition, storing and announcing nothing, while the provider user ID is recorded as that of a removed User (User.Delete, until User.ForgetRemovedIdentity), also when that removal completes while Create runs. The email of a removed User SHALL be free for another provider user ID.
 
 #### Scenario: Identity of a removed User
 

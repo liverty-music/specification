@@ -8,6 +8,30 @@ See proposal.md. Facts (2026-11-27):
 - The backend reaches ZITADEL at `https://auth.liverty-music.app`, which resolves to the external load balancer: key fetches arrive from node public IPs. The login app already calls `http://zitadel-api:80` with the public host in headers; ZITADEL resolves the instance from `x-zitadel-instance-host` or `x-zitadel-public-host` (values.yaml `InstanceHostHeaders`).
 - ZITADEL serves one replica; measured inside it, simple calls take tens to hundreds of ms (`/oauth/v2/keys` p50 146 ms, p95 223 ms over 7 days of sparse traffic). Introspection has not been measured.
 
+### Measurement (task 2.1, prod, 2026-11-27)
+
+The backend's own clients ran on a laptop against `zitadel-api` through a port-forward, with `ZITADEL_INTERNAL_URL` pointing at it.
+
+- Instance resolution: keys, discovery, token, introspection and the gRPC call (`GetUserByID` of a throwaway fan) work at the internal address with the headers; discovery still answers the public issuer.
+- Fan app and organizer console: the access token is active, the ID token is not. A token asked about with another project's key is not active. The admin console key is accepted; no admin console token was asked about (Google sign-in only).
+- A fan deleted in the app: its access token, with 28 minutes left, and its ID token are not active one second after the deletion.
+- Introspection through the port-forward: p50 250 ms, p95 341 ms (100 asks). The port-forward alone costs about as much: 200 paired asks gave `/debug/healthz` p50 235 ms, p95 271 ms and introspection p50 264 ms, p95 329 ms, so ZITADEL spends about 30 ms (p50) to 60 ms (p95) on an introspection. The p95 inside the cluster is measured after the release (task 6.3). The owner decided on 2026-11-27 to go on although the measured p95 exceeds 300 ms.
+
+### Production check (task 6.3, 2026-11-27, v1.155.0 and v1.155.1)
+
+- Signed-in calls succeed in the fan app (`delete-my-account` E2E, 2 passed), the organizer API and the admin console. Since the release no backend request has reached `auth.liverty-music.app` through the load balancer.
+- The two identities removed after the release are forgotten, and `workflow.needs_admin` is 0. One row older than the release remains in `deleted_user_identities`: `401420940820349201`, removed under the old code at 06:40.
+- Introspection in the cluster: the 5 asks that reached Cloud Monitoring all took less than 50 ms. Only 5 arrived because every backend Pod writes the same metric series (the telemetry resource names no instance), so Cloud Monitoring drops most points. This predates the change.
+
+### Production check (task 7.1, 2026-11-27)
+
+- Each API refuses its own app's ID token with Unauthenticated (fan, organizer, admin console) and another app's access token with PermissionDenied (admin with a fan or organizer token, fan and organizer with each other's). A call with a garbage token or none is Unauthenticated, a public call carrying an ID token succeeds, and each app's own calls succeed. The admin console case was run by the owner in the console's DevTools (ID token 401, access token 200).
+
+Two unchanged scenarios of the modified requirement are about the cluster network, which no automated test reaches. Read in prod on 2026-11-27 after the identity port was renamed:
+
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Process with no access" -- NetworkPolicy `identity-ingress` admits only workflow-worker (9100), admin-console-api (9101) and fan-api with its candidate (9102), besides the health port
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Request from outside the cluster" -- Service `identity` is ClusterIP, no HTTPRoute names it and the cluster has no Ingress
+
 ## Goals / Non-Goals
 
 **Goals:** only an access token for the API's own app signs a call in; no backend call to ZITADEL leaves the cluster network.
