@@ -2,7 +2,7 @@
 
 ### Requirement: Create merges into an existing slot
 
-For each Concert, Create SHALL store a new Event when no Event exists at its Venue, date and start time (an unknown start matching only an unknown start). When one exists, Create SHALL keep that Event and its id, fill its start and open time only where they are unknown, never overwrite a known time, and add the Concert's performers to it. Concerts in one call that share a slot SHALL be stored once. When an Event with a publish state (an Organizer's Event) holds the slot of one of the Concerts, Create SHALL fail with FailedPrecondition and store nothing.
+For each Concert, Create SHALL store a new Event when no Event exists at its Venue, date and start time (an unknown start matching only an unknown start). When one exists, Create SHALL keep that Event and its id, fill its start and open time only where they are unknown, never overwrite a known time, and add the Concert's performers to it. Concerts in one call that share a slot SHALL be stored once. When an Event with a publish state (an Organizer's Event) holds the slot of one of the Concerts, Create SHALL fail with Unavailable and store nothing, so that a caller that looks the slots up again decides anew.
 
 #### Scenario: New slot
 - **WHEN** no Event exists at Venue V on 2026-06-01 at 18:00
@@ -26,4 +26,4 @@ For each Concert, Create SHALL store a new Event when no Event exists at its Ven
 
 #### Scenario: Slot held by a first-party event
 - **WHEN** a PUBLISHED Event of a first-party Series holds V on 2026-06-01 at 18:00 and a Concert of another Artist is created at that slot
-- **THEN** Create fails with FailedPrecondition, the Event keeps its times and performers, and nothing is stored
+- **THEN** Create fails with Unavailable, the Event keeps its times and performers, and nothing is stored
