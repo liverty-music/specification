@@ -5,7 +5,7 @@ See proposal.md for why. The current state this design builds on:
 - The daily concert search is the `concert-discovery` CronJob (18:00 JST). It lists followed Artists (`FollowRepo.ListAll`) and calls `ConcertUseCase.SearchNewConcerts` with trigger `daily_run`; a ConcertSearch completed less than 96h ago skips the external search.
 - Before each Gemini call the concert searcher fetches the OfficialSite's top page with `NewOfficialPageClient` (public addresses only, at most 3 redirects within the site's registrable domain, 5 s timeout, 2 MiB cap) and lists up to 60 of its links in the prompt, after dropping social, streaming, shop, ticket-vendor and site-information links (`officialPageLinks` in `internal/infrastructure/gcp/gemini/official_pages.go`).
 - Each search that reached Gemini sends a PostHog `concert.search.completed` event with `artist_id`, `trigger` and `outcome` (`found`, `nothing_new` or `failed`) and `event_count`.
-- Change `move-concert-search-to-flex-tier` (merged as a plan) moves the search into background attempts on the Flex tier. Once it is live, a daily search still starts at 18:00 JST but its event arrives when its last attempt ends, up to about 21 hours later, and a search may end as failed after 20 hours of a busy service. D6 keys each search by the day it started, so searches are paired with the same snapshots whether or not that change is live; what does differ is the lag between the snapshot and the page read (Risks).
+- Change `move-concert-search-to-flex-tier` is live (backend v1.156.0, 2026-11-27). The `concert-discovery` CronJob (18:00 JST) now only records each due search and starts a `search-concerts` workflow, and ends within minutes without calling Gemini. The workflow worker runs the search in attempts: the page read and the Gemini call happen at the successful attempt, from 18:00 JST up to 20 hours later (no attempt starts at or after 20 hours; a call can end up to 15 minutes after that), and the search's `concert.search.completed` event is sent when it ends, so always before the next 18:00 JST. A search ends as failed (error kind unavailable) when the service stays busy for the whole window. A search whose Artist is found ended or represented by the first attempt sends no event.
 - `pkg/analyticslog` marks a log line for the analytics log bucket, with exactly one topic from the list the structured-logging spec fixes (`job_result`, `notification_delivery`, `catalog_review`, `catalog_sync`, `payment`). An unmarked line stays in the operational logs, which Cloud Logging keeps for 30 days.
 
 ## Goals / Non-Goals
@@ -27,9 +27,11 @@ See proposal.md for why. The current state this design builds on:
 
 Alternative: a new `cmd/job/official-page-check` binary. It needs its own Dockerfile stage, an entry in the deploy workflow's image list, a base image name and a prod image pin, all to be removed again after 8 days. The mode reuses the image, the job wiring and the prod pin of concert-discovery, so the temporary footprint is one flag and one manifest.
 
+The job's code path for the search is gone (it starts workflows), so this mode shares only the binary, the image and the database wiring with the daily run. The check needs no Gemini key and no workflow client.
+
 The CronJob carries the pod label `app: concert-discovery`, the label of the binary it runs, so the existing per-workload ERROR-log alert in cloud-provisioning (`src/gcp/components/monitoring.ts`, one entry per `app` label under `k8s/namespaces/backend/base`) covers its failures with no new entry. A label of its own would need a new alert entry, a Pulumi change applied to prod by the owner, for a workload that lives 8 days. The CronJob name tells the two apart in logs.
 
-Alternative: run the check inside the daily search job. It would change the timing and failure behavior of the job fans depend on, which this measurement must not do.
+Alternative: run the check inside the daily job. The job now ends within minutes, so a check of about 1,900 pages (D3) would stretch it by an order of magnitude and put its failures into the job's 3-failure stop, which this measurement must not do.
 
 ### D2. Hash the normalized visible text, not the raw HTML
 
@@ -72,12 +74,12 @@ The checked Artists are the ones the search would search. Followed Artists are c
 
 ### D6. How the results are read
 
-**Which searches are compared.** Each `concert.search.completed` event with `trigger = daily_run` and outcome `found` or `nothing_new` in the period is one search. Its start day is the day of the latest 18:00 JST at or before the event, which holds whether the search ran inline or in background attempts. Its **baseline** is the Artist's previous `daily_run` search with outcome `found` or `nothing_new`; a `failed` search is skipped, because it could not have found a concert the page announced. A search is **comparable** only when the snapshots of both start days exist; the others are counted as "no baseline" and left out of every rate below.
+**Which searches are compared.** Each `concert.search.completed` event with `trigger = daily_run` and outcome `found` or `nothing_new` in the period is one search. Its start day is the day of the latest 18:00 JST at or before the event: a search ends within 20.25 hours of its start, so before the next 18:00 JST. Its **baseline** is the Artist's previous `daily_run` search with outcome `found` or `nothing_new`; a `failed` search is skipped, because it could not have found a concert the page announced. A search is **comparable** only when the snapshots of both start days exist; the others are counted as "no baseline" and left out of every rate below.
 
 **Which pages are compared.** For a comparable search, take the 17:00 JST snapshot of its start day and that of its baseline's start day. A page is compared only when it has `status = ok` in both. When the top page is not `ok` in either snapshot, the search is counted as "unreadable" and left out, because its link list is missing too. A page is matched by `page_url`. When the top page's `page_url` differs between the two snapshots (the OfficialSite was replaced by the daily official-site refresh, or the www. fallback read another host), the search is counted as "site moved" and left out, because every hash would differ for a reason that says nothing about an update. The search is **changed** when a compared page's `text_sha256` differs, or when the set of listed URLs differs between the two `ok` top pages. The search is **found** when its outcome is `found`.
 
 Reported, as aggregate counts only:
-- the counts of searches left out (no baseline, unreadable, site moved, failed outcome);
+- the counts of searches left out (no baseline, unreadable, site moved, failed outcome, no event because the first attempt found the Artist ended or represented);
 - over comparable searches, the 2x2 table of changed and found; recall = found and changed / found; trigger rate = changed / comparable searches;
 - of the changed searches, how many changed only through linked pages;
 - Artists whose top page text is shorter than 200 characters, and pages that failed to fetch on more than 2 runs;
@@ -88,7 +90,7 @@ If fewer than 10 comparable searches are `found` in the period, recall is not re
 ## Risks / Trade-offs
 
 - [A site rate-limits or blocks the extra GETs] → one request at a time per site, the existing User-Agent naming the service, and the 5 s timeout; a site that answers 429 or 403 is logged with its status and left out of the comparison (D6), so a refusal never reads as a change.
-- [A concert announced after the 17:00 snapshot and before the search reads the page counts as found without change] → measured recall is a lower bound. Inline searches read the page within about an hour; with move-concert-search-to-flex-tier live, up to about 21 hours later. The report states which applied, and the share of `found` searches whose signal came more than 2 hours after 18:00 JST.
+- [A concert announced after the 17:00 snapshot and before the search reads the page counts as found without change] → measured recall is a lower bound. The search reads the page when its successful attempt runs, from 18:00 JST up to 20 hours later (a busy Flex tier delays it), so the snapshot predates the read by 1 to 21 hours. The report states the share of `found` searches whose event came more than 2 hours after 18:00 JST, the ones for which a change in that gap is most likely.
 - [Text that changes on every load (a clock, a random banner) makes every search look changed] → the trigger rate shows it; the report lists the pages that changed on every run so the next change can decide how to handle them.
 - [A concert announced only off-site (a festival site, a ticket vendor) is never visible on the official pages] → it shows up as found without change, which is exactly what recall measures.
 - [The refactor of the top-page fetch changes what the searcher sends] → the searcher's existing link-list tests must pass unchanged.

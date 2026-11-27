@@ -12,7 +12,7 @@ What the probe cannot show is whether a text change predicts a new concert, and 
 - cloud-provisioning adds a temporary CronJob that runs that mode daily at 17:00 JST, one hour before the daily concert search, for 8 days.
 - After the 8th run, the results are compared with the `concert.search.completed` events of the daily searches in the same period, and the findings are written into this change's design.md.
 - Then the CronJob and the mode are removed.
-- Out of scope: any change to when searches run. Running the search on Gemini's Flex tier in background attempts is change `move-concert-search-to-flex-tier`; the comparison in design D6 holds whether or not it is live during the measurement.
+- Out of scope: any change to when searches run. The search runs on Gemini's Flex tier in background attempts since change `move-concert-search-to-flex-tier` (v1.156.0); the comparison in design D6 reads its end events, which arrive up to 20 hours after 18:00 JST.
 
 ## Capabilities
 
