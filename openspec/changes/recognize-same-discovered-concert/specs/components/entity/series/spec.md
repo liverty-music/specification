@@ -29,6 +29,16 @@ Two Series titles SHALL be the same tour title when they are equal once full-wid
 - **WHEN** one title is "ARENA TOUR Ⅰ" and the other is "ARENA TOUR Ⅱ"
 - **THEN** they are not the same tour title
 
+#### Scenario: Roman numeral is not the same as its letters
+
+- **WHEN** one title is "TOUR Ⅱ" and the other is "TOUR II"
+- **THEN** they are not the same tour title
+
+#### Scenario: Circled numerals differ
+
+- **WHEN** one title is "VOL.①" and the other is "VOL.②"
+- **THEN** they are not the same tour title
+
 #### Scenario: Different year
 
 - **WHEN** one title is "ARENA TOUR 2026" and the other is "ARENA TOUR 2027"
