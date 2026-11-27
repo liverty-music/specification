@@ -50,7 +50,7 @@ When the Artist has an Event on an event's date listed under the event's listed 
 - when the event has no start time and one of them, listed under the event's name, has one, nothing SHALL be stored, since the event adds nothing;
 - when the event has no start time and one of them, not listed under the event's name, has one, the event SHALL be staged (ConcertCandidate.Upsert) and not published;
 - when one of them has the same start time (or both have none) and is not listed under the event's name, the event SHALL be staged (ConcertCandidate.Upsert) and not published;
-- when the event brings a start time and one of them has none, the time SHALL be filled onto that Event (Concert.FillEventStartTimes) and nothing else stored, unless the Artist has an Event with that start time at another Venue (see "Same Artist at another venue at the same time") or another Event holds that slot (see "Start time held by another Event"); one unknown-start Event SHALL be filled by at most one event of the batch;
+- when the event brings a start time and one of them has none, the time SHALL be filled onto that Event (Concert.FillEventStartTimes) and nothing else stored, unless that Event has a publish state (an Organizer's Event, never filled: the event is staged), unless the Artist has an Event with that start time at another Venue (see "Same Artist at another venue at the same time") or another Event holds that slot (see "Start time held by another Event"); one unknown-start Event SHALL be filled by at most one event of the batch;
 - otherwise the event SHALL go on to "Same Artist at another venue at the same time" and then to the collision check.
 
 #### Scenario: Exact re-discovery

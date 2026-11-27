@@ -47,7 +47,7 @@ When the ConcertCandidate collides and the resolution is adopt the candidate, Ap
 ### Requirement: Publish a non-colliding concert candidate
 
 When the ConcertCandidate does not collide, Approve SHALL ignore any resolution and:
-- when it brings a start time and an Event of its Artist at the Venue and date has none, fill that Event's times (Concert.FillEventStartTimes) and add nothing;
+- when it brings a start time and an Event of its Artist at the Venue and date has none, fill that Event's times (Concert.FillEventStartTimes) and add nothing; an Organizer's Event is never filled this way: the ConcertCandidate collides with it instead;
 - otherwise add it as a Concert under the ConcertCandidate's Series with its Artist as performer (Concert.Create), never creating a Series. Concert.Create announces the new concert to the Artist's followers; when it fails, Approve SHALL fail with its error and keep the ConcertCandidate.
 
 An Event at the Venue and date that its Artist does not perform at SHALL never be filled by Approve. It SHALL then remove the ConcertCandidate, and, when nothing was added, remove the ConcertCandidate's Series if it is left with no Event and no ConcertCandidate (Series.DeleteOrphaned; a failure here does not fail Approve).
