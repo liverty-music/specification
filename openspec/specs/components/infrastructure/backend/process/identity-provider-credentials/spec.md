@@ -14,7 +14,7 @@ Every change the platform makes to an identity at the identity provider SHALL be
 - from the fan API: confirming an email address with the code from a verification email, and nothing else;
 - from the admin console API: creating, provisioning, deactivating and deleting an Organizer's Organization.
 
-The identity service SHALL take no requests from outside the cluster. Each calling process SHALL reach only the identity-service operations it uses, and every other process SHALL reach none. A request for an operation outside the caller's set SHALL be refused and SHALL change nothing. Each API server SHALL keep validating sign-in tokens with the identity provider's public keys, which are not a credential.
+The identity service SHALL take no requests from outside the cluster. Each calling process SHALL reach only the identity-service operations it uses, and every other process SHALL reach none. A request for an operation outside the caller's set SHALL be refused and SHALL change nothing. The fan, organizer and admin console API servers SHALL each hold a credential of their own that only lets them ask the identity provider whether a sign-in token is valid; it can neither read nor change identities through the management API. No other process SHALL have another process's such credential.
 
 #### Scenario: API server deployment
 
@@ -63,5 +63,5 @@ The identity service SHALL take no requests from outside the cluster. Each calli
 
 #### Scenario: Signed-in calls keep working
 
-- **WHEN** a caller calls a signed-in procedure of the fan, organizer or reception API with a valid token
-- **THEN** the token is validated as before, without any identity-provider credential
+- **WHEN** a caller calls a signed-in procedure of the fan, organizer or admin console API with a valid token
+- **THEN** the server checks the token with its own token-checking credential, without any management credential
