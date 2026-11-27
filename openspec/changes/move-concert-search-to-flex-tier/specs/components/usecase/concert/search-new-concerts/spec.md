@@ -6,7 +6,7 @@ After recording the ConcertSearch as pending, SearchNewConcerts SHALL start the 
 
 The background search SHALL call Concert.Search in attempts:
 - Each attempt SHALL call Concert.Search once and SHALL run once, also when it is started again.
-- When Concert.Search fails with Unavailable or DeadlineExceeded and less than 20 hours have passed since the search time, the next attempt SHALL start after a wait of 1 minute for the first retry, doubling with each further retry up to at most 1 hour.
+- When Concert.Search fails with Unavailable or DeadlineExceeded, the next attempt SHALL start after a wait of 1 minute for the first retry, doubling with each further retry up to at most 1 hour, provided that it would start less than 20 hours after the search time. Otherwise no further attempt SHALL start.
 - At most 8 attempts SHALL be calling Concert.Search at once across all backend processes. Attempts waiting to retry SHALL NOT count toward those 8.
 - No attempt SHALL call Concert.Search 20 hours or more after the search time. The search then SHALL end as failed (see "The search is recorded").
 
@@ -127,9 +127,9 @@ Every background search that calls Concert.Search SHALL send one "concert search
 - the outcome (failed, nothing new, or new concerts found);
 - the numbers of series and events it handed on.
 
-A failed search SHALL also carry the kind of error that failed it, or unknown when the error states no kind, and SHALL NOT carry the error's message. Examples of an error kind are deadline exceeded, unavailable and permission denied. A search that ended because no attempt could call Concert.Search within 20 hours of the search time SHALL carry the kind of the last error.
+A failed search SHALL also carry the kind of error that failed it, or unknown when the error states no kind, and SHALL NOT carry the error's message. Examples of an error kind are deadline exceeded, unavailable and permission denied. A search that ended because no further attempt could start within 20 hours of the search time SHALL carry the kind of the error its last call returned.
 
-Retried attempts SHALL NOT send a signal of their own. A search that ends before any call to Concert.Search sends no signal. A failure to send the signal SHALL NOT change the outcome.
+Retried attempts SHALL NOT send a signal of their own. A search that ends before any call to Concert.Search sends no signal, including a search whose first attempt could only start 20 hours or more after the search time. A failure to send the signal SHALL NOT change the outcome.
 
 #### Scenario: Nothing new
 - **WHEN** the daily run searches an Artist and every event found is already known
@@ -144,7 +144,7 @@ Retried attempts SHALL NOT send a signal of their own. A search that ends before
 - **THEN** one signal is sent with the outcome failed and the error kind unknown
 
 #### Scenario: Busy for a whole day
-- **WHEN** a search made 12 attempts that all failed with Unavailable and the 20 hours have passed
+- **WHEN** every attempt of a search failed with Unavailable until no further attempt could start within 20 hours of the search time
 - **THEN** exactly one signal is sent, with the outcome failed and the error kind unavailable
 
 ## REMOVED Requirements

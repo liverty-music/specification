@@ -13,7 +13,7 @@ This change moves the search into background attempts that retry a busy refusal 
   - The first-follow search starts one the same way.
 - **The background search survives a busy service.** It runs the steps that were inline before: Concert.Search, the filtering, handing on to CreateFromDiscovered, the status update and the completed signal.
   - It calls Concert.Search in attempts. At most 8 attempts call it at once across the platform, and attempts waiting to retry hold no place.
-  - A busy or timed-out attempt is followed by another, first after 1 minute and then at doubling intervals of at most 1 hour, while less than 20 hours have passed since the search time. After that the search ends as failed, with one completed signal of outcome failed.
+  - A busy or timed-out attempt is followed by another, first after 1 minute and then at doubling intervals of at most 1 hour, as long as the next attempt would start less than 20 hours after the search time. Otherwise the search ends as failed, with one completed signal of outcome failed.
   - Every attempt first checks again that the search is still current and the Artist may still be searched (not ended, not represented by an active Organizer), because an attempt can run hours after the request.
 - **The pending timeout becomes 20 hours (from 3 minutes).** While a background search may still be running, no second search for the same Artist starts.
 - **Concert.Search asks for the lower-priced service level (Flex).** It waits up to 15 minutes for each answer. A busy refusal counts as a transient failure.

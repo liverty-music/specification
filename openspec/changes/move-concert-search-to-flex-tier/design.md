@@ -102,7 +102,7 @@ That gap is accepted rather than adding a transactional start.
    - **failed**: the error kind of a permanent error.
 
    Busy and failed are values, not errors, so the step retry policy never runs.
-3. **busy within the window:** start the next attempt and end. The next attempt has:
+3. **busy, and the next attempt would start less than 20 h after the search time:** start the next attempt and end. (When it would start at or past 20 h, go to `record-end` as failed instead.) The next attempt has:
    - the id `...:<attempt+1>`;
    - a delay of 1 minute doubling to at most 1 hour;
    - the same queue.
@@ -154,7 +154,7 @@ Attempt numbers count from 1, and every attempt reports its call (Concert.Search
 ### D7. Reporting
 
 - **Service tier on each generation.** `posthog.LLMGeneration` gets `ServiceTier`, reported as `service_tier`. Cost from PostHog's own price table reads as standard pricing; the billing export stays the source of truth for money. Sending our own cost figures was rejected: it would put a price table in code that goes stale on each repricing.
-- **Every search that reached the external search ends with one signal.** `concert.search.completed` is sent once per search, from the `record-end` of its last attempt, including a search that gave up at 20 h (outcome failed, error kind unavailable). A search ended by the `check` step before any call sends none, as a skipped search does today.
+- **Every search that reached the external search ends with one signal.** `concert.search.completed` is sent once per search, from the `record-end` of its last attempt, including a search that gave up at 20 h (outcome failed, error kind unavailable). A search that never called Concert.Search sends none, as a skipped search does today: one ended by the `check` step on attempt 1, or one whose attempt 1 got its slot only after 20 h (D2 step 5).
 
 ### D8. Model and tier pins follow the process that calls Gemini
 
