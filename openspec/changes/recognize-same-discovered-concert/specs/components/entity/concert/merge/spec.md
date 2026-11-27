@@ -46,6 +46,11 @@ It SHALL announce nothing (no Concert.Created). It SHALL fail with InvalidArgume
 - **WHEN** the source is a PUBLISHED Event of a first-party Series
 - **THEN** Merge fails with FailedPrecondition and nothing changes
 
+#### Scenario: Series being written
+
+- **WHEN** a TicketSale is being stored for the source's Series while Merge runs
+- **THEN** Merge fails with Unavailable and nothing changes
+
 #### Scenario: First-party target
 
 - **WHEN** the target is a CANCELLED Event of a first-party Series

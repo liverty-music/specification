@@ -79,6 +79,9 @@ service ConcertCandidateService {
   // - FAILED_PRECONDITION: The resolution is RESOLUTION_ADOPT_CANDIDATE and
   //   the existing event is an Organizer's, whose listed venue name and
   //   times are not changed.
+  // - UNAVAILABLE: The concert could not be stored just now, for example
+  //   because another change was writing the same records. The
+  //   ConcertCandidate is kept, so it can be approved again.
   rpc Approve(ApproveRequest) returns (ApproveResponse);
 
   // Reject drops a pending concert and records the rejection (with reason) for

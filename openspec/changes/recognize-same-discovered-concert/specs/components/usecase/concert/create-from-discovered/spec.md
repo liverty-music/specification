@@ -188,7 +188,7 @@ When the start time to fill onto the Artist's Event is already held by another E
 - when that other Event is listed under the event's listed venue name and neither Event has a publish state, it SHALL merge the Artist's Event into it (Concert.Merge), which tells nobody again, and store nothing else; when Merge refuses because the Artist's Event is the last of a Series with a TicketSale, the event SHALL be staged instead;
 - otherwise it SHALL stage the event (ConcertCandidate.Upsert) and not publish it.
 
-When filling fails with AlreadyExists because another Event took the slot meanwhile, the event SHALL be staged. Neither case SHALL fail the batch; the batch goes on with its other events.
+When filling fails with AlreadyExists because another Event took the slot meanwhile, the event SHALL be staged. Neither case SHALL fail the batch; the batch goes on with its other events. When Merge fails with Unavailable (another change is writing the Series), CreateFromDiscovered SHALL fail, and the batch is processed again later.
 
 #### Scenario: Co-headliner's time already known
 - **WHEN** Artist A's Event at Venue V on 2026-12-31 has no start time, Artist B's Event at V on 2026-12-31 starts at 18:00 under the same listed venue name, and A's event brings 18:00
@@ -205,6 +205,10 @@ When filling fails with AlreadyExists because another Event took the slot meanwh
 #### Scenario: Held by an Organizer's event
 - **WHEN** the slot is held by an Organizer's Event listed under the event's name
 - **THEN** the event is staged and both Events are unchanged
+
+#### Scenario: Series being written during a merge
+- **WHEN** Merge fails with Unavailable
+- **THEN** CreateFromDiscovered fails, nothing is staged for that event, and the batch is processed again later
 
 #### Scenario: Slot taken meanwhile
 - **WHEN** filling fails with AlreadyExists
