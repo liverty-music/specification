@@ -16,7 +16,7 @@
 - [ ] 3.4 Declare and implement `Concert.Merge` as in design D3; verify one contract test per scenario of `components/entity/concert/merge`, plus one that a ticket journey inserted for the source while the merge holds its lock fails instead of being removed
 - [ ] 3.5 Declare and implement `Series.ListUpcomingToursByArtist`; verify one contract test per scenario of `components/entity/series/list-upcoming-tours-by-artist`
 - [ ] 3.6 Make `Concert.Create` fail when an Event with a publish state holds a slot (design D6a); verify one contract test per scenario of `components/entity/concert/create` "Create merges into an existing slot"
-- [ ] 3.7 Make `Series.DeleteOrphaned` keep a Series that has a TicketSale; verify one contract test per scenario of `components/entity/series/delete-orphaned`
+- [ ] 3.7 Make `Series.DeleteOrphaned` keep a Series that has a TicketSale; including one being written at that moment; verify one contract test per scenario of `components/entity/series/delete-orphaned`
 
 ## 4. backend: shared decision and CreateFromDiscovered (design D5, D6, D7)
 
@@ -43,5 +43,4 @@
 
 - [ ] 8.1 Collect, with a read-only prod query, the ids of the 9 duplicate pairs (older and newer event, the agreed listed venue name) and of the 29 split discovered TOUR Series in 13 groups with their ticket sales, excluding Ayron Jones' "TOUR DATES"; record the query and its result in the PR description, not in the issue (public repository)
 - [ ] 8.2 Write the Atlas data migration with those ids, a backup table, skips for rows that no longer exist, and the ticket sale steps of design D10; verify a migration test with a fixture of one duplicate pair (with a ticket journey on the newer event) and one split tour (with a discovered ticket sale on each Series, two of them on the same method and start date) shows one event with both names, the journey moved, one Series and one sale per method and start date
-- [ ] 8.3 In the same PR as 8.2, add or annotate the tests for the concurrent-write scenarios "Series being written" (`components/entity/concert/merge`), "Series still being written" (`components/entity/series/delete-orphaned`), "Series being written during a merge" (`components/usecase/concert/create-from-discovered`) and "Merge cannot run" (`components/usecase/concert-candidate/approve`); verify `scripts/check-scenario-coverage.py` finds each
-- [ ] 8.4 Re-run the 8.1 query against prod right before merging, merge the PR (it applies to prod), and verify read-only: AtlasMigration `Ready`, no remaining pair of one Artist's discovered events at one venue and date where only one has a start time, and no Artist with two upcoming discovered TOUR Series of the same tour title other than the excluded one
+- [ ] 8.3 Re-run the 8.1 query against prod right before merging, merge the PR (it applies to prod), and verify read-only: AtlasMigration `Ready`, no remaining pair of one Artist's discovered events at one venue and date where only one has a start time, and no Artist with two upcoming discovered TOUR Series of the same tour title other than the excluded one

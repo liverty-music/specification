@@ -137,11 +137,15 @@ Published events go out together with the series' other published events (see "T
 
 ### Requirement: Empty new series are removed
 
-At the end of the batch, CreateFromDiscovered SHALL remove, among the Series it created in this batch and the Series of the Events it merged away in this batch, those that have no Event and no ConcertCandidate (Series.DeleteOrphaned); it SHALL NOT touch other Series. A failure here SHALL NOT fail the batch.
+At the end of the batch, also when the batch fails, CreateFromDiscovered SHALL remove, among the Series it created in this batch and the Series of the Events it merged away in this batch, those that have no Event and no ConcertCandidate (Series.DeleteOrphaned); it SHALL NOT touch other Series. A failure here SHALL NOT fail the batch.
 
 #### Scenario: Created series left empty
 - **WHEN** a Series created in this batch ended up with no Event and no ConcertCandidate
 - **THEN** it is removed
+
+#### Scenario: Failed batch is swept
+- **WHEN** the batch merged away the only Event of a Series and then fails
+- **THEN** that Series is removed, since the retry would not look at it again
 
 #### Scenario: Series of a merged event left empty
 - **WHEN** the batch merged away the only Event of a Series that has no ConcertCandidate
