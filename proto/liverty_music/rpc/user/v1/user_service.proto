@@ -169,9 +169,11 @@ service UserService {
   // The request carries the ID token of a sign-in the caller made within the
   // last 5 minutes; the backend checks it, so a direct call cannot skip the
   // fresh sign-in. Nothing is removed while ListDeletionBlockers returns any
-  // blocker. The sign-in identity is removed before the User record and an
-  // identity that is already gone counts as removed, so a call that failed
-  // partway is completed by calling Delete again.
+  // blocker. Otherwise the removal is started and waited on for up to 5
+  // seconds: the User record is removed first, then the sign-in identity, and
+  // a started removal runs to its end on its own. Success means the removal is
+  // still running or has removed the User; the identity may still exist for a
+  // while, and it gets no new User.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The ID token is missing.
@@ -180,6 +182,9 @@ service UserService {
   //   sign-in older than 5 minutes.
   // - NOT_FOUND: No user record exists for the authenticated identity.
   // - FAILED_PRECONDITION: The User has a deletion blocker.
+  // - UNAVAILABLE: The removal could not be started, or the wait for it could
+  //   not be read; a started removal goes on. NOT_FOUND from a later call then
+  //   means the removal went ahead.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
@@ -362,6 +367,6 @@ message DeleteRequest {
   string id_token = 1 [(buf.validate.field).string.min_len = 1];
 }
 
-// DeleteResponse is returned once the caller's User and its sign-in identity
-// have been removed.
+// DeleteResponse is returned once the caller's User is removed, or while the
+// accepted removal is still running.
 message DeleteResponse {}

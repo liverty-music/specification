@@ -36,3 +36,13 @@ See proposal.md. Facts (backend `origin/main`, 2026-11-26):
 ## Migration Plan
 
 The migration adds `deleted_user_identities`; the default privileges of schema `app` already give the fan API's database role (the worker runs as it) what it needs, so no grant migration is added; it applies on merge, before the release is pinned, and the old code ignores it. One backend release for identity, worker and APIs. Rollback: revert the backend release and keep the table. A `delete-user` run left pending or enqueued is not in the admin report (only failed states are), so before reverting, check that none is open (`dbos` system tables, read-only), or resolve those runs afterwards.
+
+## Production verification (2026-11-27, backend v1.152.0)
+
+- Migration `20261126141736` applied (`backend-migration` Ready); every `backend` Deployment rolled out on v1.152.0 with no restart.
+- The worker launched, and `workflow.needs_admin` reports `delete-user` at 0 in all three statuses (2026-11-26T15:35Z). One `create-from-discovered` run in ERROR since 2026-11-20 predates this release.
+
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "API server deployment" -- prod Deployments fan-api, fan-api-candidate, organizer-console-api, reception-api, admin-console-api, event-consumer and workflow-worker mount no machine key and set no key variable; only identity does (2026-11-27)
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Process with no access" -- prod NetworkPolicy identity-ingress admits only workflow-worker (9100), admin-console-api (9101) and fan-api and its candidate (9102), besides the health port (2026-11-27)
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Request from outside the cluster" -- prod Service identity is ClusterIP and no HTTPRoute names it (2026-11-27)
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Signed-in calls keep working" -- signed-in fan API calls (TicketJourneyService/List, FollowService/List, NotificationService/List) succeed in prod on v1.152.0 (2026-11-27); this change touches no token validation

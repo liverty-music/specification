@@ -895,14 +895,14 @@ footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
   </div>
 
   <h3>Zitadel のアカウントを変えられるのは identity service だけ</h3>
-  <p class="prose">Zitadel の管理 API の資格情報を持つのは、バックエンドの identity service という 1 つのプロセスだけです。クラスタの外からは届かず、呼び出し元ごとに頼める操作が決まっています。外部のデータを処理する API サーバーやイベント処理が乗っ取られても、ファンのアカウントや Organizer の Organization を書き換えられないようにするためです。</p>
+  <p class="prose">Zitadel の管理 API の資格情報を持つのは、バックエンドの identity service という 1 つのプロセスだけです。クラスタの外からは届かず、呼び出し元ごとに頼める操作が決まっています。API サーバーが乗っ取られても、ファンのアカウントや Organizer の Organization を書き換えられないようにするためです。外部のデータも処理する workflow worker は、受け付けた退会を最後まで終えるために、ファンの identity の削除を頼めます。</p>
   <div class="tablewrap" role="region" aria-label="identity service に頼める操作" tabindex="0">
     <table>
       <thead><tr><th scope="col">呼び出し元</th><th scope="col">identity service に頼める操作</th></tr></thead>
       <tbody>
-        <tr><td>fan API</td><td>確認メールのコードでアドレスを確認済みにする／退会するファン本人の identity を削除する。これ以外は拒否</td></tr>
-        <tr><td>イベント処理 (event consumer)</td><td>確認コードの発行／パスキー登録リンクの発行</td></tr>
-        <tr><td>admin console API</td><td>ファンの identity の削除／Organizer の Organization の作成・Provision・停止・削除</td></tr>
+        <tr><td>fan API</td><td>確認メールのコードでアドレスを確認済みにする。これ以外は拒否</td></tr>
+        <tr><td>workflow worker</td><td>確認コードの発行／パスキー登録リンクの発行／アカウントを削除中のファンの identity の削除</td></tr>
+        <tr><td>admin console API</td><td>Organizer の Organization の作成・Provision・停止・削除</td></tr>
         <tr><td>それ以外 (organizer API など)</td><td>届かない</td></tr>
       </tbody>
     </table>
@@ -917,7 +917,7 @@ footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
     <table class="pit">
       <thead><tr><th scope="col">取り違え</th><th scope="col">正しくは</th><th scope="col">取り違えると</th></tr></thead>
       <tbody>
-        <tr><td>User と identity は同じもの</td><td>User は Liverty Music の DB の行、identity は Zitadel のアカウント。<code>provider user ID</code> で 1 対 1 にひも付く</td><td>identity だけ消して User が残る、またはその逆の不整合を作る。退会は identity を先に消し、次に User を消す</td></tr>
+        <tr><td>User と identity は同じもの</td><td>User は Liverty Music の DB の行、identity は Zitadel のアカウント。<code>provider user ID</code> で 1 対 1 にひも付く</td><td>identity だけ消して User が残る、またはその逆の不整合を作る。退会は User を先に消し、次に identity を消す。消した identity には新しい User を作らない</td></tr>
         <tr><td>Organization と Organizer は同じもの</td><td>Organization は Zitadel のサインインの単位で DB に行がない。Organizer は事業者で DB にある。<code>provider organizer ID</code> でつながる</td><td>Organizer の停止で Organization も消えると思い込む。停止では identity が止まるだけで Organization は残る</td></tr>
         <tr><td>同じメールなら同じ人のアカウント</td><td>Organization が違えば別の identity・別のパスキー。どちらからも他方へは入れない</td><td>ファンのアカウントで Organizer の画面に入れる穴を作る。console が Organization を指定せずにサインインを始めると、ファンのアカウントに一致する</td></tr>
         <tr><td>URL の <code>?org=</code> や <code>?org_id=</code> で Organizer が決まる</td><td>決めるのはトークンの Organization。URL はログイン画面を選ぶ目印だけ</td><td>URL を書き換えるだけで他社のデータが見える</td></tr>
@@ -947,7 +947,7 @@ footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
     <li>抽選の結果待ちの応募がある</li>
     <li>支払い中の購入がある</li>
   </ul>
-  <p class="prose">消すときは identity を先に、次に User を消します。消えたあとは、そのパスキーではどのアカウントにも入れません。注文とチケットは記録として残ります。同じメールアドレスで登録し直すと、フォローもチケットも本人確認の結果も無い、新しいアカウントになります。管理者がファンの依頼を受けて消すことも、同じ条件のもとでできます。</p>
+  <p class="prose">消すときは User を先に、次に identity を消します。削除は受け付けたあと自動で最後まで進み、一時的な障害は 24 時間まで再試行します。終えられないときは管理者に通知します。User が消えたあとは、identity がまだ残っていても新しいアカウントは作られず、そのパスキーではどのアカウントにも入れません。注文とチケットは記録として残ります。削除が終わったあとに同じメールアドレスで登録し直すと、フォローもチケットも本人確認の結果も無い、新しいアカウントになります。管理者がファンの依頼を受けて消すことも、同じ条件のもとでできます。</p>
 
   <h3>Organizer の停止と削除</h3>
   <p class="prose">Organizer は、管理者が <strong>停止</strong> してから <strong>削除</strong> します。停止すると、メンバーはサインインできなくなり、その Organizer が代表していた Artist は別の Organizer に付け替えられるようになります。停止しても Zitadel の Organization は消えません。</p>
@@ -999,7 +999,7 @@ footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
         <tr><td>admin API の関門 (admin 役割)</td><td><code>components/adapter/admin/api/rpc/organizer/spec.md</code>, <code>components/adapter/admin/api/rpc/user/spec.md</code></td></tr>
         <tr><td>console 画面の owner 役割の確認、別の Organizer の URL</td><td><code>components/infrastructure/organizer/web/global/organizer-shell/spec.md</code></td></tr>
         <tr><td>identity service だけが資格情報を持つ、呼び出し元ごとの操作、トークンは公開鍵で検証</td><td><code>components/infrastructure/backend/process/identity-provider-credentials/spec.md</code></td></tr>
-        <tr><td>退会で identity を先に消す</td><td><code>components/usecase/user/delete/spec.md</code></td></tr>
+        <tr><td>退会で User を先に消す、自動で最後まで進める、消した identity には User を作らない</td><td><code>components/usecase/user/delete/spec.md</code>, <code>components/entity/user/create/spec.md</code></td></tr>
         <tr><td><code>WalletPublicKey</code> は 1 User に 1 つ、置き換えで旧端末のコードが拒否される</td><td><code>components/entity/wallet-public-key/spec.md</code>, <code>components/usecase/wallet-public-key/register/spec.md</code></td></tr>
       </tbody>
     </table>
