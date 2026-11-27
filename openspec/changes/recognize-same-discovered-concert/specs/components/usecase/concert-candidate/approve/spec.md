@@ -84,7 +84,7 @@ An Event at the Venue and date that its Artist does not perform at SHALL never b
 
 ### Requirement: Another Artist's Event becomes a shared bill
 
-When a ConcertCandidate is resolved by keep existing or adopt the candidate against an Event its Artist does not perform at and that has no publish state, Approve SHALL make the Artist a performer of that Event: when the Artist has an Event without a start time and without a publish state at the same Venue and date, by merging it into that Event (Concert.Merge), which tells nobody again, and then removing that merged Event's Series if it is left with no Event and no ConcertCandidate (Series.DeleteOrphaned); otherwise by storing the Artist's concert in that Event's slot (Concert.Create), which adds the Artist to the Event's performers and tells the Artist's followers (Concert.Created). An Event the Artist already performs at, and an Event with a publish state, SHALL be left with their performers.
+When a ConcertCandidate is resolved by keep existing or adopt the candidate against an Event its Artist does not perform at and that has no publish state, Approve SHALL make the Artist a performer of that Event: when the Artist has an Event without a start time and without a publish state at the same Venue and date, by merging it into that Event (Concert.Merge), which tells nobody again, and then removing that merged Event's Series if it is left with no Event and no ConcertCandidate (Series.DeleteOrphaned); otherwise, or when Merge refuses because the Artist's Event is the last of a Series with a TicketSale, by storing the Artist's concert in that Event's slot (Concert.Create), which adds the Artist to the Event's performers and tells the Artist's followers (Concert.Created). An Event the Artist already performs at, and an Event with a publish state, SHALL be left with their performers.
 
 #### Scenario: Shared bill approved
 - **WHEN** an admin approves a ConcertCandidate of SiM that collides with マキシマム ザ ホルモン's Event, choosing keep existing
@@ -97,3 +97,7 @@ When a ConcertCandidate is resolved by keep existing or adopt the candidate agai
 #### Scenario: Artist's unknown-start event merged
 - **WHEN** the ConcertCandidate's Artist has an Event without a start time at the Venue and date of the other Artist's colliding Event at 18:00, and the admin chooses adopt the candidate
 - **THEN** the 18:00 Event lists both Artists, the Event without a start time is gone, and nobody is told again
+
+#### Scenario: Tour with a ticket sale is kept
+- **WHEN** the same holds but the Artist's Event without a start time is the only Event of a Series with a discovered TicketSale
+- **THEN** that Event and its Series' TicketSale stay, and the 18:00 Event lists both Artists

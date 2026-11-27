@@ -173,7 +173,7 @@ When the event brings a start time and the Artist has an Event on its date with 
 
 When the start time to fill onto the Artist's Event is already held by another Event at that Venue and date (an Event of another Artist), CreateFromDiscovered SHALL treat the two as one concert:
 
-- when that other Event is listed under the event's listed venue name and neither Event has a publish state, it SHALL merge the Artist's Event into it (Concert.Merge), which tells nobody again, and store nothing else;
+- when that other Event is listed under the event's listed venue name and neither Event has a publish state, it SHALL merge the Artist's Event into it (Concert.Merge), which tells nobody again, and store nothing else; when Merge refuses because the Artist's Event is the last of a Series with a TicketSale, the event SHALL be staged instead;
 - otherwise it SHALL stage the event (ConcertCandidate.Upsert) and not publish it.
 
 When filling fails with AlreadyExists because another Event took the slot meanwhile, the event SHALL be staged. Neither case SHALL fail the batch; the batch goes on with its other events.
@@ -181,6 +181,10 @@ When filling fails with AlreadyExists because another Event took the slot meanwh
 #### Scenario: Co-headliner's time already known
 - **WHEN** Artist A's Event at Venue V on 2026-12-31 has no start time, Artist B's Event at V on 2026-12-31 starts at 18:00 under the same listed venue name, and A's event brings 18:00
 - **THEN** A performs at B's 18:00 Event, A's Event without a start time is gone, A's followers are not told again, and the batch's other events are processed
+
+#### Scenario: Tour with a ticket sale is not merged away
+- **WHEN** the same holds but A's Event without a start time is the only Event of a Series with a discovered TicketSale
+- **THEN** A's event is staged, and A's Event and its Series' TicketSale are unchanged
 
 #### Scenario: Held under another name
 - **WHEN** the same holds but B's Event is listed under another venue name
