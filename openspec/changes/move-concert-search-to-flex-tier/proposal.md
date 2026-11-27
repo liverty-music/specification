@@ -60,8 +60,8 @@ Unchanged, and why:
   - the generation report carries the service tier;
   - the daily job and the first-follow consumer finish in seconds.
 - **cloud-provisioning:**
-  - the prod release pin;
-  - the search model, thinking level and service tier are pinned in the prod ConfigMap the workflow worker reads, and removed from the job's.
+  - the search model, thinking level and service tier are pinned in the prod ConfigMap the workflow worker reads, and removed from the job's;
+  - the backend release reaches prod through the CI-written prod pins, with no hand-edited pin.
 - **Production:**
   - concert-search token cost roughly halves;
   - new concerts may reach fans up to some hours later on a busy day;

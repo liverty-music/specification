@@ -174,8 +174,8 @@ Attempt numbers count from 1, and every attempt reports its call (Concert.Search
 
 ## Migration Plan
 
-1. backend PR: the workflow, queue, searcher tier, reporting and preview removal. Merge and release.
-2. cloud-provisioning PR: the pins (D8) and the prod release pin for the job, consumer, API server and worker images. It goes live on merge through ArgoCD.
+1. cloud-provisioning PR: the ConfigMap pins (D8). Merged first, it changes nothing that runs: the current code ignores the tier variable, and the moved model and thinking pins equal the code defaults.
+2. backend PR: the workflow, queue, searcher tier, reporting and preview removal. Merge and release. The release retags the images into prod, and `bump-prod-pin.yml` in cloud-provisioning rewrites every backend prod pin and pushes to main; ArgoCD then syncs the job, consumer, API server and worker together. The prod pins are CI-written, never edited by hand (`k8s/namespaces/backend/overlays/prod/kustomization.yaml`, "Bumping on release").
    - In-flight inline searches at the moment of the rollout finish in their old Pods.
    - The first daily run after the rollout starts workflows.
 3. Rollback: set `GCP_GEMINI_CONCERT_SEARCH_SERVICE_TIER=standard` (no release) to leave Flex. A waiting attempt reads the setting when it runs, so it calls the standard tier.
