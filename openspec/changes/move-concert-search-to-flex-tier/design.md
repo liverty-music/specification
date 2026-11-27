@@ -49,7 +49,11 @@ See proposal.md for why. The current code this design changes (backend `main`, 2
 
 ### D1. The background search is a DBOS workflow, not a NATS announcement
 
-SearchNewConcerts keeps its skip rules and the pending upsert. It then starts the first attempt of the workflow `search-concerts` with:
+SearchNewConcerts keeps its skip rules, the pending upsert and the Artist data check.
+
+The data check is `artist.CheckSearchable`, which today runs at the top of `executeSearch`, after the upsert. It stays in SearchNewConcerts, after the upsert and before the start: an Artist with no name or no MBID fails SearchNewConcerts with Internal and the ConcertSearch becomes failed, as today (spec "Artist data required"). No attempt is started for it.
+
+SearchNewConcerts then starts the first attempt of the workflow `search-concerts` with:
 - id `search-concerts:<artist>:<search time µs>:1`;
 - input: the Artist id, the search time, the trigger and the attempt number;
 - queue `concert-search`;
@@ -110,7 +114,9 @@ That gap is accepted rather than adding a transactional start.
    - **failed** with the error kind after a permanent error;
    - **failed** with the kind of the last error when the attempt was busy and the next one would start at or past 20 h.
 
-   No attempt starts at or past 20 h after the search time. An attempt that gets its slot only after 20 h skips the call (step 2) and ends here, with the kind of the previous attempt's error. The input carries that kind, or unknown on attempt 1.
+   No attempt starts at or past 20 h after the search time. An attempt that gets its slot only after 20 h skips the call (step 2) and ends here as failed, with the kind of the previous attempt's error, which the input carries.
+
+   **When the signal is sent.** Only when some attempt of the search called Concert.Search, that is, when this attempt called it or the attempt number is above 1. Attempt 1 that gets its slot after 20 h records failed without a signal, as the spec's "Each search reports its outcome" requires.
 
 A failure to start `create-from-discovered` is a permanent error and ends as failed, as today. The run itself ends successfully in every case above, so no outcome is reported for an admin. A run that fails outside these paths (a bug) still is, per durable-workflows.
 

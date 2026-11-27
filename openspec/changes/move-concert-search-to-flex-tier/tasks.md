@@ -8,7 +8,7 @@
 - [ ] 2.1 Add the `search-concerts` workflow `ConcertUseCase.RunSearch`, one attempt per run with the steps of design D2. Move the body of `executeSearch` into it, and make `search` return busy or failed as values so the step retry policy never runs.
 
   Verify with usecase unit tests (Flow and operations mocked) for these scenarios:
-  - "The search runs in the background": "Service busy for 3 hours" (the next attempt started with a 1, 2, 4 … minute delay capped at 60, then completed) and "Queued until late";
+  - "The search runs in the background": "Service busy for 3 hours" (the next attempt started with a 1, 2, 4 … minute delay capped at 60, then completed) and "Queued until late" (failed, and no signal on attempt 1);
   - "Each attempt checks again before searching": "Represented while waiting" and "Search replaced";
   - "The search is recorded": "Productive search", "Nothing new", "External search fails" and "Service busy for a whole day";
   - "New concerts are handed on once per search": "Two series found", "Nothing new" and "Cannot be started";
@@ -17,6 +17,7 @@
 
   Verify with usecase unit tests for these scenarios:
   - "The search runs in the background": "Daily run starts searches and ends" and "Cannot be started";
+  - "Artist data required": "Artist without MBID" (the check stays in SearchNewConcerts, which fails with Internal and starts no attempt; design D1);
   - "Skip when recently searched or discovered": "Searched 2 hours ago", "New concert found 3 days ago", "Another search running", "Abandoned search" and "Previous search failed".
 - [ ] 2.3 Register `search-concerts` and the `concert-search` queue (concurrency 8) in the workflow worker, and build the concert searcher there (design D1, D4).
 
