@@ -1199,20 +1199,20 @@ The Concerts view SHALL expose its date filter as the period row of the Concerts
 
 ### Requirement: The Concerts view's area is chosen in the filter sheet and kept on the device
 
-The Concerts view SHALL present the current reference area as the area row of the Concerts view's filter sheet, and allow the user to override it by opening the shared `home-area-selector` from that row. The override SHALL be kept on the device, never on the user's account, and SHALL be used on the fan's next visit to the Concerts view. Choosing the fan's own home area SHALL clear the override, so the view follows the home area again when it changes. Signing in, signing up and signing out SHALL clear the override and the kept date preset, so no one inherits another person's filter on a shared device.
+The Concerts view SHALL present the current reference area as the area row of the Concerts view's filter sheet, and allow the user to override it by opening the shared `home-area-selector` from that row. The view SHALL call `ConcertService.ListByLocation` with the code of the area in use, the override when one is kept and the fan's home area otherwise, and SHALL send no coordinates: the server finds the area's reference point, so the view keeps no table of area centres. The override SHALL be kept on the device, never on the user's account, and SHALL be used on the fan's next visit to the Concerts view. Choosing the fan's own home area SHALL clear the override, so the view follows the home area again when it changes. Signing in, signing up and signing out SHALL clear the override and the kept date preset, so no one inherits another person's filter on a shared device.
 
 #### Scenario: Default area is user home
 
 - **WHEN** the Concerts view opens for an authenticated user who has set a home area and the device keeps no override
 - **THEN** the area row SHALL display the user's home area name (prefecture display name)
-- **AND** the `GeoLocation` passed to `ListByLocation` SHALL use `user.home.centroid.latitude`, `user.home.centroid.longitude`, and `user.home.level_1` as `admin_area` (`centroid` is the nested `Coordinates` sub-message on the `Home` proto; `centroid_latitude`/`centroid_longitude` are reserved field names)
+- **AND** `ListByLocation` SHALL be called with the home area's code (`JP-13` for 東京都) as its area, and with no coordinates
 
 #### Scenario: Area override via HomeAreaSelector
 
 - **WHEN** the user taps the area row
 - **THEN** the `home-area-selector` component SHALL open
-- **AND** on selection, the view SHALL use the new ISO 3166-2 code
-- **AND** `ListByLocation` SHALL be called with the new area's centroid coordinates and admin_area
+- **AND** on selection, the view SHALL use the chosen area's code
+- **AND** `ListByLocation` SHALL be called with that code as its area, and with no coordinates
 - **AND** the new area SHALL NOT be saved to the user's account
 
 #### Scenario: Area override is kept on the device

@@ -11,14 +11,13 @@ A RejectedConcert entry is an append-only record of a concert candidate an admin
 | artist name | the Artist's name when it was rejected | required |
 | title | title as discovered | required |
 | local date | calendar date | required |
-| start time | start as discovered | optional |
-| open time | doors open as discovered | optional |
+| start time | start as discovered | optional, a time of day at the venue |
+| open time | doors open as discovered | optional, a time of day at the venue |
 | listed venue name | venue text as discovered | required |
 | admin area | admin area as discovered | optional |
+| time zone | the venue's IANA time zone as discovered | optional |
 | source page | where it was found | optional |
 | resolved place id | resolved venue's place identity | optional |
-| resolved venue name | resolved venue's name | optional |
-| resolved admin area | resolved venue's admin area | optional |
 | reason | why it was dropped | required |
 | reviewed by | identity of the reviewing admin | optional |
 | reject time | when it was dropped | required |

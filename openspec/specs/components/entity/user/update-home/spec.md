@@ -6,39 +6,6 @@ Sets or replaces a User's Home and returns the updated User.
 
 ## Requirements
 
-### Requirement: UpdateHome creates or replaces the home as a whole
-
-UpdateHome SHALL give a User without a home a new Home, and SHALL replace every attribute of an existing Home with the supplied values while keeping its id. A level 2 omitted from the supplied Home SHALL leave the stored Home without level 2. The change SHALL be stored completely or not at all, and UpdateHome SHALL return the updated User.
-
-#### Scenario: First home
-
-- **WHEN** UpdateHome runs for a User with no home, with level 1 `JP-13`
-- **THEN** the User has a new Home with level 1 `JP-13` and the returned User carries it
-
-#### Scenario: Changing the home
-
-- **WHEN** UpdateHome runs for a User whose home is `JP-13`, with level 1 `JP-27`
-- **THEN** the User's Home keeps its id and now has level 1 `JP-27`
-
-#### Scenario: Level 2 dropped
-
-- **WHEN** the existing Home has a level 2 and the supplied Home has none
-- **THEN** the stored Home has no level 2
-
-### Requirement: UpdateHome sets the home's centroid
-
-UpdateHome SHALL set the Home's centroid to the centre of its level 1 area when that area is in the supported catalog (the 47 Japanese prefectures), and SHALL leave the centroid absent otherwise, replacing any earlier centroid.
-
-#### Scenario: Japanese prefecture
-
-- **WHEN** UpdateHome stores a Home with level 1 `JP-27`
-- **THEN** the stored Home carries the centroid of Osaka
-
-#### Scenario: Area outside the catalog
-
-- **WHEN** UpdateHome stores a Home with level 1 `US-CA` or a well-formed code not in the catalog such as `JP-99`
-- **THEN** the stored Home has no centroid
-
 ### Requirement: UpdateHome on an unknown user
 
 UpdateHome SHALL fail with NotFound and change nothing when no User has the given id, and with InvalidArgument when the id is empty.
@@ -52,3 +19,22 @@ UpdateHome SHALL fail with NotFound and change nothing when no User has the give
 
 - **WHEN** the id is empty
 - **THEN** UpdateHome fails with InvalidArgument
+
+### Requirement: UpdateHome sets the home's area
+
+UpdateHome SHALL make the User's Home the first-level Area that the supplied level 1 names, whether or not the User had a Home, store the change completely or not at all, and return the updated User. The returned Home SHALL carry that code as level 1, the Area's country as country code, and the Area's reference point when it has one. When the supplied level 1 is not the code of a first-level Area, UpdateHome SHALL fail with InvalidArgument and leave the User's Home unchanged.
+
+#### Scenario: First home
+
+- **WHEN** UpdateHome runs for a User with no Home, with level 1 `JP-13`
+- **THEN** the User's Home is `JP-13` and the returned User carries it with the reference point of the Area `JP-13`
+
+#### Scenario: Changing the home
+
+- **WHEN** UpdateHome runs for a User whose Home is `JP-13`, with level 1 `KR-11`
+- **THEN** the User's Home is `KR-11`, the User has no other Home, and the returned Home carries country code `KR` and the reference point of the Area `KR-11`
+
+#### Scenario: Level 1 that is no first-level Area
+
+- **WHEN** UpdateHome runs for a User whose Home is `JP-13`, with level 1 `JP-99`
+- **THEN** UpdateHome fails with InvalidArgument and the User's Home is still `JP-13`

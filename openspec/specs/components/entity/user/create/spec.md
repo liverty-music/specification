@@ -25,20 +25,6 @@ Create SHALL store the new User and, when a Home is supplied, that Home linked t
 - **WHEN** the Home cannot be stored
 - **THEN** Create fails and no User is stored
 
-### Requirement: Create sets the home's centroid
-
-When Create stores a Home, it SHALL set the Home's centroid to the centre of its level 1 area when that area is in the supported catalog (the 47 Japanese prefectures), and SHALL leave the centroid absent otherwise.
-
-#### Scenario: Japanese prefecture
-
-- **WHEN** Create stores a Home with level 1 `JP-13`
-- **THEN** the stored Home carries the centroid of Tokyo
-
-#### Scenario: Area outside the catalog
-
-- **WHEN** Create stores a Home with level 1 `US-CA`
-- **THEN** the stored Home has no centroid
-
 ### Requirement: Create rejects a taken identity or email
 
 Create SHALL fail with AlreadyExists and store nothing when another User already has the same provider user ID or the same email. Two emails SHALL be the same when they are equal with letter case ignored. Create SHALL store the email as given, in its own letter case.
@@ -100,3 +86,22 @@ Create SHALL fail with FailedPrecondition, storing and announcing nothing, when 
 
 - **WHEN** Create runs with a removed User's email and a provider user ID no removed User had
 - **THEN** a new User is stored
+
+### Requirement: A created Home names its Area
+
+When Create stores a Home, it SHALL store the Home as the code of its first-level Area, owned by the new User. The returned User's Home SHALL carry that code as level 1, the Area's country as country code, and the Area's reference point when it has one. When the supplied Home's level 1 is not the code of a first-level Area, Create SHALL fail with InvalidArgument and store no User.
+
+#### Scenario: Japanese prefecture
+
+- **WHEN** Create stores a Home with country code `JP` and level 1 `JP-13`
+- **THEN** the returned Home carries country code `JP`, level 1 `JP-13` and the reference point of the Area `JP-13`
+
+#### Scenario: Area without a reference point
+
+- **WHEN** Create stores a Home whose Area has no reference point
+- **THEN** the returned Home carries its country code and level 1 and no reference point
+
+#### Scenario: Level 1 that is no first-level Area
+
+- **WHEN** Create runs with a Home of level 1 `FR-33`
+- **THEN** Create fails with InvalidArgument and no User is stored

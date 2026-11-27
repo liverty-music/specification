@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Proximity says how close a Concert's venue is to a reference area: HOME (same administrative area), NEARBY (within 200 km of the area's centroid) or AWAY (anything else, including an unknown location or no home area). A proximity group is one calendar date's Concerts sorted into those three lists.
+Proximity says how close a Concert's venue is to a reference area: HOME (same administrative area), NEARBY (within 200 km of the area's reference point) or AWAY (anything else, including an unknown location or no home area). A proximity group is one calendar date's Concerts sorted into those three lists.
 
 | value | meaning |
 |-------|---------|
 | HOME | the venue's admin area equals the home area's level-1 code |
-| NEARBY | not HOME; venue coordinates and home centroid both known; great-circle distance at most 200 km |
+| NEARBY | not HOME; venue coordinates and the home area's reference point both known; great-circle distance at most 200 km |
 | AWAY | everything else |
 
 | proximity group attribute | meaning | constraint |

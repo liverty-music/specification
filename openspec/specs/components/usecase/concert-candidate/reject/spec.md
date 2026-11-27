@@ -8,7 +8,7 @@ Reject lets an admin drop a ConcertCandidate with a reason and record it in the 
 
 ### Requirement: Reject logs and drops
 
-Reject SHALL record the ConcertCandidate in the RejectedConcert (RejectedConcert.Append) with its details as discovered, its resolved preview, the Artist's current name, the reason and the reviewing admin's identity when known, and then remove it (ConcertCandidate.Delete). When the Artist cannot be read, Reject SHALL fail and change nothing.
+Reject SHALL record the ConcertCandidate in the RejectedConcert (RejectedConcert.Append) with its details as discovered, its resolved place id and time zone, the Artist's current name, the reason and the reviewing admin's identity when known, and then remove it (ConcertCandidate.Delete). When the Artist cannot be read, Reject SHALL fail and change nothing.
 
 #### Scenario: Reject with a reason
 - **WHEN** an admin rejects a ConcertCandidate with reason "wrong artist"

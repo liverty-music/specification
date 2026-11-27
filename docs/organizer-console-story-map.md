@@ -153,6 +153,7 @@ journey
       Press 公演をつくる on Concerts: 5: Member
       Fill in type, visibility, performers and dates: 4: Member
       Pick each venue from the search results: 3: Member
+      Confirm a new venue's 会場名, 国, 地域 and タイムゾーン: 3: Member
       Save: 5: Member
     section Publish
       Press 公開する on the concert page: 4: Member
@@ -336,7 +337,7 @@ at the screen's chapter (not drawn).
 | Home | Items by kind: 要対応, 7日以内, 開始時刻なし, 下書き | Open an item; 公演一覧へ | `home` |
 | Concerts | Concerts of the Artist worked on: 公演名, 日程・会場, 販売状態, 状態 | Open a concert; 公演をつくる | `publish` |
 | Concert | Title, type, visibility, cover, performers; dates with state and sale state; 席種 with price | 編集; 公開する; 公演を中止; 席種を追加; 削除 a seat type no stock uses | `publish`, `sell` |
-| Concert editor | 公演名, 説明, 種類, 公開範囲, 出演者, カバー画像; dates with 会場, 日付, 開場, 開演, 1アカウントの上限 | 公演日を追加; save; キャンセル | `publish`, `sell` |
+| Concert editor | 公演名, 説明, 種類, 公開範囲, 出演者, カバー画像; dates with 会場 (a new venue also 会場名, 国, 地域, タイムゾーン), 日付, 開場, 開演, 1アカウントの上限 | 公演日を追加; save; キャンセル | `publish`, `sell` |
 | Event | Date, start time, venue, state; ファンページ address | 公開する; 中止する; 公演を編集; tabs 販売 and 受付 | `sell` |
 | 販売 tab | Prerequisite notices; 席種と枚数 with 販売済み, 購入手続き中 and state; sales with state, window, per-stock lottery entries; 本人確認; 紹介コード別の購入 | 席種を追加 (a stock); 削除 a stock; 抽選で販売する; 先着で販売する; 編集; change 本人確認 | `sell` |
 | Lottery sale editor | Event and its stocks; 販売名, 受付期間 | 抽選販売を始める or save; キャンセル | `sell` |

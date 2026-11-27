@@ -11,8 +11,8 @@ An Event is one performance at one Venue on one local date, at an optional start
 | venue | where it happens | required |
 | listed venue name | venue text as listed by the source or Organizer, normalized | optional, 1–255 characters; absent on events stored before the name was kept |
 | local date | calendar date at the venue | required; a date without a time of day |
-| start time | performance start | optional; absent means unknown |
-| open time | doors open | optional; absent means unknown |
+| start time | performance start | optional, a time of day on the local date in the Venue's time zone; absent means unknown |
+| open time | doors open | optional, a time of day on the local date in the Venue's time zone; absent means unknown |
 | publish state | DRAFT, PUBLISHED or CANCELLED | first-party only; absent on a discovered Event |
 | per-account limit | most tickets one account may hold for the event, across every TicketSale, SeatType and official resale | first-party only; 1 to 10; 4 when not given |
 
@@ -178,3 +178,23 @@ An application by an account for a ticket count of one SeatType SHALL fit the Ev
 #### Scenario: First application
 - **WHEN** the account holds no ticket for the event and applies for 2 A席
 - **THEN** the application fits
+
+### Requirement: Start and open times are times of day at the Venue
+
+An Event's start time and open time SHALL each be a time of day on its local date, read in the time zone of its Venue. The instant of the start SHALL be computed from the local date, the start time and the Venue's time zone whenever a rule needs one, so a change of the zone's rules before the event moves the instant and keeps the announced wall-clock time. A start or open time that does not exist on the local date in the Venue's time zone, because the clocks skip it when daylight saving time starts, SHALL be invalid. A start time that occurs twice on the local date, because the clocks repeat it when daylight saving time ends, SHALL stand for the earlier of the two instants. Both times fall on the local date, so an Event cannot state that it starts on the day after its doors open; Series.Create and Series.Update reject an open time after the start time.
+
+#### Scenario: Show in Seoul
+- **WHEN** an Event at a Venue in Asia/Seoul is on 2027-03-14 and starts at 18:30
+- **THEN** its start is the instant 2027-03-14 09:30 UTC, which is 18:30 in Japan time
+
+#### Scenario: Show in London
+- **WHEN** an Event at a Venue in Europe/London is on 2026-11-10 and starts at 19:30
+- **THEN** its start is the instant 2026-11-10 19:30 UTC, which is 04:30 on 11 November in Japan time
+
+#### Scenario: Start in the spring-forward gap
+- **WHEN** an Event at a Venue in America/New_York is on 2027-03-14 and starts at 02:30, which the clocks skip that night
+- **THEN** the Event is invalid
+
+#### Scenario: Start in the repeated hour
+- **WHEN** an Event at a Venue in America/New_York is on 2026-11-01 and starts at 01:30, which occurs twice that night
+- **THEN** its start is the instant 2026-11-01 05:30 UTC, the first 01:30

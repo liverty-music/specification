@@ -23,11 +23,9 @@ Home
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
-| id | identifier of the home | required; assigned when the User first gets a home and kept when the home is changed later |
-| country code | home country | required; ISO 3166-1 alpha-2, two uppercase letters (e.g. `JP`) |
-| level 1 | first-order subdivision: prefecture, state, Land | required; ISO 3166-2: two uppercase letters, a hyphen, then 1 to 3 uppercase letters or digits (e.g. `JP-13`); its first two letters are the country code |
-| level 2 | finer area within level 1, in a code system chosen by the country (US: FIPS county code, DE: AGS; JP: not defined, always absent) | optional; 1 to 20 bytes of text when present |
-| centroid | approximate geographic centre of the level 1 area, the reference point for Nearby classification | optional; set when the home is stored and level 1 is in the supported catalog (the 47 Japanese prefectures), absent otherwise |
+| country code | home country or territory | required; ISO 3166-1 alpha-2, two uppercase letters (e.g. `JP`); the country of the level 1 Area |
+| level 1 | the home area: a prefecture, state, Land or a territory without subdivisions | required; the code of a first-level Area of that country (e.g. `JP-13`, `HK`) |
+| reference point | the Coordinates NEARBY distances are measured from | the level 1 Area's current reference point, not kept by the Home itself; absent when the Area has none |
 
 Events announced about it:
 
@@ -75,45 +73,6 @@ A preferred language value SHALL be valid only when it is exactly two lowercase 
 - **WHEN** the value is empty, `jpn`, `JA` or `ja-JP`
 - **THEN** it is not a valid preferred language
 
-### Requirement: Home validation
-
-A Home SHALL be valid only when its country code is two uppercase letters, its level 1 is two uppercase letters, a hyphen and 1 to 3 uppercase letters or digits, the first two letters of level 1 equal the country code, and level 2, when present, is 1 to 20 bytes of text. Any Home that breaks one of these rules SHALL be invalid.
-
-#### Scenario: Valid home without level 2
-
-- **WHEN** a Home has country code `JP`, level 1 `JP-13` and no level 2
-- **THEN** it is valid
-
-#### Scenario: Valid home with level 2
-
-- **WHEN** a Home has country code `US`, level 1 `US-CA` and level 2 `06037`
-- **THEN** it is valid
-
-#### Scenario: Malformed country code
-
-- **WHEN** a Home has country code `j` or `jp`
-- **THEN** it is invalid
-
-#### Scenario: Malformed level 1
-
-- **WHEN** a Home has level 1 `INVALID`
-- **THEN** it is invalid
-
-#### Scenario: Level 1 in another country
-
-- **WHEN** a Home has country code `JP` and level 1 `US-CA`
-- **THEN** it is invalid
-
-#### Scenario: Empty level 2
-
-- **WHEN** a Home has level 2 present but empty
-- **THEN** it is invalid
-
-#### Scenario: Level 2 too long
-
-- **WHEN** a Home has a level 2 of 21 bytes, such as 21 ASCII characters or 7 kanji
-- **THEN** it is invalid
-
 ### Requirement: Personal details
 
 A User's full name, when present, SHALL be 1 to 200 characters. A User's phone number, when present, SHALL be in E.164 form: a `+` followed by 2 to 15 digits whose first digit is not 0, with no spaces or separators. Both are absent until the User first gives them.
@@ -133,3 +92,66 @@ A User's full name, when present, SHALL be 1 to 200 characters. A User's phone n
 #### Scenario: Not given yet
 - **WHEN** a User has never given a full name or phone number
 - **THEN** both are absent and the User is valid
+
+### Requirement: A Home names a first-level Area
+
+A Home SHALL be valid only when its country code is two uppercase letters and its level 1 is the code of a first-level Area of that country. A Home SHALL have no other area than level 1. Any other Home SHALL be invalid.
+
+#### Scenario: Prefecture
+
+- **WHEN** a Home has country code `JP` and level 1 `JP-13`
+- **THEN** it is valid
+
+#### Scenario: Territory without subdivisions
+
+- **WHEN** a Home has country code `HK` and level 1 `HK`
+- **THEN** it is valid
+
+#### Scenario: Malformed country code
+
+- **WHEN** a Home has country code `j` or `jp`
+- **THEN** it is invalid
+
+#### Scenario: Not an Area code
+
+- **WHEN** a Home has level 1 `INVALID`
+- **THEN** it is invalid
+
+#### Scenario: Level 1 in another country
+
+- **WHEN** a Home has country code `JP` and level 1 `US-CA`
+- **THEN** it is invalid
+
+#### Scenario: Well-formed code that is no Area
+
+- **WHEN** a Home has country code `JP` and level 1 `JP-99`
+- **THEN** it is invalid
+
+#### Scenario: Lower-level Area
+
+- **WHEN** a Home has country code `FR` and level 1 `FR-33`, whose parent is `FR-NAQ`
+- **THEN** it is invalid
+
+#### Scenario: Region
+
+- **WHEN** a Home has country code `JP` and level 1 `JP-KANTO`
+- **THEN** it is invalid
+
+### Requirement: A Home's reference point is its Area's
+
+A Home's reference point, the home area's centroid from which NEARBY distances are measured, SHALL be the current reference point of the Area its level 1 names, and the Home SHALL have none when that Area has none. A Home SHALL keep no reference point of its own: when the Area's reference point changes, every Home of that Area SHALL have the new one.
+
+#### Scenario: Prefecture with a reference point
+
+- **WHEN** a Home has level 1 `JP-40`
+- **THEN** its reference point is the reference point of the Area `JP-40` (Fukuoka)
+
+#### Scenario: Area without a reference point
+
+- **WHEN** a Home's Area has no reference point
+- **THEN** the Home has no reference point
+
+#### Scenario: Area's reference point changed
+
+- **WHEN** the reference point of the Area `KR-11` changes after a User set a Home of `KR-11`
+- **THEN** that User's Home has the new reference point

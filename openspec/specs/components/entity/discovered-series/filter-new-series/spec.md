@@ -6,16 +6,28 @@ Drops from newly DiscoveredSeries the events already known — among an Artist's
 
 ## Requirements
 
-### Requirement: Novelty by date, venue and start time
+### Requirement: Grouping is kept
+
+FilterNewSeries SHALL keep each series' title, type and source page for its remaining events, keep events in their original order, and drop a series left with no events. It SHALL NOT change its input.
+
+#### Scenario: Tour partially known
+- **WHEN** a tour has three events and one is already known
+- **THEN** the tour is returned with the other two events in their original order
+
+#### Scenario: Fully known series
+- **WHEN** every event of a series is known
+- **THEN** the series is not returned
+
+### Requirement: Novelty by date, venue and wall-clock start
 
 FilterNewSeries SHALL compare events by local date and listed venue name, two names being the same listed venue (see Venue, "Same listed venue"), and within the same date and venue SHALL treat start time asymmetrically:
 - an event with no start time is known when anything is known at that date and venue;
-- an event with a start time is known only when that exact start time is known there, so a start time announced after an unknown-start Concert is kept.
+- an event with a start time, a time of day at the venue, is known only when that exact start time is known there, so a start time announced after an unknown-start Concert is kept.
 
 Existing Concerts without a listed venue name SHALL be ignored. Events with a blank listed venue name SHALL be dropped. Each event kept SHALL count as known for the events after it. Title, open time, source page and admin area SHALL play no part.
 
-#### Scenario: Same instant in another time zone
-- **WHEN** an existing Concert starts at 2026-06-01T09:00Z and a discovered event at the same date and venue starts at 2026-06-01T18:00+09:00
+#### Scenario: Same wall-clock start
+- **WHEN** an existing Concert starts at 18:00 and a discovered event at the same date and venue starts at 18:00
 - **THEN** the event is dropped
 
 #### Scenario: Unknown start next to a known start
@@ -49,15 +61,3 @@ Existing Concerts without a listed venue name SHALL be ignored. Events with a bl
 #### Scenario: Legacy concert without listed name
 - **WHEN** an existing Concert has no listed venue name
 - **THEN** it drops no discovered event
-
-### Requirement: Grouping is kept
-
-FilterNewSeries SHALL keep each series' title, type and source page for its remaining events, keep events in their original order, and drop a series left with no events. It SHALL NOT change its input.
-
-#### Scenario: Tour partially known
-- **WHEN** a tour has three events and one is already known
-- **THEN** the tour is returned with the other two events in their original order
-
-#### Scenario: Fully known series
-- **WHEN** every event of a series is known
-- **THEN** the series is not returned

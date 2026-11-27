@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `home-area-selector` frontend component and its `homeAreaSelector.*` i18n namespace used in both onboarding and Settings.
+Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, the reference point read from its Area), the RPCs that create and update it, and the unified `home-area-selector` frontend component and its `homeAreaSelector.*` i18n namespace used in both onboarding and Settings.
 
 ## Requirements
 

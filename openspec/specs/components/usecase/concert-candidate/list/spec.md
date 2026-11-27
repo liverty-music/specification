@@ -2,7 +2,7 @@
 
 ## Purpose
 
-List gives an admin every ConcertCandidate awaiting review, oldest first, each with its performing Artist, its details as discovered and its resolved-venue preview.
+List gives an admin every ConcertCandidate awaiting review, oldest first, each with its performing Artist, and its details as discovered, including the resolved place id when its venue was resolved.
 
 ## Requirements
 
