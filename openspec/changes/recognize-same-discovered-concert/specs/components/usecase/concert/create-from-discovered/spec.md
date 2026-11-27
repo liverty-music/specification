@@ -135,6 +135,26 @@ At the end of the batch, CreateFromDiscovered SHALL remove, among the Series it 
 - **WHEN** the batch merged away the only Event of a Series that has no ConcertCandidate
 - **THEN** that Series is removed at the end of the batch, after every event of the batch was stored
 
+### Requirement: The published events of a series are created together
+
+For each series, CreateFromDiscovered SHALL publish every event it decides to publish in one Concert.Create call with the Artist as performer, after deciding for each event of the series whether to publish, stage, fill, merge or skip it. Each Concert in the call is under the series' Series, except one stored in another Artist's Event slot (see "Collision is staged, anything else is published"), which is under that Event's Series. Concert.Create then tells the Artist's followers about them once per Series. A series that publishes nothing SHALL NOT call Concert.Create. When Concert.Create fails, the batch SHALL fail.
+
+#### Scenario: Three-stop tour
+- **WHEN** three events of a tour are to be published
+- **THEN** Concert.Create is called once with the three events
+
+#### Scenario: Everything staged
+- **WHEN** every event of a series is staged
+- **THEN** Concert.Create is not called for that series
+
+#### Scenario: Concerts cannot be created
+- **WHEN** Concert.Create fails with Unavailable for a series
+- **THEN** CreateFromDiscovered fails and the batch is processed again later
+
+#### Scenario: New date and a shared bill in one series
+- **WHEN** a tour brings one new date and one date at another Artist's Event slot under the same listed venue name and start time
+- **THEN** Concert.Create is called once with both Concerts, the second under the other Artist's Event's Series
+
 ## ADDED Requirements
 
 ### Requirement: Same Artist at another venue at the same time

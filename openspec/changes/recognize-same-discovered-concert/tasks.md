@@ -1,6 +1,6 @@
 ## 1. specification: proto comments (design D9)
 
-- [ ] 1.1 In `proto/liverty_music/rpc/admin/concert_candidate/v1/concert_candidate_service.proto`, rewrite the comments of `Approve`, `RESOLUTION_KEEP_EXISTING` and `RESOLUTION_ADOPT_CANDIDATE` to say that both resolutions make the candidate's Artist a performer of the existing event and keep the name not shown as one of its other listed venue names; open the PR citing `OpenSpec-Change: recognize-same-discovered-concert` and merge it (comment only, no release); verify `buf breaking` in CI reports no change
+- [ ] 1.1 In `proto/liverty_music/rpc/admin/concert_candidate/v1/concert_candidate_service.proto`, rewrite the comments of `Approve`, `RESOLUTION_KEEP_EXISTING` and `RESOLUTION_ADOPT_CANDIDATE` to say that both resolutions make the candidate's Artist a performer of the existing event, unless it is an Organizer's event, and keep the name not shown as one of its other listed venue names; open the PR citing `OpenSpec-Change: recognize-same-discovered-concert` and merge it (comment only, no release); verify `buf breaking` in CI reports no change
 
 ## 2. backend: schema and entities (Event, Series; design D1, D8)
 
@@ -19,7 +19,7 @@
 ## 4. backend: shared decision and CreateFromDiscovered (design D5, D6, D7)
 
 - [ ] 4.1 Replace `resolveExistingEvent` and `duplicateEventAmong` with the one decision function of design D6; verify a table test with one row per branch listed in D6
-- [ ] 4.2 Restructure `createSeriesFromDiscovered` into venue resolution then series choice (D5) and apply the decision per event (Nothing, Fill, MergeInto, AddPerformer through `Concert.Create`, Stage, Publish), staging on AlreadyExists from the fill; verify one unit test per ADDED or MODIFIED scenario of `components/usecase/concert/create-from-discovered` with the operations mocked, and that a test reproducing the 2026-11-20 shape (an unknown-start row and a timed row under another name at one venue) neither fails nor adds an event
+- [ ] 4.2 Restructure `createSeriesFromDiscovered` into venue resolution then series choice (D5) and apply the decision per event (Nothing, Fill, MergeInto, Stage, and Publish or AddPerformer collected into the series' one `Concert.Create` call), staging on AlreadyExists from the fill; verify one unit test per ADDED or MODIFIED scenario of `components/usecase/concert/create-from-discovered` with the operations mocked, and that a test reproducing the 2026-11-20 shape (an unknown-start row and a timed row under another name at one venue) neither fails nor adds an event
 
 ## 5. backend: Approve (design D6, D7)
 
