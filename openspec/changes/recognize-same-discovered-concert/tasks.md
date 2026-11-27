@@ -46,7 +46,7 @@
 - [ ] 8.3 Add `ConcertCreationUseCase.RemoveEmptyDiscoveredSeries` on a daily DBOS schedule, and remove the `DeleteOrphaned` calls of `CreateFromDiscovered`, `Approve` and `Reject` with the tests annotated with their removed scenarios; verify one unit test per scenario of `components/usecase/concert/remove-empty-discovered-series` and the "Last staged row of an empty series" scenario of `components/usecase/concert-candidate/approve`
 - [ ] 8.4 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: the rollout finished, the next 09:00 JST discovery runs its batches one at a time with no `create-from-discovered` ERROR, and the first daily run of `RemoveEmptyDiscoveredSeries` succeeds
 
-## 9. backend: data migration (design D10, after 6.1 is live)
+## 9. backend: data migration (design D10, after 6.1 and 8.4 are live)
 
 - [ ] 9.1 Collect, with a read-only prod query, the ids of the 9 duplicate pairs (older and newer event, the agreed listed venue name) and of the 29 split discovered TOUR Series in 13 groups with their ticket sales, excluding Ayron Jones' "TOUR DATES"; record the query and its result in the PR description, not in the issue (public repository)
 - [ ] 9.2 Write the Atlas data migration with those ids, a backup table, skips for rows that no longer exist, and the ticket sale steps of design D10; verify a migration test with a fixture of one duplicate pair (with a ticket journey on the newer event) and one split tour (with a discovered ticket sale on each Series, two of them on the same method and start date) shows one event with both names, the journey moved, one Series and one sale per method and start date
