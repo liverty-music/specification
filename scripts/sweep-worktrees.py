@@ -213,10 +213,11 @@ def main():
     for repo in repos:
         git(repo, "fetch", "--quiet", "origin")
     listed = git(store, "ls-tree", "-d", "--name-only", "origin/main", "openspec/changes/").stdout.split()
-    listed += [str(d) for d in (store / "openspec" / "changes").iterdir() if d.is_dir()]
-    active = {os.path.basename(p) for p in listed} - {"archive"}
     dated = git(store, "ls-tree", "-d", "--name-only", "origin/main", "openspec/changes/archive/").stdout.split()
     archived = {re.sub(r"^\d{4}-\d{2}-\d{2}-", "", os.path.basename(p)) for p in dated}
+    # The archive sync can leave an untracked file, and so the folder, behind.
+    local = {d.name for d in (store / "openspec" / "changes").iterdir() if d.is_dir()}
+    active = ({os.path.basename(p) for p in listed} | (local - archived)) - {"archive"}
     trees = [(repo, tree) for repo in repos for tree in worktrees(repo)]
     if not trees:
         used = {}
