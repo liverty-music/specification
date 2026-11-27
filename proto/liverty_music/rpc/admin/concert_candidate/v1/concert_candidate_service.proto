@@ -45,14 +45,22 @@ service ConcertCandidateService {
   // notification. The operation is idempotent: approving a ConcertCandidate that
   // no longer exists succeeds without creating a duplicate.
   //
-  // Approve is two-phase for duplicate events. When the ConcertCandidate maps
-  // onto an already-published event at the same resolved (venue, date, start
-  // time) and the request's `resolution` is unset, the response carries a
-  // `DuplicateConflict` (the existing event's display fields plus the
-  // ConcertCandidate) and NO state is mutated; the reviewer then re-invokes
-  // Approve with a `resolution` of `RESOLUTION_KEEP_EXISTING` or
-  // `RESOLUTION_ADOPT_CANDIDATE`. A non-duplicate approval publishes normally
-  // regardless of the `resolution` value.
+  // Approve is two-phase for duplicate events. The ConcertCandidate collides
+  // with an existing event at its resolved venue and date that has the same
+  // start time (or both have none), with any event there that has a start time
+  // when the ConcertCandidate has none, and, when it has a start time, with an
+  // event of its own artist on that date with the same start time at another
+  // venue. When it collides and the request's `resolution` is unset, the
+  // response carries a `DuplicateConflict` (the existing event's display fields
+  // plus the ConcertCandidate) and NO state is mutated; the reviewer then
+  // re-invokes Approve with a `resolution` of `RESOLUTION_KEEP_EXISTING` or
+  // `RESOLUTION_ADOPT_CANDIDATE`. Both resolutions keep the one existing event
+  // and make the ConcertCandidate's artist one of its performers, unless the
+  // event belongs to an Organizer, whose performers stay as they are; the
+  // listed venue name that the event does not show is kept as one of its other
+  // listed venue names, so the same candidate is not held for review again. A
+  // non-duplicate approval publishes normally regardless of the `resolution`
+  // value.
   //
   // Approve also settles the venue's area and time zone: the request's
   // admin_area and time_zone take precedence over the candidate's, and both
@@ -164,15 +172,21 @@ enum Resolution {
   // DuplicateConflict without mutating state; otherwise it publishes normally.
   RESOLUTION_UNSPECIFIED = 0;
 
-  // Keep the existing event unchanged: record the ConcertCandidate as a
-  // RejectedConcert with a duplicate reason (attributed to the calling reviewer)
-  // and drop it.
+  // Keep the existing event's listed venue name and times: record the
+  // ConcertCandidate as a RejectedConcert with a duplicate reason (attributed to
+  // the calling reviewer), keep the ConcertCandidate's listed venue name as one
+  // of the event's other listed venue names, make the ConcertCandidate's artist
+  // a performer of the event unless it is an Organizer's event, and remove the
+  // ConcertCandidate.
   RESOLUTION_KEEP_EXISTING = 1;
 
-  // Adopt the ConcertCandidate's display representation: overwrite the existing
-  // event's listed venue name and fill its start/open time only where currently
-  // unset, leaving venue identity (venue_id, place_id) and the shared series
-  // title untouched, then drop the ConcertCandidate.
+  // Adopt the ConcertCandidate's display representation: show its listed venue
+  // name on the existing event, keeping the replaced name as one of the event's
+  // other listed venue names, and fill the event's start and open time only
+  // where unknown, leaving venue identity (venue_id, place_id) and the shared
+  // series title untouched; make the ConcertCandidate's artist a performer of
+  // the event unless it is an Organizer's event, then remove the
+  // ConcertCandidate.
   RESOLUTION_ADOPT_CANDIDATE = 2;
 }
 
@@ -187,8 +201,9 @@ message ExistingEvent {
   // The descriptive title of the existing event (from its shared series).
   entity.v1.Title title = 2 [(buf.validate.field).required = true];
 
-  // The venue name currently stored on the existing event (its display field,
-  // the one RESOLUTION_ADOPT_CANDIDATE would overwrite).
+  // The venue name currently shown on the existing event (its display field,
+  // the one RESOLUTION_ADOPT_CANDIDATE replaces while keeping it as one of the
+  // event's other listed venue names).
   entity.v1.ListedVenueName listed_venue_name = 3 [(buf.validate.field).required = true];
 
   // The local calendar date of the existing event.
