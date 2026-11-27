@@ -10,7 +10,7 @@
 
 ## 3. backend: entity operations (design D2, D3, D4, D8)
 
-- [ ] 3.1 Return other listed venue names from `FindEventsByArtistAndDate`, and listed venue name, other listed venue names and performers from `FindEventsByVenueAndDate`; verify one contract test per scenario of `components/entity/concert/find-events-by-artist-and-date` and `components/entity/concert/find-events-by-venue-and-date`
+- [ ] 3.1 Return other listed venue names, publish state and performers from `FindEventsByArtistAndDate`, and listed venue name, other listed venue names, publish state and performers from `FindEventsByVenueAndDate`; verify one contract test per scenario of `components/entity/concert/find-events-by-artist-and-date` and `components/entity/concert/find-events-by-venue-and-date`
 - [ ] 3.2 Make `FillEventStartTimes` fail with AlreadyExists and change nothing when a filled time takes another Event's slot; verify one contract test per scenario of `components/entity/concert/fill-event-start-times`
 - [ ] 3.3 Declare and implement `Concert.AddOtherListedVenueName` (read under lock, decide with `ListedUnder`, append), and make `UpdateEventListedVenueName` keep the replaced name in the same statement; verify one contract test per scenario of `components/entity/concert/add-other-listed-venue-name` and `components/entity/concert/update-event-listed-venue-name`
 - [ ] 3.4 Declare and implement `Concert.Merge` as in design D3; verify one contract test per scenario of `components/entity/concert/merge`, plus one that a ticket journey inserted for the source while the merge holds its lock fails instead of being removed

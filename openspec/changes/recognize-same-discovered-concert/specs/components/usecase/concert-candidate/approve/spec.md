@@ -40,6 +40,38 @@ When the ConcertCandidate collides and the resolution is adopt the candidate, Ap
 - **WHEN** the Event starts at 18:00 and the ConcertCandidate has no start time and adopt the candidate is chosen
 - **THEN** the Event still starts at 18:00 and lists the ConcertCandidate's venue name
 
+### Requirement: Publish a non-colliding concert candidate
+
+When the ConcertCandidate does not collide, Approve SHALL ignore any resolution and:
+- when it brings a start time and an Event of its Artist at the Venue and date has none, fill that Event's times (Concert.FillEventStartTimes) and add nothing;
+- otherwise add it as a Concert under the ConcertCandidate's Series with its Artist as performer (Concert.Create), never creating a Series. Concert.Create announces the new concert to the Artist's followers; when it fails, Approve SHALL fail with its error and keep the ConcertCandidate.
+
+An Event at the Venue and date that its Artist does not perform at SHALL never be filled by Approve. It SHALL then remove the ConcertCandidate, and, when nothing was added, remove the ConcertCandidate's Series if it is left with no Event and no ConcertCandidate (Series.DeleteOrphaned; a failure here does not fail Approve).
+
+#### Scenario: New concert
+- **WHEN** a non-colliding ConcertCandidate is approved
+- **THEN** an Event is added under its Series and the ConcertCandidate is removed
+
+#### Scenario: Tour stop joins its tour
+- **WHEN** a ConcertCandidate staged from a TOUR series is approved
+- **THEN** its Event belongs to that TOUR Series and no Series is created
+
+#### Scenario: Fill only
+- **WHEN** the ConcertCandidate starts at 18:00 and its Artist's only Event at its Venue and date has no start time
+- **THEN** that Event now starts at 18:00, no Event is added, and the ConcertCandidate is removed
+
+#### Scenario: Another artist's unknown-start event is not filled
+- **WHEN** the ConcertCandidate starts at 18:00 and the only Event at its Venue and date is another Artist's, without a start time
+- **THEN** a new Event at 18:00 with the ConcertCandidate's Artist is added and the other Event still has no start time
+
+#### Scenario: Concert cannot be added
+- **WHEN** Concert.Create fails with Unavailable
+- **THEN** Approve fails with Unavailable and the ConcertCandidate is kept, so the admin can approve it again
+
+#### Scenario: Last staged row of an empty series
+- **WHEN** a fill-only approval removes the last ConcertCandidate of a Series with no Event
+- **THEN** that Series is removed
+
 ## ADDED Requirements
 
 ### Requirement: Another Artist's Event becomes a shared bill

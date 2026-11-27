@@ -22,10 +22,10 @@ Concert discovery does not recognize that two found events are one concert, or t
 
 ### Modified Capabilities
 - `components/usecase/concert/create-from-discovered` (and Purpose diagram at archive): series joining by Venue and by tour title, matching the Artist's Events by Venue and by other listed names, the same Artist at another Venue at the same time, another Artist's slot, a start time held by another Event, and no failed batch on a collision.
-- `components/usecase/concert-candidate/approve` (and Purpose diagram at archive): collision with the Artist's Event at another Venue, both resolutions add the Artist as performer of another Artist's Event (merging the Artist's start-time-less Event), and the name not chosen is recorded on the Event.
+- `components/usecase/concert-candidate/approve` (and Purpose diagram at archive): collision with the Artist's Event at another Venue, a non-colliding candidate fills only its own Artist's Event, both resolutions add the Artist as performer of another Artist's Event (merging the Artist's start-time-less Event), and the name not chosen is recorded on the Event.
 - `components/entity/concert/fill-event-start-times`: fails with AlreadyExists, changing nothing, when another Event holds the slot.
 - `components/entity/concert/update-event-listed-venue-name`: keeps the replaced name among the Event's other listed venue names.
-- `components/entity/concert/find-events-by-artist-and-date`, `components/entity/concert/find-events-by-venue-and-date`: also return the Event's other listed venue names and its performers.
+- `components/entity/concert/find-events-by-artist-and-date`, `components/entity/concert/find-events-by-venue-and-date`: also return the Event's other listed venue names, publish state and performers.
 - `components/entity/series`: when a discovered tour title is the same as a Series title.
 - `components/infrastructure/admin/web/route/approval-queue`: the conflict dialog's wording.
 - `stories/review-concert-candidates`: approving a shared bill.
