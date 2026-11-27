@@ -54,7 +54,7 @@ When the ConcertCandidate does not collide, Approve SHALL ignore any resolution 
 - when it brings a start time and an Event of its Artist at the Venue and date has none, fill that Event's times (Concert.FillEventStartTimes) and add nothing; an Organizer's Event is never filled this way (see "Collision is detected before any change");
 - otherwise add it as a Concert under the ConcertCandidate's Series with its Artist as performer (Concert.Create), never creating a Series. Concert.Create announces the new concert to the Artist's followers; when it fails, Approve SHALL fail with its error and keep the ConcertCandidate.
 
-An Event at the Venue and date that its Artist does not perform at SHALL never be filled by Approve. It SHALL then remove the ConcertCandidate, and, when nothing was added, remove the ConcertCandidate's Series if it is left with no Event and no ConcertCandidate (Series.DeleteOrphaned; a failure here does not fail Approve).
+An Event at the Venue and date that its Artist does not perform at SHALL never be filled by Approve. It SHALL then remove the ConcertCandidate. A Series left with no Event and no ConcertCandidate stays until the daily removal of empty discovered Series.
 
 #### Scenario: New concert
 - **WHEN** a non-colliding ConcertCandidate is approved
@@ -78,13 +78,13 @@ An Event at the Venue and date that its Artist does not perform at SHALL never b
 
 #### Scenario: Last staged row of an empty series
 - **WHEN** a fill-only approval removes the last ConcertCandidate of a Series with no Event
-- **THEN** that Series is removed
+- **THEN** that Series is kept by Approve
 
 ## ADDED Requirements
 
 ### Requirement: Another Artist's Event becomes a shared bill
 
-When a ConcertCandidate is resolved by keep existing or adopt the candidate against an Event its Artist does not perform at and that has no publish state, Approve SHALL make the Artist a performer of that Event: when the Artist has an Event without a start time and without a publish state at the same Venue and date, by merging it into that Event (Concert.Merge), which tells nobody again, and then removing that merged Event's Series if it is left with no Event and no ConcertCandidate (Series.DeleteOrphaned); otherwise, or when Merge refuses because the Artist's Event is the last of a Series with a TicketSale, by storing the Artist's concert in that Event's slot (Concert.Create), which adds the Artist to the Event's performers and tells the Artist's followers (Concert.Created). When Merge fails for another reason, such as Unavailable, Approve SHALL fail and keep the ConcertCandidate. An Event the Artist already performs at, and an Event with a publish state, SHALL be left with their performers.
+When a ConcertCandidate is resolved by keep existing or adopt the candidate against an Event its Artist does not perform at and that has no publish state, Approve SHALL make the Artist a performer of that Event: when the Artist has an Event without a start time and without a publish state at the same Venue and date, by merging it into that Event (Concert.Merge), which tells nobody again, leaving the merged Event's Series in place; otherwise, or when Merge refuses because the Artist's Event is the last of a Series with a TicketSale, by storing the Artist's concert in that Event's slot (Concert.Create), which adds the Artist to the Event's performers and tells the Artist's followers (Concert.Created). When Merge fails for another reason, such as Unavailable, Approve SHALL fail and keep the ConcertCandidate. An Event the Artist already performs at, and an Event with a publish state, SHALL be left with their performers.
 
 #### Scenario: Shared bill approved
 - **WHEN** an admin approves a ConcertCandidate of SiM that collides with マキシマム ザ ホルモン's Event, choosing keep existing

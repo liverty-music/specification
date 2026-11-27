@@ -135,18 +135,6 @@ Published events go out together with the series' other published events (see "T
 - **WHEN** no Event is at the resolved Venue and date
 - **THEN** the event is published under the series' Series
 
-### Requirement: Empty new series are removed
-
-At the end of the batch, CreateFromDiscovered SHALL remove, among the Series it created in this batch and the Series of the Events it merged away in this batch, those that have no Event and no ConcertCandidate (Series.DeleteOrphaned); it SHALL NOT touch other Series. A failure here SHALL NOT fail the batch.
-
-#### Scenario: Created series left empty
-- **WHEN** a Series created in this batch ended up with no Event and no ConcertCandidate
-- **THEN** it is removed
-
-#### Scenario: Series of a merged event left empty
-- **WHEN** the batch merged away the only Event of a Series that has no ConcertCandidate
-- **THEN** that Series is removed at the end of the batch, after every event of the batch was stored
-
 ### Requirement: The published events of a series are created together
 
 For each series, CreateFromDiscovered SHALL publish every event it decides to publish in one Concert.Create call with the Artist as performer, after deciding for each event of the series whether to publish, stage, fill, merge or skip it. Each Concert in the call is under the series' Series, except one stored in another Artist's Event slot (see "Collision is staged, anything else is published"), which is under that Event's Series. Concert.Create then tells the Artist's followers about them once per Series. A series that publishes nothing SHALL NOT call Concert.Create. When Concert.Create fails, the batch SHALL fail.
@@ -168,6 +156,15 @@ For each series, CreateFromDiscovered SHALL publish every event it decides to pu
 - **THEN** Concert.Create is called once with both Concerts, the second under the other Artist's Event's Series
 
 ## ADDED Requirements
+
+### Requirement: One batch at a time
+
+CreateFromDiscovered SHALL process one batch at a time across all Artists: a batch handed over while another is being processed SHALL wait until that one has ended, and then be processed. Two batches therefore never decide or store events at the same time.
+
+#### Scenario: Two Artists of one concert found together
+- **WHEN** the batches of Artist A and Artist B, who both play Venue V on 2026-12-22 at 18:00, are handed over at the same time
+- **THEN** B's batch is processed after A's has ended, finds A's Event and adds B as its performer
+
 
 ### Requirement: Same Artist at another venue at the same time
 
@@ -213,3 +210,11 @@ When filling fails with AlreadyExists because another Event took the slot meanwh
 #### Scenario: Slot taken meanwhile
 - **WHEN** filling fails with AlreadyExists
 - **THEN** the event is staged and the batch does not fail
+
+## REMOVED Requirements
+
+### Requirement: Empty new series are removed
+
+**Reason**: Removing a batch's emptied Series at its end raced with writes to those Series (a TicketSale being stored, a Merge) and missed the Series of a batch that failed after a Merge. An empty Series row is harmless for a day.
+**Migration**: Replaced by SeriesUseCase.RemoveEmptyDiscovered ("Empty discovered Series are removed daily"), which removes every empty discovered Series once it is a day old.
+
