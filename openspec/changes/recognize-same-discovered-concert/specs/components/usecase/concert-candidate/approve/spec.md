@@ -30,7 +30,7 @@ When the ConcertCandidate collides and the resolution is keep existing, Approve 
 
 ### Requirement: Adopt the candidate
 
-When the ConcertCandidate collides and the resolution is adopt the candidate, Approve SHALL add the Event's current listed venue name to its other listed venue names (Concert.AddOtherListedVenueName), replace the Event's listed venue name with the ConcertCandidate's (Concert.UpdateEventListedVenueName), fill the Event's unknown start and open time from it (Concert.FillEventStartTimes), make its Artist a performer of the Event (see "Another Artist's Event becomes a shared bill"), leave its Venue, place id and Series title unchanged, remove the ConcertCandidate, and return no conflict.
+When the ConcertCandidate collides and the resolution is adopt the candidate, Approve SHALL replace the Event's listed venue name with the ConcertCandidate's, keeping the replaced name among its other listed venue names (Concert.UpdateEventListedVenueName), fill the Event's unknown start and open time from it (Concert.FillEventStartTimes), make its Artist a performer of the Event (see "Another Artist's Event becomes a shared bill"), leave its Venue, place id and Series title unchanged, remove the ConcertCandidate, and return no conflict.
 
 #### Scenario: Admin adopts the candidate's details
 - **WHEN** an admin approves a colliding ConcertCandidate choosing adopt the candidate
@@ -44,11 +44,15 @@ When the ConcertCandidate collides and the resolution is adopt the candidate, Ap
 
 ### Requirement: Another Artist's Event becomes a shared bill
 
-When a ConcertCandidate is resolved by keep existing or adopt the candidate against an Event its Artist does not perform at, Approve SHALL make the Artist a performer of that Event: when the Artist has an Event without a start time at the same Venue and date, by merging it into that Event (Concert.Merge), which tells nobody again; otherwise by storing the Artist's concert in that Event's slot (Concert.Create), which adds the Artist to the Event's performers and tells the Artist's followers (Concert.Created). An Event the Artist already performs at SHALL be left with its performers.
+When a ConcertCandidate is resolved by keep existing or adopt the candidate against an Event its Artist does not perform at and that has no publish state, Approve SHALL make the Artist a performer of that Event: when the Artist has an Event without a start time and without a publish state at the same Venue and date, by merging it into that Event (Concert.Merge), which tells nobody again, and then removing that merged Event's Series if it is left with no Event and no ConcertCandidate (Series.DeleteOrphaned); otherwise by storing the Artist's concert in that Event's slot (Concert.Create), which adds the Artist to the Event's performers and tells the Artist's followers (Concert.Created). An Event the Artist already performs at, and an Event with a publish state, SHALL be left with their performers.
 
 #### Scenario: Shared bill approved
 - **WHEN** an admin approves a ConcertCandidate of SiM that collides with マキシマム ザ ホルモン's Event, choosing keep existing
 - **THEN** that Event lists both Artists as performers, SiM's followers are told about it, and the ConcertCandidate is removed
+
+#### Scenario: Organizer's event kept as it is
+- **WHEN** an admin approves a ConcertCandidate that collides with an Organizer's PUBLISHED Event, choosing keep existing
+- **THEN** that Event's performers are unchanged and the ConcertCandidate is removed
 
 #### Scenario: Artist's unknown-start event merged
 - **WHEN** the ConcertCandidate's Artist has an Event without a start time at the Venue and date of the other Artist's colliding Event at 18:00, and the admin chooses adopt the candidate

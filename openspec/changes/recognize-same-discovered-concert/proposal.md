@@ -7,7 +7,7 @@ Concert discovery does not recognize that two found events are one concert, or t
 - An Artist's existing Event at the same Venue and date counts as the same concert whatever its listed venue name, so a start time is filled onto it instead of publishing a second Event. A different listed name for the same slot is staged for the admin as today.
 - An Event of the same Artist on the same date with the same known start time at another Venue (a renamed hall, a building and its hall) is a collision and is staged.
 - An Event keeps the listed venue names an admin did not choose when resolving a duplicate, and a later discovery under such a name is a re-discovery, so the same candidate is not staged again.
-- Another Artist's Event at the same slot is one concert with two performers: discovery adds the Artist as a performer when the listed venue name and the known start time match, and stages it otherwise; approving such a candidate with either resolution adds the performer.
+- Another Artist's discovered Event at the same slot is one concert with two performers: discovery adds the Artist as a performer when the listed venue name and the known start time match, and stages it otherwise; approving such a candidate with either resolution adds the performer. An Organizer's Event is never changed this way; it is staged as today.
 - When the start time to fill is held by another Artist's Event, the Artist's start-time-less Event is merged into it (performers and fans' ticket journeys move, nobody is notified again): automatically when the listed names match, on approval otherwise. A collision no longer fails the batch.
 - A discovered TOUR joins the Artist's TOUR Series of the same title that has an upcoming Event, so dates announced later stay in their tour; a series also joins through an Event at the same Venue, not only the same listed name. Venues are resolved before the series is chosen.
 - The approval queue's conflict dialog says that either choice keeps one Event and lists the candidate's Artist as its performer.
@@ -16,7 +16,7 @@ Concert discovery does not recognize that two found events are one concert, or t
 ## Capabilities
 
 ### New Capabilities
-- `components/entity/concert/merge`: merges a discovered Event into another Event at the same Venue and date, moving its performers and its fans' ticket journeys and sale links, without announcing anything.
+- `components/entity/concert/merge`: merges a discovered Event into another discovered Event at the same Venue and date, moving its performers and its fans' ticket journeys and sale links, without announcing anything.
 - `components/entity/concert/add-other-listed-venue-name`: records a listed venue name an Event is also known by.
 - `components/entity/series/list-upcoming-tours-by-artist`: lists an Artist's discovered TOUR Series that still have an Event on or after the current date at its Venue, with their titles.
 
@@ -24,12 +24,13 @@ Concert discovery does not recognize that two found events are one concert, or t
 - `components/usecase/concert/create-from-discovered` (and Purpose diagram at archive): series joining by Venue and by tour title, matching the Artist's Events by Venue and by other listed names, the same Artist at another Venue at the same time, another Artist's slot, a start time held by another Event, and no failed batch on a collision.
 - `components/usecase/concert-candidate/approve` (and Purpose diagram at archive): collision with the Artist's Event at another Venue, both resolutions add the Artist as performer of another Artist's Event (merging the Artist's start-time-less Event), and the name not chosen is recorded on the Event.
 - `components/entity/concert/fill-event-start-times`: fails with AlreadyExists, changing nothing, when another Event holds the slot.
+- `components/entity/concert/update-event-listed-venue-name`: keeps the replaced name among the Event's other listed venue names.
 - `components/entity/concert/find-events-by-artist-and-date`, `components/entity/concert/find-events-by-venue-and-date`: also return the Event's other listed venue names and its performers.
 - `components/entity/series`: when a discovered tour title is the same as a Series title.
 - `components/infrastructure/admin/web/route/approval-queue`: the conflict dialog's wording.
 - `stories/review-concert-candidates`: approving a shared bill.
 - `components/entity/event` (Purpose and a new requirement): new attribute "other listed venue names"; an Event is listed under a name when its listed venue name or one of its other listed venue names is that name.
-- Relied on and unchanged: Concert.Create (it already merges into an existing slot, adds performers and announces Concert.Created for a newly listed Artist), Concert.UpdateEventListedVenueName, ConcertCandidate.Upsert, Series.Create and Series.DeleteOrphaned, Venue lookups, RejectedConcert.Append (keep existing still records the candidate; the log still never suppresses — the other listed names do, and only for the Event they belong to).
+- Relied on and unchanged: Concert.Create (it already merges into an existing slot, adds performers and announces Concert.Created for a newly listed Artist), ConcertCandidate.Upsert, Series.Create and Series.DeleteOrphaned, Venue lookups, RejectedConcert.Append (keep existing still records the candidate; the log still never suppresses — the other listed names do, and only for the Event they belong to).
 
 ## Impact
 

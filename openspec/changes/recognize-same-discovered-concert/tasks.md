@@ -12,7 +12,7 @@
 
 - [ ] 3.1 Return other listed venue names from `FindEventsByArtistAndDate`, and listed venue name, other listed venue names and performers from `FindEventsByVenueAndDate`; verify one contract test per scenario of `components/entity/concert/find-events-by-artist-and-date` and `components/entity/concert/find-events-by-venue-and-date`
 - [ ] 3.2 Make `FillEventStartTimes` fail with AlreadyExists and change nothing when a filled time takes another Event's slot; verify one contract test per scenario of `components/entity/concert/fill-event-start-times`
-- [ ] 3.3 Declare and implement `Concert.AddOtherListedVenueName` (read under lock, decide with `ListedUnder`, append); verify one contract test per scenario of `components/entity/concert/add-other-listed-venue-name`
+- [ ] 3.3 Declare and implement `Concert.AddOtherListedVenueName` (read under lock, decide with `ListedUnder`, append), and make `UpdateEventListedVenueName` keep the replaced name in the same statement; verify one contract test per scenario of `components/entity/concert/add-other-listed-venue-name` and `components/entity/concert/update-event-listed-venue-name`
 - [ ] 3.4 Declare and implement `Concert.Merge` as in design D3; verify one contract test per scenario of `components/entity/concert/merge`, plus one that a ticket journey inserted for the source while the merge holds its lock fails instead of being removed
 - [ ] 3.5 Declare and implement `Series.ListUpcomingToursByArtist`; verify one contract test per scenario of `components/entity/series/list-upcoming-tours-by-artist`
 
@@ -38,6 +38,6 @@
 
 ## 8. backend: data migration (design D10, after 6.1 is live)
 
-- [ ] 8.1 Collect, with a read-only prod query, the ids of the 9 duplicate pairs (older and newer event, the agreed listed venue name) and of the 29 split discovered TOUR Series in 13 groups, excluding Ayron Jones' "TOUR DATES"; record the query and its result in the PR description, not in the issue (public repository)
-- [ ] 8.2 Write the Atlas data migration with those ids, a backup table, and skips for rows that no longer exist; verify a migration test with a fixture of one duplicate pair (with a ticket journey on the newer event) and one split tour shows one event with both names, the journey moved, and one Series
+- [ ] 8.1 Collect, with a read-only prod query, the ids of the 9 duplicate pairs (older and newer event, the agreed listed venue name) and of the 29 split discovered TOUR Series in 13 groups with their ticket sales, excluding Ayron Jones' "TOUR DATES"; record the query and its result in the PR description, not in the issue (public repository)
+- [ ] 8.2 Write the Atlas data migration with those ids, a backup table, skips for rows that no longer exist, and the ticket sale steps of design D10; verify a migration test with a fixture of one duplicate pair (with a ticket journey on the newer event) and one split tour (with a discovered ticket sale on each Series, two of them on the same method and start date) shows one event with both names, the journey moved, one Series and one sale per method and start date
 - [ ] 8.3 Re-run the 8.1 query against prod right before merging, merge the PR (it applies to prod), and verify read-only: AtlasMigration `Ready`, no remaining pair of one Artist's discovered events at one venue and date where only one has a start time, and no Artist with two upcoming discovered TOUR Series of the same tour title other than the excluded one
