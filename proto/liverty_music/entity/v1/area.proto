@@ -92,7 +92,8 @@ message Area {
 
 // TimeZoneOption is a time zone with the names a screen shows for it: one of
 // the zones that venues of a country can have, as offered in a time zone
-// select, or the zone of a returned venue or ticket sale.
+// select, the zone of a returned venue or ticket sale, or the listed zone a
+// time zone name resolves to.
 message TimeZoneOption {
   // The IANA name (e.g., "Asia/Seoul").
   TimeZone time_zone = 1 [(buf.validate.field).required = true];

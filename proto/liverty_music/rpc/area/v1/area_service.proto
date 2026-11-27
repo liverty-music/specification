@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.area.v1 provides the fan-facing AreaService, which
+// the fan app uses to name a time zone that no other response carries: the
+// zone of the fan's own browser.
+package liverty_music.rpc.area.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/area.proto";
+import "liverty_music/entity/v1/user.proto";
+
+// AreaService is the fan surface over the Area reference data, which holds the
+// time zones and the names a screen shows for them. It can be called without
+// sign-in, so a guest's screens name zones too.
+service AreaService {
+  // ResolveTimeZone returns the one listed time zone that an IANA time zone
+  // name stands for, with its names. The listed zones are those of the IANA
+  // zone.tab. A listed name resolves to itself. Another name for a listed zone,
+  // such as the backward-compatible "Asia/Calcutta" that a browser can report,
+  // resolves to that zone ("Asia/Kolkata"), so the returned time_zone can
+  // differ from the requested one. The name is matched exactly, including
+  // letter case.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The time zone is missing, empty or longer than 64
+  //   characters.
+  // - NOT_FOUND: The name stands for no listed zone, such as "UTC",
+  //   "Etc/GMT+9" or a name the reference data does not know.
+  rpc ResolveTimeZone(ResolveTimeZoneRequest) returns (ResolveTimeZoneResponse);
+}
+
+// ResolveTimeZoneRequest carries the time zone name to resolve.
+message ResolveTimeZoneRequest {
+  // Required. The IANA name as the client has it, e.g. "Asia/Calcutta".
+  entity.v1.TimeZone time_zone = 1 [(buf.validate.field).required = true];
+}
+
+// ResolveTimeZoneResponse carries the listed zone the name stands for.
+message ResolveTimeZoneResponse {
+  // The listed zone, under its zone.tab name, with its names.
+  entity.v1.TimeZoneOption time_zone_option = 1 [(buf.validate.field).required = true];
+}
