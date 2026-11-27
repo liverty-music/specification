@@ -8,7 +8,7 @@ Stages a discovered concert for review, or refreshes the pending ConcertCandidat
 
 ### Requirement: One pending row per artist, date and venue
 
-Upsert SHALL store a new ConcertCandidate unless one exists for the same Artist and date and the same resolved place id or, when the venue is unresolved, the same listed venue name. When one exists, Upsert SHALL refresh its series, title, times, admin area, source page and resolved preview, and SHALL keep its id and find time. Start time SHALL play no part in this match.
+Upsert SHALL store a new ConcertCandidate unless one exists for the same Artist and date and the same resolved place id or, when the venue is unresolved, the same listed venue name. When one exists, Upsert SHALL refresh its series, title, times, admin area, source page, resolved place id and time zone, and SHALL keep its id and find time. Start time SHALL play no part in this match.
 
 #### Scenario: First staging
 - **WHEN** no ConcertCandidate exists for the Artist, date and place

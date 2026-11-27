@@ -8,11 +8,15 @@ ListFollowed gives a User the Concerts of every Artist they follow, on or after 
 
 ### Requirement: Followed artists' concerts in proximity groups
 
-ListFollowed SHALL read the Concerts of the User's followed Artists from the given date, or from the current date when none is given (Concert.ListByFollower), and return them as proximity groups relative to the User's home area (Concert.GroupByDateAndProximity), in date order. Concerts of first-party Series that are not publicly visible SHALL NOT be returned.
+ListFollowed SHALL read the Concerts of the User's followed Artists from the given date, or, when none is given, from the current date at each Concert's Venue (Concert.ListByFollower), and return them as proximity groups relative to the User's home area (Concert.GroupByDateAndProximity), in date order. Concerts of first-party Series that are not publicly visible SHALL NOT be returned.
 
 #### Scenario: Upcoming by default
 - **WHEN** no date is given
-- **THEN** only Concerts from the current date onward are grouped
+- **THEN** only Concerts on or after the current date at their own Venue are grouped
+
+#### Scenario: Today differs between venues
+- **WHEN** no date is given at 2027-03-15 08:00 in Asia/Tokyo (2027-03-14 23:00 in Europe/London), and followed Artists have Concerts on 2027-03-14 at a Venue in Asia/Tokyo and at a Venue in Europe/London
+- **THEN** the Concert at the Venue in Europe/London is grouped and the one at the Venue in Asia/Tokyo is not
 
 #### Scenario: From a past date
 - **WHEN** the given date is 7 days ago

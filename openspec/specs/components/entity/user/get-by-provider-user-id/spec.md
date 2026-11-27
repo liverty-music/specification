@@ -8,7 +8,7 @@ Returns the User linked to a given identity at the identity provider, including 
 
 ### Requirement: GetByProviderUserID returns the user or NotFound
 
-GetByProviderUserID SHALL return the User whose provider user ID equals the given value, carrying its Home, centroid included, when one is set. It SHALL fail with NotFound when no User has that provider user ID, and with InvalidArgument when the value is empty. Any other failure to read SHALL be returned with its own code, not as NotFound.
+GetByProviderUserID SHALL return the User whose provider user ID equals the given value, carrying its Home when one is set, with the reference point of the Home's Area when that Area has one. It SHALL fail with NotFound when no User has that provider user ID, and with InvalidArgument when the value is empty. Any other failure to read SHALL be returned with its own code, not as NotFound.
 
 #### Scenario: Registered identity
 

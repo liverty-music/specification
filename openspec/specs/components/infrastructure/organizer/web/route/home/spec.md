@@ -10,11 +10,11 @@ The organizer console's first screen: the list of things that need the member no
 Home SHALL list, as one list grouped by kind under a heading per kind, items that each say what needs doing and are one target that opens where it is resolved, with no other action inside the item:
 
 1. 要対応 (needs action): the Organizer has no payout account yet, or its payout account is not active — labelled 登録する (set up), opening Settings at the payout account;
-2. 7日以内 (within 7 days): a published event that starts within the next 7 days (Japan time) and has no Scanner that is Unused or InUse — labelled 発行する (issue), opening that event's Reception tab;
+2. 7日以内 (within 7 days): a published event whose start, at its Venue's local time, is within the next 7 days and that has no Scanner that is Unused or InUse — labelled 発行する (issue), opening that event's Reception tab;
 3. 開始時刻なし (no start time): a published event without a start time — labelled 設定する (set), opening the concert editor of its concert;
 4. 下書き (draft): a concert that has a draft event — opening that concert's page.
 
-Items SHALL be ordered by this list and, within a kind, by event date, earliest first. A cancelled event or concert SHALL never appear. An item about a concert SHALL open it under the first of its performers that the Organizer represents. An Organizer that has no payout account yet is a state Home shows as the 要対応 item, never as a payout status that could not be loaded.
+Items SHALL be ordered by this list and, within a kind, by event date, earliest first. An event's date and start time SHALL be shown at its Venue's local time with the labels of global/i18n "Dates and times in the zone they belong to". A cancelled event or concert SHALL never appear. An item about a concert SHALL open it under the first of its performers that the Organizer represents. An Organizer that has no payout account yet is a state Home shows as the 要対応 item, never as a payout status that could not be loaded.
 
 #### Scenario: Payout account not finished
 
@@ -28,8 +28,13 @@ Items SHALL be ordered by this list and, within a kind, by event date, earliest 
 
 #### Scenario: Event next week without a scanner
 
-- **WHEN** it is 2026-10-28 and a published event starts on 2026-11-03 18:00 JST and has no Scanner
-- **THEN** Home shows 11月3日(火) 18:00 JST · 受付リンクなし labelled 発行する, and selecting the item opens that event's Reception tab
+- **WHEN** it is 2026-10-28 and a published event at a Venue in Tokyo starts on 2026-11-03 18:00 and has no Scanner
+- **THEN** Home shows 11月3日(火) 18:00 日本時間 · 受付リンクなし labelled 発行する, and selecting the item opens that event's Reception tab
+
+#### Scenario: Event abroad next week without a scanner
+
+- **WHEN** it is 2027-02-15 and a published event at a Venue in London starts on 2027-02-20 19:30 London time and has no Scanner
+- **THEN** Home shows 2月20日(土) 19:30 ロンドン時間（日本時間 2月21日(日) 04:30） · 受付リンクなし labelled 発行する
 
 #### Scenario: Revoked scanners only
 

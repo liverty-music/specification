@@ -14,10 +14,11 @@ A DiscoveredSeries is what an external concert search returns for an Artist: one
 | discovered event attribute | meaning | constraint |
 |----------------------------|---------|------------|
 | listed venue name | venue text as the source wrote it | required; a blank name makes the event unusable |
-| admin area | ISO 3166-2 code of the venue's area | optional; absent when unknown |
+| admin area | code of the first-level Area the venue lies in | optional; absent when unknown |
+| time zone | the venue's IANA time zone | optional; absent when unknown, and always without an admin area |
 | local date | calendar date | required |
-| start time | performance start | optional |
-| open time | doors open | optional |
+| start time | performance start | optional, a time of day at the venue |
+| open time | doors open | optional, a time of day at the venue |
 
 ```mermaid
 erDiagram

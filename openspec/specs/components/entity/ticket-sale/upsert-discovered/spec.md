@@ -1,7 +1,7 @@
 # components/entity/ticket-sale/upsert-discovered Specification
 
 ## Purpose
-UpsertDiscovered stores a sale found by discovery as a discovered TicketSale. It updates the known discovered sale with the same series, method and start date in Japan time, or creates a new one, and reports whether the sale was inserted, updated or skipped, together with its id.
+UpsertDiscovered stores a sale found by discovery as a discovered TicketSale. It updates the known discovered sale with the same series, method and start date (each sale's date read in its own time zone), or creates a new one, and reports whether the sale was inserted, updated or skipped, together with its id.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ UpsertDiscovered SHALL store nothing for a discovered sale whose start time or e
 
 ### Requirement: UpsertDiscovered rejects a sale without a valid series or name
 
-UpsertDiscovered SHALL fail with InvalidArgument when the discovered sale names no series, has no name, or breaks the TicketSale rules for a discovered sale. It SHALL fail with FailedPrecondition when the named series does not exist or has an Organizer.
+UpsertDiscovered SHALL fail with InvalidArgument when the discovered sale names no series, has no name, has no time zone, or breaks the TicketSale rules for a discovered sale. It SHALL fail with FailedPrecondition when the named series does not exist or has an Organizer.
 
 #### Scenario: No series
 - **WHEN** UpsertDiscovered receives a discovered sale without a series
@@ -35,6 +35,10 @@ UpsertDiscovered SHALL fail with InvalidArgument when the discovered sale names 
 
 #### Scenario: No name
 - **WHEN** UpsertDiscovered receives a discovered sale without a name
+- **THEN** it fails with InvalidArgument and stores nothing
+
+#### Scenario: No time zone
+- **WHEN** UpsertDiscovered receives a discovered sale opening on 1 November 12:00 without a time zone
 - **THEN** it fails with InvalidArgument and stores nothing
 
 #### Scenario: Unknown series
@@ -47,11 +51,16 @@ UpsertDiscovered SHALL fail with InvalidArgument when the discovered sale names 
 
 ### Requirement: Same series, method and start date is one discovered sale
 
-UpsertDiscovered SHALL treat a discovered sale as the known discovered sale that has the same series and method and a start time on the same calendar day in Japan time (Asia/Tokyo). On a match it SHALL replace the name, start time and end time with the discovered values, and SHALL replace the result date only when the discovered sale has one, so a stored result date is never removed by a discovery that did not read it; a stored result date that falls before the calendar day, in Japan time, of the new end time SHALL be cleared, because a corrected end time made it impossible. It SHALL keep the id, series, method and find time, and return Updated with the existing id. Without a match it SHALL create a new discovered sale, with the result date when the discovered sale has one, a new id and the current time as find time, and return Inserted with the new id.
+UpsertDiscovered SHALL treat a discovered sale as the known discovered sale that has the same series and method and a start time on the same calendar day, each sale's start date being the date of its local start date-time in its own time zone. On a match it SHALL replace the name, time zone, start time and end time with the discovered values, and SHALL replace the result date only when the discovered sale has one, so a stored result date is never removed by a discovery that did not read it; a stored result date that falls before the calendar day of the new end time, in the sale's time zone, SHALL be cleared, because a corrected end time made it impossible. It SHALL keep the id, series, method and find time, and return Updated with the existing id. Without a match it SHALL create a new discovered sale, with the result date when the discovered sale has one, a new id and the current time as find time, and return Inserted with the new id.
 
 #### Scenario: Re-discovery with a corrected time
-- **WHEN** a lottery stored as opening on 5 October 16:00 is discovered again as opening on 5 October 18:00
+- **WHEN** a lottery stored as opening on 5 October 16:00 Asia/Tokyo is discovered again as opening on 5 October 18:00 Asia/Tokyo
 - **THEN** UpsertDiscovered updates that sale to open at 18:00 and returns Updated with its id
+- **AND** no second sale is created
+
+#### Scenario: Late-evening sale abroad keeps its date
+- **WHEN** a lottery stored as opening on 1 November 23:30 Asia/Taipei, which is 2 November in Japan time, is discovered again as opening on 1 November 22:30 Asia/Taipei, which is 1 November in Japan time
+- **THEN** UpsertDiscovered updates that sale to open at 22:30 and returns Updated with its id
 - **AND** no second sale is created
 
 #### Scenario: Re-discovery with a new name

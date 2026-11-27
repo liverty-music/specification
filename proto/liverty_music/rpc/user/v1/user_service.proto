@@ -12,9 +12,8 @@ import "liverty_music/entity/v1/user.proto";
 // Every per-user call acts on the signed-in caller's own User: no request
 // names a User, and the backend resolves the caller from the sign-in identity.
 // A returned User carries its id, email, provider user ID, name, preferred
-// language when set, home (country code, level 1 and, when set, level 2,
-// without a centroid), and its full name and phone number when set. Whether the
-// User is verified is read from
+// language when set, home (country code and level 1) when set, and its full
+// name and phone number when set. Whether the User is verified is read from
 // liverty_music.rpc.identity_verification.v1.IdentityVerificationService.Get.
 // RequestPasskeyRecovery and VerifyEmail are the only calls that need no
 // sign-in.

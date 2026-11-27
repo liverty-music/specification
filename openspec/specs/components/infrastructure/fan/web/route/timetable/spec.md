@@ -206,14 +206,19 @@ Every timetable load SHALL call `FollowService.List` to retrieve per-artist hype
 
 ### Requirement: Default today-onward timetable
 
-The timetable "My Timetable" SHALL, by default, display only concerts whose date is on or after the current local date. The "today" boundary SHALL be anchored to the client's local date, and the timetable SHALL request the timetable by passing that date as the `from` argument to `ConcertService.ListFollowed`.
+The timetable "My Timetable" SHALL, by default, display only concerts on or after the current date at each concert's venue. For the default view the timetable SHALL call `ConcertService.ListFollowed` without the `from` argument, so the server applies each venue's own "today"; it SHALL NOT send the device's local date.
 
 #### Scenario: Fresh load defaults to today onward
 
 - **WHEN** the user opens `/timetable` with no date query parameter
-- **THEN** the timetable SHALL request `ConcertService.ListFollowed` with `from` set to the client's current local date
-- **AND** only concerts on or after today SHALL be displayed
+- **THEN** the timetable SHALL request `ConcertService.ListFollowed` without `from`
+- **AND** only concerts on or after today at their venue SHALL be displayed
 - **AND** past concerts of followed artists SHALL NOT be displayed
+
+#### Scenario: Concert abroad still today at its venue
+
+- **WHEN** the user in Japan opens `/timetable` at 08:00 on 15 March, and a followed artist plays in London on 14 March, where it is still 14 March
+- **THEN** that concert SHALL be displayed
 
 #### Scenario: Empty upcoming timetable
 
@@ -987,13 +992,18 @@ The month-jump capsule SHALL fade in when it appears (the list is first scrolled
 
 ### Requirement: Guest timetable follows the same date lower bound
 
-The guest timetable SHALL show only the concert dates on or after the timetable's active `from` date (today by default), the same lower bound the signed-in timetable shows, both when it opens and after its resume refresh. Choosing an earlier date in the date filter SHALL show the earlier concerts again.
+The guest timetable SHALL show only the concert dates the signed-in timetable would show: on or after the active `from` date or, without one, on or after the current date at each concert's venue, both when it opens and after its resume refresh. Choosing an earlier date in the date filter SHALL show the earlier concerts again.
 
 #### Scenario: Guest timetable hides past concerts
 
 - **WHEN** a guest who follows artists with concerts before and after today opens `/timetable` with no date query parameter
-- **THEN** only concerts on or after the timetable's `from` date SHALL be displayed
+- **THEN** only concerts on or after today at their venue SHALL be displayed
 - **AND** past concerts of the followed artists SHALL NOT be displayed
+
+#### Scenario: Guest's concert abroad still today at its venue
+
+- **WHEN** a guest in Japan opens `/timetable` at 08:00 on 15 March, and a followed artist plays in London on 14 March, where it is still 14 March
+- **THEN** that concert SHALL be displayed
 
 #### Scenario: Guest looks back
 
@@ -1003,4 +1013,4 @@ The guest timetable SHALL show only the concert dates on or after the timetable'
 #### Scenario: Guest resume refresh keeps the cut
 
 - **WHEN** a guest on `/timetable` returns the PWA to the foreground and the list is refreshed
-- **THEN** only concerts on or after the timetable's `from` date SHALL be displayed
+- **THEN** only concerts on or after the timetable's lower bound SHALL be displayed

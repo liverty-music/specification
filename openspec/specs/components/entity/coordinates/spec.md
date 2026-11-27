@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Coordinates is a point on Earth given as a WGS 84 latitude and longitude, always carried together as a pair. It locates a Venue and the centroid of a Home area, and has no identity of its own.
+Coordinates is a point on Earth given as a WGS 84 latitude and longitude, always carried together as a pair. It locates a Venue or serves as an Area's reference point, and has no identity of its own.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
