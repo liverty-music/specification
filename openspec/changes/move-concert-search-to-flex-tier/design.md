@@ -19,11 +19,12 @@ See proposal.md for why. The current code this design changes (backend `main`, 2
   - Each call has a 120-second budget (`geminiCallTimeout`), detached from the caller's context.
   - A call is retried for 3 attempts at 1 s, 2 s and 4 s.
   - The tier is not set, so calls run at the standard tier.
-- **Workflows** (`internal/infrastructure/workflow`). These are DBOS workflows run only by the `workflow-worker` Deployment.
-  - A step that fails with Unavailable or DeadlineExceeded is retried at 1 s doubling to at most 1 h (`stepOptions`).
-  - `WithDeadline` stops a run and reports it for an admin.
-  - `WithQueue` with `RegisterQueue(name, n)` caps concurrency across workers.
-  - Starting an id that exists returns the existing run.
+- **Workflows** (`internal/infrastructure/workflow`). These are DBOS workflows (v1.8.0) run only by the `workflow-worker` Deployment.
+  - A step that fails with Unavailable or DeadlineExceeded is retried at 1 s doubling to at most 1 h (`stepOptions`). The run stays PENDING while it waits between retries.
+  - `WithQueue` with `RegisterQueue(name, n)` caps concurrency across workers. The cap counts every PENDING run of the queue (`system_database.go:5086-5157`), so a run waiting between step retries holds a slot.
+  - `WithDeadline` is counted from the dequeue, not from the start (`client.go:77-85`; DBOS `system_database.go:5273`). A run that waits in the queue therefore gets more time than asked for.
+  - `WithDelay` keeps a run DELAYED until its time. A DELAYED run is not PENDING, so it holds no slot.
+  - Starting an id that exists returns the existing run. A stored run is resumed by its registered name, so an older worker that lacks the name cannot run it (`runtime.go:168`).
 - **Flex** (Gemini API docs, "Flex inference", read 2026-11-26).
   - Requested with `service_tier: flex`; it costs 50% less on tokens.
   - Target latency is 1 to 15 minutes, and the docs' example sets a 900-second client timeout.
@@ -48,57 +49,95 @@ See proposal.md for why. The current code this design changes (backend `main`, 2
 
 ### D1. The background search is a DBOS workflow, not a NATS announcement
 
-SearchNewConcerts keeps its skip rules and the pending upsert. It then starts the workflow `search-concerts` with:
-- id `search-concerts:<artist>:<search time µs>`, the same business key as `create-from-discovered`;
-- input: the Artist id, the search time and the trigger;
+SearchNewConcerts keeps its skip rules and the pending upsert. It then starts the first attempt of the workflow `search-concerts` with:
+- id `search-concerts:<artist>:<search time µs>:1`;
+- input: the Artist id, the search time, the trigger and the attempt number;
 - queue `concert-search`;
-- deadline: the search time plus 20 h.
+- no DBOS deadline (D5 explains why).
 
-The workflow is `ConcertUseCase.RunSearch` (registered in `internal/di/worker.go`). It holds the body of today's `executeSearch`.
+The workflow is `ConcertUseCase.RunSearch` (registered in `internal/di/worker.go`). One run is one attempt: it calls Concert.Search once. A busy service does not make it wait. Instead it starts the next attempt with a delay and ends (D2).
 
 Why a workflow:
 - **Project rule.** The event-delivery spec ("Work for one receiver is started as a workflow") says a request for one receiver to do work is started as a workflow, not announced.
 - **The platform already provides what the retry needs:**
-  - the id makes a repeated start a no-op, which is exactly-once per search;
-  - step retries with durable backoff up to 1 h;
-  - a deadline;
+  - an id per attempt makes a repeated start a no-op, so each attempt runs once;
+  - a delayed start that holds no queue slot while it waits;
   - a concurrency cap;
   - recovery after a worker restart.
 
 A NATS subject with `NakWithDelay` would need a new stream subject, a Consumer CR, a delivery-count-based delay and an `ackWait` longer than a 15-minute call. It would also break that rule.
 
-**Why the job and consumer start the workflow inline.** The durable-workflows spec allows API servers, consumers and jobs to start workflows. The pending upsert and the start are two writes, not one transaction. If the start fails after the upsert, SearchNewConcerts fails and the ConcertSearch stays pending until the 20-hour timeout. Either the first-follow consumer's redelivery or the next daily run starts it again; the redelivery is skipped as in progress, so the daily run recovers it. That gap is accepted rather than adding a transactional start.
+**Why not retry inside one run.** Two facts rule out the step retry policy (Context, Workflows):
+- A run waiting between step retries stays PENDING, so 8 busy searches would hold all 8 slots for hours. The other searches would make no call at all.
+- `WithDeadline` counts from the dequeue, so a search queued for hours would outlive the 20-hour window and could be duplicated by the next daily run.
 
-### D2. Steps of the workflow
+The attempt chain avoids both. A slot is held only during a call, and the 20-hour limit is checked against the search time itself.
 
-1. `search`: get the Artist and its OfficialSite, list upcoming Concerts and pending ConcertCandidate keys, then call Concert.Search and filter. It returns the new series.
-   - Retried by the step policy on Unavailable and DeadlineExceeded.
-   - Each run of the step re-reads the catalog, so the filter sees the catalog at the time the result arrives.
-2. `hand-on`: when series remain, start `create-from-discovered` with today's id, then MarkFound.
-3. `record-end`: UpdateStatus to completed or failed, and send `concert.search.completed` with the trigger from the input.
+**Why the job and consumer start the workflow inline.** The durable-workflows spec allows API servers, consumers and jobs to start workflows. The pending upsert and the start are two writes, not one transaction. If the start fails after the upsert:
+- SearchNewConcerts fails, and the ConcertSearch stays pending until the 20-hour timeout;
+- a redelivery to the first-follow consumer is skipped, because the search counts as in progress;
+- so the next daily run is what searches the Artist again.
 
-A permanent error in step 1 or 2 makes the run end with that error after `record-end` sets failed. The durable-workflows spec then reports it for an admin. Today such a failure is only a log line of the job.
+That gap is accepted rather than adding a transactional start.
+
+### D2. One attempt, step by step
+
+1. `check`: read the Artist and its ConcertSearch. The attempt ends without searching in two cases:
+   - **The search was replaced.** The ConcertSearch is no longer pending with this search time. The attempt changes nothing.
+   - **The Artist may no longer be searched.** Its activity has ended, or an active Organizer represents it. The attempt goes to `record-end` as nothing new. The signal is sent only when an earlier attempt called Concert.Search, that is, when the attempt number is above 1.
+
+   Both checks ran only before the pending upsert before this change. They are repeated because an attempt can start hours after the request.
+2. `search`: if the search time is 20 h or more in the past, skip the call and treat the attempt as busy. Otherwise:
+   - read the OfficialSite, the upcoming Concerts and the pending ConcertCandidate keys;
+   - call Concert.Search once;
+   - filter the result.
+
+   The step returns one of three results:
+   - **the new series**;
+   - **busy**: Concert.Search failed with Unavailable or DeadlineExceeded;
+   - **failed**: the error kind of a permanent error.
+
+   Busy and failed are values, not errors, so the step retry policy never runs.
+3. **busy within the window:** start the next attempt and end. The next attempt has:
+   - the id `...:<attempt+1>`;
+   - a delay of 1 minute doubling to at most 1 hour;
+   - the same queue.
+
+   The start is checkpointed in the run, so a resumed run does not start it twice.
+4. `hand-on`: when series remain, start `create-from-discovered` with today's id (`create-from-discovered:<artist>:<search time µs>`), then MarkFound.
+5. `record-end`: UpdateStatus and send `concert.search.completed` with the trigger from the input:
+   - **completed** after a hand-on or nothing new;
+   - **failed** with the error kind after a permanent error;
+   - **failed** with the kind of the last error when the attempt was busy and the next one would start at or past 20 h.
+
+   No attempt starts at or past 20 h after the search time. An attempt that gets its slot only after 20 h skips the call (step 2) and ends here, with the kind of the previous attempt's error. The input carries that kind, or unknown on attempt 1.
+
+A failure to start `create-from-discovered` is a permanent error and ends as failed, as today. The run itself ends successfully in every case above, so no outcome is reported for an admin. A run that fails outside these paths (a bug) still is, per durable-workflows.
+
+Attempt numbers count from 1, and every attempt reports its call (Concert.Search "Each external call reports its usage"). The observation therefore sees each attempt.
 
 ### D3. Flex in the searcher, configurable, default on
 
 - **Config.** `gemini.Config` gets `ServiceTier`, set on `GenerateContentConfig.ServiceTier` of every concert search call. `pkg/config` reads `GCP_GEMINI_CONCERT_SEARCH_SERVICE_TIER`; the code default is `flex`, and `standard` sends no tier.
 - **Call timeout.** `geminiCallTimeout` becomes 15 minutes when the tier is flex and stays 120 s otherwise.
-- **Busy answers.** A 503 or 429 maps to Unavailable as today, so the existing 3 in-process attempts run, and then the step retry takes over.
+- **Busy answers.** A 503 or 429 maps to Unavailable as today. The existing 3 in-process tries run within one attempt; then the attempt is busy (D2).
 - **Ticket sale searcher.** Unchanged: it never succeeded at Flex in the trial.
 
-**Worst case for one step.** 3 attempts × 15 min plus the backoffs, about 45 minutes. A worker redeploy in the middle reruns the step after the new worker starts. The rerun repeats at most one interrupted call.
+**Worst case for one attempt.** 3 tries × 15 min plus the backoffs, about 45 minutes, during which the attempt holds a queue slot. A worker redeploy in the middle reruns the `search` step after the new worker starts. The rerun repeats at most one interrupted call.
 
 ### D4. Queue `concert-search` with concurrency 8
 
 - Registered in the worker next to the payment and checkout queues.
 - 8 keeps the daily batch (about 80 Artists) moving when calls take minutes, and stays far below the project's Gemini request-rate limits.
 - Gemini calls hold no database connection. The steps' short reads share the worker's pool, as `create-from-discovered` already does.
+- **A search can wait behind a batch.** A first-follow search started during the daily batch may wait for free slots. The worst case is about 80 × 45 min / 8, about 7.5 h; when Flex answers quickly, it is minutes. Nobody waits for it (stories/follow-an-artist). The order in which waiting attempts get a slot is the queue's own; this change does not set priorities.
 
-### D5. Pending timeout 20 hours, deadline 20 hours
+### D5. One 20-hour window, checked against the search time
 
-- **20 h < 24 h.** A search abandoned at its deadline frees the Artist before the next daily run at the same hour, so the next run requests a fresh search with a new id.
-- **The workflow deadline** uses the same 20 h counted from the search time. The background search can never outlive the window in which no second search starts.
-- **A run stopped at the deadline is reported for an admin** (durable-workflows). During the Flex-only observation this is the signal that Flex failed for a whole day. If it happens on more than a few Artists, the next change adds the standard-tier fallback.
+- **20 h < 24 h.** A search that gives up frees the Artist before the next daily run at the same hour, so the next run requests a fresh search with new ids.
+- **The window is checked by the attempt itself** (D2 step 2), against the search time, so time in the queue counts. No DBOS deadline is set, because it would count from the dequeue.
+- **The last call can end after the window.** An attempt started just before 20 h can finish its call up to about 45 min later, still well before the next daily run at 24 h. Only the daily run and a first follow of a never-searched Artist start searches, so no newer search can begin in that gap.
+- **Giving up sends the failed signal with the error kind unavailable** (D2 step 5). During the Flex-only observation, the count of these signals shows how often Flex failed for a whole day. No admin report is raised for it.
 
 ### D6. The daily job and first-follow consumer
 
@@ -109,8 +148,7 @@ A permanent error in step 1 or 2 makes the run end with that error after `record
 ### D7. Reporting
 
 - **Service tier on each generation.** `posthog.LLMGeneration` gets `ServiceTier`, reported as `service_tier`. Cost from PostHog's own price table reads as standard pricing; the billing export stays the source of truth for money. Sending our own cost figures was rejected: it would put a price table in code that goes stale on each repricing.
-- **Searches that end.** `concert.search.completed` is still sent once per search that called Gemini, from `record-end`.
-- **Searches stopped at the deadline.** They send no signal; they are counted from the workflow records in the observation.
+- **Every search that reached the external search ends with one signal.** `concert.search.completed` is sent once per search, from the `record-end` of its last attempt, including a search that gave up at 20 h (outcome failed, error kind unavailable). A search ended by the `check` step before any call sends none, as a skipped search does today.
 
 ### D8. Model and tier pins follow the process that calls Gemini
 
@@ -120,9 +158,11 @@ A permanent error in step 1 or 2 makes the run end with that error after `record
 
 ## Risks / Trade-offs
 
-- [Flex stays busy for most of a day, as in the trial] → each search keeps retrying, up to hourly, until its 20-hour deadline. No duplicate starts, and the run is reported. The observation decides on the fallback.
-- [A deadline report per Artist on a bad day floods the admin view] → accepted for the observation period. The fallback change removes the cause.
-- [The spend cap refuses calls (403) in prod] → nothing is stored, as the paid-api-spend-cap spec requires. Whether the searcher maps this refusal to a transient error is checked in task 1.2. If it does, the step retries until the deadline; if not, the run ends at once. Either way, the run is reported for an admin.
+- [Flex stays busy for most of a day, as in the trial] → each search keeps trying, up to hourly, until 20 h after its search time. Waiting attempts hold no slot, so every search gets its turn. Searches still busy at 20 h end as failed with error kind unavailable. The observation decides on the fallback.
+- [The spend cap refuses calls (403) in prod] → nothing is stored, as the paid-api-spend-cap spec requires. Task 1.2 checks whether the searcher maps this refusal to a transient error:
+  - if it does, the search keeps trying until 20 h and ends as failed with error kind unavailable;
+  - if not, it ends at once as failed with its error kind.
+- [An Organizer starts to represent the Artist, or its activity ends, while a search waits] → every attempt checks both before calling (D2 step 1).
 - [Filtering runs hours after the search started, while CreateFromDiscovered of an earlier search is still running] → dedup at the database natural key (`UNIQUE (series_id, local_event_date, venue_id)`) is the source of truth, as today.
 - [The worker now builds the Gemini searcher] → the worker gets the Gemini key from `fan-api-backend-secrets`, which already holds `GCP_GEMINI_SEARCH_API_KEY`. Its startup fails loudly if the key is missing, as the API server does.
 
@@ -132,16 +172,16 @@ A permanent error in step 1 or 2 makes the run end with that error after `record
 2. cloud-provisioning PR: the pins (D8) and the prod release pin for the job, consumer, API server and worker images. It goes live on merge through ArgoCD.
    - In-flight inline searches at the moment of the rollout finish in their old Pods.
    - The first daily run after the rollout starts workflows.
-3. Rollback:
-   - set `GCP_GEMINI_CONCERT_SEARCH_SERVICE_TIER=standard` (no release) to leave Flex;
-   - or revert the release pin to go back to inline searches. Workflows already started finish under the old searcher's rules.
+3. Rollback: set `GCP_GEMINI_CONCERT_SEARCH_SERVICE_TIER=standard` (no release) to leave Flex. A waiting attempt reads the setting when it runs, so it calls the standard tier.
+   - **Do not revert the release pin.** The previous worker does not register `search-concerts` and could not run the attempts already stored (Context, Workflows). Their ConcertSearch rows would stay pending for 20 h.
+   - **A defect in the new code is fixed by a new release.** If the code itself must go, first cancel every `search-concerts` run that has not ended, then revert the pin. The Artists are searched again 20 h later by the daily run.
 
 ## Observation (Flex only, no fallback)
 
 For 3 days after the rollout, read in prod (read-only):
 - PostHog `$ai_generation` with `service_tier = flex`: successes, 503/429 counts, latency percentiles;
 - `concert.search.completed` by outcome;
-- the DBOS workflow records of `search-concerts` (through the cloud-provisioning read-only db-proxy runbook): run time from start to end, step attempts, runs stopped at the deadline.
+- the DBOS workflow records of `search-concerts` (through the cloud-provisioning read-only db-proxy runbook): attempts per search, and time from the search time to the last attempt's end.
 
 Results go into the Results section below. The decision on a standard-tier fallback and on a shorter freshness window is made from them, in a separate change.
 

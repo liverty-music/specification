@@ -4,7 +4,7 @@ Since the release of 2026-11-21 the concert search makes almost no Google Search
 
 Nobody waits for a search. The daily run is a background job, and the first-follow search already runs in the background (stories/follow-an-artist). So a late answer costs nothing, as long as a refused search is tried again for hours instead of being given up after a few seconds. Today it cannot be: the search runs inline in the daily job and the event consumer, with 3 attempts a few seconds apart, a 120-second call timeout, a 3-minute pending timeout, one Artist at a time, and a job that stops after 3 failures in a row.
 
-This change moves the search into a background workflow that retries a busy refusal for up to 20 hours. It then runs the search on Flex only, to observe its success rate and delay for several days before deciding on a fallback to the standard tier or a shorter search interval.
+This change moves the search into background attempts that retry a busy refusal for up to 20 hours. It then runs the search on Flex only, to observe its success rate and delay for several days before deciding on a fallback to the standard tier or a shorter search interval.
 
 ## What Changes
 
@@ -12,8 +12,9 @@ This change moves the search into a background workflow that retries a busy refu
   - The daily run therefore only records and starts searches.
   - The first-follow search starts one the same way.
 - **The background search survives a busy service.** It runs the steps that were inline before: Concert.Search, the filtering, handing on to CreateFromDiscovered, the status update and the completed signal.
-  - At most 8 searches run at once across the platform.
-  - A busy or timed-out search is tried again, first after 1 second and then at doubling intervals of at most 1 hour (the durable-workflows retry), until 20 hours after its search time.
+  - It calls Concert.Search in attempts. At most 8 attempts call it at once across the platform, and attempts waiting to retry hold no place.
+  - A busy or timed-out attempt is followed by another, first after 1 minute and then at doubling intervals of at most 1 hour, while less than 20 hours have passed since the search time. After that the search ends as failed, with one completed signal of outcome failed.
+  - Every attempt first checks again that the search is still current and the Artist may still be searched (not ended, not represented by an active Organizer), because an attempt can run hours after the request.
 - **The pending timeout becomes 20 hours (from 3 minutes).** While a background search may still be running, no second search for the same Artist starts.
 - **Concert.Search asks for the lower-priced service level (Flex).** It waits up to 15 minutes for each answer. A busy refusal counts as a transient failure.
 - **The usage report of each Gemini call carries the service level.** Without it, cost in product analytics reads at twice the billed price.
@@ -35,9 +36,10 @@ None.
 ### Modified Capabilities
 
 - `components/usecase/concert/search-new-concerts`:
-  - the search runs in the background with retries until 20 hours, at most 8 at once;
+  - the search runs in the background, in attempts until 20 hours after the search time, at most 8 calling at once;
+  - every attempt checks the search and the Artist again before calling;
   - the pending timeout becomes 20 hours;
-  - a search that cannot hand on its concerts is failed by the background search;
+  - the status and the completed signal are set by the background search, once per search, including a search that gives up at 20 hours;
   - the previews are removed.
   - (Purpose) The sequence diagram changes: SearchNewConcerts ends by starting the background search, and the steps after Upsert move into it. The diagram is fixed at archive.
 - `components/entity/concert/search`:
@@ -59,8 +61,9 @@ Unchanged, and why:
   - the daily job and the first-follow consumer finish in seconds.
 - **cloud-provisioning:**
   - the prod release pin;
-  - the search model's service tier is pinned in the job, consumer and worker ConfigMaps of prod.
+  - the search model, thinking level and service tier are pinned in the prod ConfigMap the workflow worker reads, and removed from the job's.
 - **Production:**
   - concert-search token cost roughly halves;
   - new concerts may reach fans up to some hours later on a busy day;
-  - a search still refused 20 hours after it started is reported for an admin as a workflow past its deadline, and the next daily run searches the Artist again.
+  - a search still refused 20 hours after it started ends as failed, and the next daily run searches the Artist again;
+  - leaving Flex is a setting (no release). Reverting the release is not a rollback: the previous worker cannot run the stored attempts.

@@ -5,9 +5,25 @@
 
 ## 2. backend: background search (components/usecase/concert/search-new-concerts)
 
-- [ ] 2.1 Add the `search-concerts` workflow `ConcertUseCase.RunSearch` with the steps of design D2, moving the body of `executeSearch` into it, and verify with usecase unit tests (Flow and operations mocked) for the scenarios "Productive search", "Nothing new" (both requirements), "External search fails", "Two series found" and "Cannot be started" of "New concerts are handed on once per search"
-- [ ] 2.2 Make SearchNewConcerts start `search-concerts` (id `search-concerts:<artist>:<search time µs>`, queue `concert-search`, deadline search time + 20 h) after the pending upsert, return only an error, delete the previews, and raise `pendingTimeout` to 20 h (design D1, D5, D6); verify with usecase unit tests for "Daily run starts searches and ends", "Cannot be started" of "The search runs in the background", and "Searched 2 hours ago", "New concert found 3 days ago", "Another search running", "Abandoned search" and "Previous search failed"
-- [ ] 2.3 Register `search-concerts` and the `concert-search` queue (concurrency 8) in the workflow worker and build the concert searcher there (design D1, D4), and verify with the workflow runtime integration test against Postgres for "Same search started twice", "Eight at once", "Service busy for 3 hours" (a step failing with Unavailable then succeeding) and "Service busy for a whole day" (a short deadline in the test)
+- [ ] 2.1 Add the `search-concerts` workflow `ConcertUseCase.RunSearch`, one attempt per run with the steps of design D2. Move the body of `executeSearch` into it, and make `search` return busy or failed as values so the step retry policy never runs.
+
+  Verify with usecase unit tests (Flow and operations mocked) for these scenarios:
+  - "The search runs in the background": "Service busy for 3 hours" (the next attempt started with a 1, 2, 4 … minute delay capped at 60, then completed) and "Queued until late";
+  - "Each attempt checks again before searching": "Represented while waiting" and "Search replaced";
+  - "The search is recorded": "Productive search", "Nothing new", "External search fails" and "Service busy for a whole day";
+  - "New concerts are handed on once per search": "Two series found", "Nothing new" and "Cannot be started";
+  - "Each search reports its outcome": "Nothing new", "Search failed", "Failure without a kind" and "Busy for a whole day".
+- [ ] 2.2 Make SearchNewConcerts start the first attempt after the pending upsert (id `search-concerts:<artist>:<search time µs>:1`, queue `concert-search`, no deadline). It returns only an error, the previews are deleted, and `pendingTimeout` rises to 20 h (design D1, D5, D6).
+
+  Verify with usecase unit tests for these scenarios:
+  - "The search runs in the background": "Daily run starts searches and ends" and "Cannot be started";
+  - "Skip when recently searched or discovered": "Searched 2 hours ago", "New concert found 3 days ago", "Another search running", "Abandoned search" and "Previous search failed".
+- [ ] 2.3 Register `search-concerts` and the `concert-search` queue (concurrency 8) in the workflow worker, and build the concert searcher there (design D1, D4).
+
+  Verify with the workflow runtime integration test against Postgres for these scenarios of "The search runs in the background":
+  - "Same attempt started twice";
+  - "Eight at once";
+  - "Waiting retries hold no place": 8 delayed attempts and a ninth that runs at once.
 - [ ] 2.4 Update the daily job and the first-follow consumer for the error-only SearchNewConcerts and keep their tests passing; release backend once the image built from the merge exists, and record the version for task 3.2
 
 ## 3. cloud-provisioning: pins and rollout
@@ -18,5 +34,5 @@
 ## 4. Production check and observation (read-only)
 
 - [ ] 4.1 After the first 18:00 JST run following the rollout, confirm in prod that the job finished within 5 minutes, that each Artist due for a search has a `search-concerts` workflow, that `$ai_generation` events carry `service_tier = flex`, and that at least one search reached completed or failed
-- [ ] 4.2 After 3 days, collect the observation of design.md (success and 503/429 counts, latency, run time to end, step attempts, runs stopped at the deadline) and write it with a recommendation on the standard-tier fallback and the freshness window into design.md Results
+- [ ] 4.2 After 3 days, collect the observation of design.md (success and 503/429 counts, latency, attempts per search, time from search time to end, searches that gave up at 20 hours) and write it with a recommendation on the standard-tier fallback and the freshness window into design.md Results
 - [ ] 4.3 Update the held change `measure-official-page-change-detection` (its plan worktree) to the new structure: its D1 (where the check runs), D5 and D6 (searches now end hours after 18:00 JST and the outcome comes from `record-end`), then resume it with plan-change step 4

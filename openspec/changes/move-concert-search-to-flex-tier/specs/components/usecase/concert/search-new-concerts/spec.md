@@ -2,31 +2,56 @@
 
 ### Requirement: The search runs in the background
 
-After recording the ConcertSearch as pending, SearchNewConcerts SHALL start the rest of the search (Concert.Search, the filtering, the hand-on, the status update and the completed signal) as a background workflow named after the Artist and the search time of its ConcertSearch, and SHALL return without concerts and without waiting for it. Starting it again with the same Artist and search time SHALL NOT start a second search. When it cannot be started, SearchNewConcerts SHALL fail. At most 8 background searches SHALL run at once across all backend processes; the others wait for one to end. A step of the background search that fails with Unavailable or DeadlineExceeded SHALL be tried again as every workflow step is (first after 1 second, then at doubling intervals of at most 1 hour), until 20 hours after the search time, when the background search stops and is reported for an admin as a workflow past its deadline.
+After recording the ConcertSearch as pending, SearchNewConcerts SHALL start the rest of the search (Concert.Search, the filtering, the hand-on, the status update and the completed signal) as a background search for the Artist and the search time of its ConcertSearch, and SHALL return without concerts and without waiting for it. When it cannot be started, SearchNewConcerts SHALL fail.
+
+The background search SHALL call Concert.Search in attempts:
+- Each attempt SHALL call Concert.Search once and SHALL run once, also when it is started again.
+- When Concert.Search fails with Unavailable or DeadlineExceeded and less than 20 hours have passed since the search time, the next attempt SHALL start after a wait of 1 minute for the first retry, doubling with each further retry up to at most 1 hour.
+- At most 8 attempts SHALL be calling Concert.Search at once across all backend processes. Attempts waiting to retry SHALL NOT count toward those 8.
+- No attempt SHALL call Concert.Search 20 hours or more after the search time. The search then SHALL end as failed (see "The search is recorded").
 
 #### Scenario: Daily run starts searches and ends
 - **WHEN** the daily run reaches 80 followed Artists that are due for a search
 - **THEN** each of them has a pending ConcertSearch and a started background search, and the run ends without waiting for any of them
 
 #### Scenario: Eight at once
-- **WHEN** 20 background searches have been started and none has ended
-- **THEN** 8 of them are searching and 12 are waiting
+- **WHEN** 20 background searches are ready to call Concert.Search and none has ended
+- **THEN** 8 of them are calling it and 12 are waiting
 
-#### Scenario: Same search started twice
-- **WHEN** the background search for an Artist and a search time is started twice
-- **THEN** the external search runs once for it
+#### Scenario: Waiting retries hold no place
+- **WHEN** 8 background searches are waiting to retry after Unavailable and a ninth is ready to call Concert.Search
+- **THEN** the ninth calls it without waiting for the 8
+
+#### Scenario: Same attempt started twice
+- **WHEN** the same attempt of a background search is started twice
+- **THEN** Concert.Search is called once for it
 
 #### Scenario: Service busy for 3 hours
-- **WHEN** Concert.Search fails with Unavailable for the first 3 hours after the search time and then succeeds
-- **THEN** the background search continues from that result, the ConcertSearch becomes completed, and nothing is reported for an admin
+- **WHEN** Concert.Search fails with Unavailable on every attempt in the first 3 hours after the search time and then succeeds
+- **THEN** the search continues from that result, the ConcertSearch becomes completed, and one concert search completed signal is sent
 
-#### Scenario: Service busy for a whole day
-- **WHEN** Concert.Search still fails with Unavailable 20 hours after the search time
-- **THEN** the background search stops, it is reported for an admin, and the ConcertSearch stays pending
+#### Scenario: Queued until late
+- **WHEN** an attempt is first able to call Concert.Search 20 hours and 5 minutes after the search time
+- **THEN** it does not call Concert.Search and the search ends as failed
 
 #### Scenario: Cannot be started
 - **WHEN** the ConcertSearch is recorded as pending and the background search cannot be started
 - **THEN** SearchNewConcerts fails
+
+### Requirement: Each attempt checks again before searching
+
+Before calling Concert.Search, every attempt of a background search SHALL read the Artist's ConcertSearch and the Artist again:
+- When the ConcertSearch is no longer pending with the search's search time, the attempt SHALL end without calling Concert.Search and without changing the ConcertSearch.
+- When the Artist's activity has ended or an active Organizer represents it, the attempt SHALL end without calling Concert.Search, and the ConcertSearch SHALL become completed without a find.
+- When the representation check itself fails, the attempt SHALL proceed, as SearchNewConcerts does.
+
+#### Scenario: Represented while waiting
+- **WHEN** an active Organizer comes to represent the Artist while its search waits to retry
+- **THEN** the next attempt does not call Concert.Search and the ConcertSearch is completed
+
+#### Scenario: Search replaced
+- **WHEN** an attempt starts and the Artist's ConcertSearch has a later search time than the attempt's
+- **THEN** the attempt does not call Concert.Search and the ConcertSearch is unchanged
 
 ## MODIFIED Requirements
 
@@ -56,7 +81,11 @@ Before searching, SearchNewConcerts SHALL read the Artist's ConcertSearch and re
 
 ### Requirement: The search is recorded
 
-Before starting the background search, SearchNewConcerts SHALL restart the Artist's ConcertSearch as pending (ConcertSearch.Upsert), and SHALL fail without searching when that cannot be recorded. When the background search ends with an error the status SHALL become failed; otherwise completed. When new concerts are handed on, the background search SHALL record the discovery (ConcertSearch.MarkFound); a failure to update the status or record the discovery SHALL NOT change the result. A background search stopped at its deadline SHALL leave the status pending.
+Before starting the background search, SearchNewConcerts SHALL restart the Artist's ConcertSearch as pending (ConcertSearch.Upsert), and SHALL fail without searching when that cannot be recorded. The background search SHALL set the status when it ends:
+- **failed** when Concert.Search fails with an error other than Unavailable or DeadlineExceeded, or when no further attempt may call it within 20 hours of the search time because it is still failing with one of them or has not been called yet;
+- **completed** otherwise.
+
+When new concerts are handed on, the background search SHALL record the discovery (ConcertSearch.MarkFound). A failure to update the status or record the discovery SHALL NOT change the result.
 
 #### Scenario: Productive search
 - **WHEN** the background search hands on two new concerts
@@ -68,11 +97,15 @@ Before starting the background search, SearchNewConcerts SHALL restart the Artis
 
 #### Scenario: External search fails
 - **WHEN** Concert.Search fails with a permanent error
-- **THEN** the ConcertSearch is failed and the background search ends with that error
+- **THEN** the ConcertSearch is failed and no further attempt starts
+
+#### Scenario: Service busy for a whole day
+- **WHEN** Concert.Search still fails with Unavailable on the last attempt it may make within 20 hours of the search time
+- **THEN** the ConcertSearch is failed and no further attempt starts
 
 ### Requirement: New concerts are handed on once per search
 
-When at least one event remains, the background search SHALL start ConcertCreationUseCase.CreateFromDiscovered for the Artist with all remaining series, named after the Artist and the search time of its ConcertSearch, so this search starts it once. When it cannot be started, the background search SHALL fail. When none remains, it SHALL start nothing.
+When at least one event remains, the background search SHALL start ConcertCreationUseCase.CreateFromDiscovered for the Artist with all remaining series, named after the Artist and the search time of its ConcertSearch, so this search starts it once. When it cannot be started, the background search SHALL end as failed. When none remains, it SHALL start nothing.
 
 #### Scenario: Two series found
 - **WHEN** a tour and a standalone show remain
@@ -83,8 +116,36 @@ When at least one event remains, the background search SHALL start ConcertCreati
 - **THEN** nothing is started and the ConcertSearch is completed
 
 #### Scenario: Cannot be started
-- **WHEN** two series remain and CreateFromDiscovered cannot be started with a permanent error
-- **THEN** the background search fails and the ConcertSearch is failed
+- **WHEN** two series remain and CreateFromDiscovered cannot be started
+- **THEN** the background search ends as failed and the ConcertSearch is failed
+
+### Requirement: Each search reports its outcome
+
+Every background search that calls Concert.Search SHALL send one "concert search completed" signal for product analytics when it ends, under the trace of that search. The signal SHALL carry:
+- the Artist;
+- what started it (the daily run, a first follow, or by hand);
+- the outcome (failed, nothing new, or new concerts found);
+- the numbers of series and events it handed on.
+
+A failed search SHALL also carry the kind of error that failed it, or unknown when the error states no kind, and SHALL NOT carry the error's message. Examples of an error kind are deadline exceeded, unavailable and permission denied. A search that ended because no attempt could call Concert.Search within 20 hours of the search time SHALL carry the kind of the last error.
+
+Retried attempts SHALL NOT send a signal of their own. A search that ends before any call to Concert.Search sends no signal. A failure to send the signal SHALL NOT change the outcome.
+
+#### Scenario: Nothing new
+- **WHEN** the daily run searches an Artist and every event found is already known
+- **THEN** one signal is sent with the outcome nothing new and 0 handed-on events
+
+#### Scenario: Search failed
+- **WHEN** Concert.Search fails because its deadline passed and no further attempt may be made within 20 hours of the search time
+- **THEN** one signal is sent with the outcome failed and the error kind deadline exceeded, and without the error's message
+
+#### Scenario: Failure without a kind
+- **WHEN** Concert.Search fails permanently with an error that states no kind
+- **THEN** one signal is sent with the outcome failed and the error kind unknown
+
+#### Scenario: Busy for a whole day
+- **WHEN** a search made 12 attempts that all failed with Unavailable and the 20 hours have passed
+- **THEN** exactly one signal is sent, with the outcome failed and the error kind unavailable
 
 ## REMOVED Requirements
 
