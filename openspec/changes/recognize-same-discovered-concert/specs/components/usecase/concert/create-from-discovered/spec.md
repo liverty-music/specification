@@ -4,7 +4,7 @@
 
 For each discovered series, CreateFromDiscovered SHALL look up the Artist's Events on the series' dates (Concert.FindEventsByArtistAndDate) and decide the Venue of each of its events (see "Re-discovery of the artist's own event" and "Venue resolution") before choosing the series' Series, in this order:
 
-1. the Series of one of those Events that the Artist performs at alone, that has the date of one of the series' events, and that either is listed under that event's listed venue name (see Event, "Listed under a name") or is at that event's Venue — the one with the smallest id when several match;
+1. the Series of one of those Events that the Artist performs at alone and that has no publish state, that has the date of one of the series' events, and that either is listed under that event's listed venue name (see Event, "Listed under a name") or is at that event's Venue — the one with the smallest id when several match;
 2. for a TOUR series only, the Series with the same tour title (see Series, "Same tour title") among the Artist's upcoming discovered tours at the current time (Series.ListUpcomingToursByArtist) — the one with the smallest id when several match;
 3. otherwise a new Series created with the discovered title, type and source page (Series.Create) before any of its events is stored or staged.
 
@@ -50,7 +50,7 @@ When the Artist has an Event on an event's date listed under the event's listed 
 - when the event has no start time and one of them, listed under the event's name, has one, nothing SHALL be stored, since the event adds nothing;
 - when the event has no start time and one of them, not listed under the event's name, has one, the event SHALL be staged (ConcertCandidate.Upsert) and not published;
 - when one of them has the same start time (or both have none) and is not listed under the event's name, the event SHALL be staged (ConcertCandidate.Upsert) and not published;
-- when the event brings a start time and one of them has none, the time SHALL be filled onto that Event (Concert.FillEventStartTimes) and nothing else stored, unless another Event holds that slot (see "Start time held by another Event"); one unknown-start Event SHALL be filled by at most one event of the batch;
+- when the event brings a start time and one of them has none, the check of "Same Artist at another venue at the same time" SHALL come first and stage the event when it applies; otherwise the time SHALL be filled onto that Event (Concert.FillEventStartTimes) and nothing else stored, unless that Event has a publish state (an Organizer's Event is never filled: when no other Event holds that slot, nothing is stored if it is listed under the event's name, and the event is staged otherwise) or another Event holds that slot (see "Start time held by another Event"); one unknown-start Event SHALL be filled, or, for an Organizer's, matched, by at most one event of the batch;
 - otherwise the event SHALL go on to "Same Artist at another venue at the same time" and then to the collision check.
 
 #### Scenario: Exact re-discovery
@@ -68,6 +68,18 @@ When the Artist has an Event on an event's date listed under the event's listed 
 #### Scenario: Start time announced under another name
 - **WHEN** the Artist's Event at Venue V on 2026-12-19 is listed as "Kyocera Dome Osaka" without a start time, and the event lists "京セラドーム大阪" at 17:00 and resolves to V
 - **THEN** that Event now starts at 17:00 and no new Event is stored
+
+#### Scenario: Organizer's unknown-start event already listed under the name
+- **WHEN** the Artist's Organizer's Event at Venue V without a start time is listed under the event's name, and the event starts at 18:00 with no other Event at that time
+- **THEN** nothing is stored and the Organizer's Event is unchanged
+
+#### Scenario: Organizer's unknown-start event under another name
+- **WHEN** the Artist's Organizer's Event at Venue V without a start time is listed under another name, and the event starts at 18:00 with no other Event at that time
+- **THEN** the event is staged and the Organizer's Event is unchanged
+
+#### Scenario: Two start times beside an Organizer's unknown-start event
+- **WHEN** the Artist's Organizer's Event at Venue V without a start time is listed under the events' name, and the batch brings 13:00 and 18:00 at that venue and date
+- **THEN** nothing is stored for 13:00 and 18:00 is handled as a new event
 
 #### Scenario: Same show under another name
 - **WHEN** the Artist's Event at Venue V on 2026-12-19 is listed as "京セラドーム大阪" at 17:00, and the event lists "Kyocera Dome Osaka" at 17:00 and resolves to V
@@ -125,11 +137,15 @@ Published events go out together with the series' other published events (see "T
 
 ### Requirement: Empty new series are removed
 
-At the end of the batch, CreateFromDiscovered SHALL remove, among the Series it created in this batch and the Series of the Events it merged away in this batch, those that have no Event and no ConcertCandidate (Series.DeleteOrphaned); it SHALL NOT touch other Series. A failure here SHALL NOT fail the batch.
+At the end of the batch, also when the batch fails, CreateFromDiscovered SHALL remove, among the Series it created in this batch and the Series of the Events it merged away in this batch, those that have no Event and no ConcertCandidate (Series.DeleteOrphaned); it SHALL NOT touch other Series. A failure here SHALL NOT fail the batch.
 
 #### Scenario: Created series left empty
 - **WHEN** a Series created in this batch ended up with no Event and no ConcertCandidate
 - **THEN** it is removed
+
+#### Scenario: Failed batch is swept
+- **WHEN** the batch merged away the only Event of a Series and then fails
+- **THEN** that Series is removed, since the retry would not look at it again
 
 #### Scenario: Series of a merged event left empty
 - **WHEN** the batch merged away the only Event of a Series that has no ConcertCandidate
@@ -159,7 +175,7 @@ For each series, CreateFromDiscovered SHALL publish every event it decides to pu
 
 ### Requirement: Same Artist at another venue at the same time
 
-When the event brings a start time and the Artist has an Event on its date with the same start time at another Venue, CreateFromDiscovered SHALL stage the event (ConcertCandidate.Upsert) and not publish it, since one Artist cannot play two venues at once.
+When the event brings a start time and the Artist has an Event on its date with the same start time at another Venue, an Event already stored, one this series publishes, or one it has filled or merged into earlier in the batch, CreateFromDiscovered SHALL stage the event (ConcertCandidate.Upsert) and not publish it, since one Artist cannot play two venues at once.
 
 #### Scenario: Renamed hall
 - **WHEN** the Artist's Event on 2027-08-28 at 18:00 is at the Venue listed "日本ガイシホール", and the event lists "クロコくんホール (旧 日本ガイシホール)" at 18:00 and resolves to another Venue
@@ -173,14 +189,18 @@ When the event brings a start time and the Artist has an Event on its date with 
 
 When the start time to fill onto the Artist's Event is already held by another Event at that Venue and date (an Event of another Artist), CreateFromDiscovered SHALL treat the two as one concert:
 
-- when that other Event is listed under the event's listed venue name and neither Event has a publish state, it SHALL merge the Artist's Event into it (Concert.Merge), which tells nobody again, and store nothing else;
+- when that other Event is listed under the event's listed venue name and neither Event has a publish state, it SHALL merge the Artist's Event into it (Concert.Merge), which tells nobody again, and store nothing else; when Merge refuses because the Artist's Event is the last of a Series with a TicketSale, the event SHALL be staged instead;
 - otherwise it SHALL stage the event (ConcertCandidate.Upsert) and not publish it.
 
-When filling fails with AlreadyExists because another Event took the slot meanwhile, the event SHALL be staged. Neither case SHALL fail the batch; the batch goes on with its other events.
+When filling fails with AlreadyExists because another Event took the slot meanwhile, the event SHALL be staged. Neither case SHALL fail the batch; the batch goes on with its other events. When Merge fails with Unavailable (another change is writing the Series), CreateFromDiscovered SHALL fail, and the batch is processed again later.
 
 #### Scenario: Co-headliner's time already known
 - **WHEN** Artist A's Event at Venue V on 2026-12-31 has no start time, Artist B's Event at V on 2026-12-31 starts at 18:00 under the same listed venue name, and A's event brings 18:00
 - **THEN** A performs at B's 18:00 Event, A's Event without a start time is gone, A's followers are not told again, and the batch's other events are processed
+
+#### Scenario: Tour with a ticket sale is not merged away
+- **WHEN** the same holds but A's Event without a start time is the only Event of a Series with a discovered TicketSale
+- **THEN** A's event is staged, and A's Event and its Series' TicketSale are unchanged
 
 #### Scenario: Held under another name
 - **WHEN** the same holds but B's Event is listed under another venue name
@@ -189,6 +209,10 @@ When filling fails with AlreadyExists because another Event took the slot meanwh
 #### Scenario: Held by an Organizer's event
 - **WHEN** the slot is held by an Organizer's Event listed under the event's name
 - **THEN** the event is staged and both Events are unchanged
+
+#### Scenario: Series being written during a merge
+- **WHEN** Merge fails with Unavailable
+- **THEN** CreateFromDiscovered fails, nothing is staged for that event, and the batch is processed again later
 
 #### Scenario: Slot taken meanwhile
 - **WHEN** filling fails with AlreadyExists

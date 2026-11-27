@@ -15,10 +15,12 @@
 - [ ] 3.3 Declare and implement `Concert.AddOtherListedVenueName` (read under lock, decide with `ListedUnder`, append), and make `UpdateEventListedVenueName` keep the replaced name in the same statement; verify one contract test per scenario of `components/entity/concert/add-other-listed-venue-name` and `components/entity/concert/update-event-listed-venue-name`
 - [ ] 3.4 Declare and implement `Concert.Merge` as in design D3; verify one contract test per scenario of `components/entity/concert/merge`, plus one that a ticket journey inserted for the source while the merge holds its lock fails instead of being removed
 - [ ] 3.5 Declare and implement `Series.ListUpcomingToursByArtist`; verify one contract test per scenario of `components/entity/series/list-upcoming-tours-by-artist`
+- [ ] 3.6 Make `Concert.Create` fail when an Event with a publish state holds a slot (design D6a); verify one contract test per scenario of `components/entity/concert/create` "Create merges into an existing slot"
+- [ ] 3.7 Make `Series.DeleteOrphaned` keep a Series that has a TicketSale; including one being written at that moment; verify one contract test per scenario of `components/entity/series/delete-orphaned`
 
 ## 4. backend: shared decision and CreateFromDiscovered (design D5, D6, D7)
 
-- [ ] 4.1 Replace `resolveExistingEvent` and `duplicateEventAmong` with the one decision function of design D6; verify a table test with one row per branch listed in D6
+- [ ] 4.1 Replace `resolveExistingEvent` and `duplicateEventAmong` with the one decision function of design D6; verify a table test with one row per branch listed in D6 and D6a
 - [ ] 4.2 Restructure `createSeriesFromDiscovered` into venue resolution then series choice (D5) and apply the decision per event (Nothing, Fill, MergeInto, Stage, and Publish or AddPerformer collected into the series' one `Concert.Create` call), staging on AlreadyExists from the fill; verify one unit test per ADDED or MODIFIED scenario of `components/usecase/concert/create-from-discovered` with the operations mocked, and that a test reproducing the 2026-11-20 shape (an unknown-start row and a timed row under another name at one venue) neither fails nor adds an event
 
 ## 5. backend: Approve (design D6, D7)
@@ -34,7 +36,8 @@
 
 - [ ] 7.1 Rewrite the conflict dialog lede in `admin/approval-queue/approval-queue-route.html`; verify the component test for `components/infrastructure/admin/web/route/approval-queue` "Dialog explains the choices"
 - [ ] 7.2 Run the approval flow with Playwright against a local build with the RPCs mocked: approve a candidate, get a conflict, read the lede, choose Keep existing, and see the row leave the queue
-- [ ] 7.3 Open the PR citing the change, merge it and release the frontend
+- [ ] 7.3 Show copy of its own when Approve refuses adopt the candidate with FailedPrecondition, keeping the dialog and the row; verify the component test for `components/infrastructure/admin/web/route/approval-queue` "Adopt refused"
+- [ ] 7.4 Open the PR citing the change, merge it and release the frontend
 
 ## 8. backend: data migration (design D10, after 6.1 is live)
 
