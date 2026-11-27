@@ -10,7 +10,8 @@ removed only when removing it loses nothing and nobody is using it:
 - it is not locked and has no uncommitted or untracked file;
 - every ignored file in it can be regenerated, or is identical to the file at
   the same path in the repository's main checkout;
-- its change is no longer an active change on the store's origin/main, and when
+- its change is not active, neither on the store's origin/main nor in the main
+  checkout's working tree (a plan may be uncommitted), and when
   it belongs to no archived change either (ad-hoc work), its pull request
   merged more than 24 hours ago;
 - no worktree of the same change is in use: a process has its working
@@ -36,11 +37,14 @@ import sys
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-# Ignored paths that a build, a test run or a download recreates.
+# Ignored paths that a build, a test run or a download recreates. Anything else
+# ignored may be somebody's only copy, so generic names such as tmp/ stay out.
 REGENERABLE = re.compile(
-    r"(^|/)(node_modules|dist[\w-]*|coverage[\w.-]*|test-results|playwright-report|storybook-static|"
-    r"\.vitest-attachments|\.vite|\.cache|\.turbo|bin|tmp|__pycache__)(/|$)"
-    r"|^k8s/.*/charts/$|\.(pyc|tsbuildinfo)$")
+    r"(^|/)(node_modules|dist(-(admin|organizer|reception))?|coverage|test-results|playwright-report|"
+    r"storybook-static|\.vitest-attachments|\.vite|__pycache__)(/|$)"
+    r"|^(bin|sdks/posthog/bin)/"  # Go binaries and the compiled Pulumi SDK
+    r"|^k8s/.*/charts/$"  # Helm charts kustomize downloads
+    r"|\.(pyc|tsbuildinfo)$")
 CHANGE_SUFFIX = re.compile(r"-(proto\d*|plan|archive)$")
 RECENT_SECONDS = 24 * 60 * 60
 
@@ -209,6 +213,7 @@ def main():
     for repo in repos:
         git(repo, "fetch", "--quiet", "origin")
     listed = git(store, "ls-tree", "-d", "--name-only", "origin/main", "openspec/changes/").stdout.split()
+    listed += [str(d) for d in (store / "openspec" / "changes").iterdir() if d.is_dir()]
     active = {os.path.basename(p) for p in listed} - {"archive"}
     dated = git(store, "ls-tree", "-d", "--name-only", "origin/main", "openspec/changes/archive/").stdout.split()
     archived = {re.sub(r"^\d{4}-\d{2}-\d{2}-", "", os.path.basename(p)) for p in dated}
