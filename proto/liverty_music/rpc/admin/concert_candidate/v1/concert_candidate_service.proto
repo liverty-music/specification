@@ -74,6 +74,9 @@ service ConcertCandidateService {
   //   time zone (given or discovered) is not one of the area's country's zones
   //   or differs from the Area's own zone, or the area or the time zone is
   //   still unknown.
+  // - FAILED_PRECONDITION: The resolution is RESOLUTION_ADOPT_CANDIDATE and
+  //   the existing event is an Organizer's, whose listed venue name and
+  //   times are not changed.
   rpc Approve(ApproveRequest) returns (ApproveResponse);
 
   // Reject drops a pending concert and records the rejection (with reason) for
@@ -184,8 +187,8 @@ enum Resolution {
   // other listed venue names, and fill the event's start and open time only
   // where unknown, leaving venue identity (venue_id, place_id) and the shared
   // series title untouched; make the ConcertCandidate's artist a performer of
-  // the event unless it is an Organizer's event, then remove the
-  // ConcertCandidate.
+  // the event, then remove the ConcertCandidate. Refused for an Organizer's
+  // event, which keeps its listed venue name and times.
   RESOLUTION_ADOPT_CANDIDATE = 2;
 }
 
