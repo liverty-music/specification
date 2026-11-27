@@ -36,7 +36,7 @@ The fan API SHALL refuse with PermissionDenied, reading and changing nothing, a 
 
 ### Requirement: An answer about a token is reused for at most 60 seconds
 
-The fan API MAY reuse an answer that a token is active for at most 60 seconds, and never past the token's expiry. While the sign-in service cannot be asked and no such answer holds, a call that needs a sign-in SHALL fail with Unavailable.
+The fan API MAY reuse an answer that a token is active for at most 60 seconds from when it asked, and never past the token's expiry. It SHALL wait at most 5 seconds for an answer. While the sign-in service cannot be asked or does not answer in that time and no such answer holds, a call that needs a sign-in SHALL fail with Unavailable.
 
 #### Scenario: Calls within a minute
 
@@ -47,6 +47,11 @@ The fan API MAY reuse an answer that a token is active for at most 60 seconds, a
 
 - **WHEN** a caller calls with a token not asked about in the last 60 seconds while the sign-in service is unreachable
 - **THEN** the call fails with Unavailable and nothing is read or changed
+
+#### Scenario: Sign-in service not answering
+
+- **WHEN** a caller calls with a token not asked about in the last 60 seconds and the sign-in service does not answer for 5 seconds
+- **THEN** the call fails with Unavailable
 
 #### Scenario: Expired token
 

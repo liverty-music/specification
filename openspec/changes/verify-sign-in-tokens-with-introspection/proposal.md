@@ -26,6 +26,7 @@ The apps already send access tokens, so no screen changes. The reception API tak
 ### Modified Capabilities
 
 - `components/entity/user/create`: refuses a removed identity while its removal is recorded.
+- `components/entity/user/delete`: the record lasts until it is forgotten.
 - `components/usecase/user/delete`: forgets the record after the identity is removed.
 - `components/infrastructure/backend/process/identity-provider-credentials`: the APIs may hold a key for asking about tokens.
 
