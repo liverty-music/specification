@@ -27,6 +27,8 @@ See proposal.md for why. The current state this design builds on:
 
 Alternative: a new `cmd/job/official-page-check` binary. It needs its own Dockerfile stage, an entry in the deploy workflow's image list, a base image name and a prod image pin, all to be removed again after 8 days. The mode reuses the image, the job wiring and the prod pin of concert-discovery, so the temporary footprint is one flag and one manifest.
 
+The CronJob carries the pod label `app: concert-discovery`, the label of the binary it runs, so the existing per-workload ERROR-log alert in cloud-provisioning (`src/gcp/components/monitoring.ts`, one entry per `app` label under `k8s/namespaces/backend/base`) covers its failures with no new entry. A label of its own would need a new alert entry, a Pulumi change applied to prod by the owner, for a workload that lives 8 days. The CronJob name tells the two apart in logs.
+
 Alternative: run the check inside the daily search job. It would change the timing and failure behavior of the job fans depend on, which this measurement must not do.
 
 ### D2. Hash the normalized visible text, not the raw HTML

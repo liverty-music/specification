@@ -8,7 +8,7 @@
 
 ## 2. cloud-provisioning: temporary CronJob
 
-- [ ] 2.1 Add the `official-page-check` CronJob under `k8s/namespaces/backend/base/cronjob/` (design D1, D5): the concert-discovery image with `args: ["-mode=official-page-check"]`, the `concert-discovery-job-config` ConfigMap and `backend-secrets`, schedule `0 8 * * *`, `concurrencyPolicy: Forbid`, `backoffLimit: 0`, `activeDeadlineSeconds: 7200`; add it to the base kustomization and the overlays the same way as concert-discovery, and verify `kustomize build` of the prod and dev overlays renders it with the prod and dev images; merge only after task 1.5 confirmed the prod pins carry the release (ArgoCD syncs it to prod), and say so in the report
+- [ ] 2.1 Add the `official-page-check` CronJob under `k8s/namespaces/backend/base/cronjob/` (design D1, D5) with the pod label `app: concert-discovery` so the existing ERROR-log alert covers it: the concert-discovery image with `args: ["-mode=official-page-check"]`, the `concert-discovery-job-config` ConfigMap and `backend-secrets`, schedule `0 8 * * *`, `concurrencyPolicy: Forbid`, `backoffLimit: 0`, `activeDeadlineSeconds: 7200`; add it to the base kustomization and the overlays the same way as concert-discovery, and verify `kustomize build` of the prod and dev overlays renders it with the prod and dev images; merge only after task 1.5 confirmed the prod pins carry the release (ArgoCD syncs it to prod), and say so in the report
 
 ## 3. Production check (read-only)
 
