@@ -12,10 +12,10 @@
 
 ## 3. Production check (read-only)
 
-- [ ] 3.1 After the first scheduled run, confirm with kubectl that the Job completed, and with `gcloud logging read` that it logged one `official page checked` line per checked Artist's top page and listed link, with failures under 10% of pages; confirm the 18:00 JST concert-discovery run of that day completed as before
+- [ ] 3.1 Before the first run, confirm that the `_Default` log bucket of `liverty-music-prod` keeps operational logs at least 30 days (`gcloud logging buckets describe`); after the first scheduled run, confirm with kubectl that the Job completed, and with `gcloud logging read` that it logged one `official page checked` line per checked Artist's top page and listed link, with failures under 10% of pages; confirm the 18:00 JST concert-discovery run of that day completed as before
 
 ## 4. Results and cleanup
 
-- [ ] 4.1 After the 8th run (or the extension in design D6), join the `official page checked` lines (read with `gcloud logging read` before their 30-day retention ends) with the `daily_run` `concert.search.completed` events of the period as design D6 describes (comparable searches only, `ok` pages matched by URL only, failed searches skipped as baselines, site moves left out), and write the aggregate results and a recommendation for the next change into the Results section of design.md (counts only, no production records)
+- [ ] 4.1 After the last run (the 8th, or the extension in design D6) and once the searches that started the day after it have ended (21 hours past its 18:00 JST), join the `official page checked` lines (read with `gcloud logging read` before their 30-day retention ends) with the `daily_run` `concert.search.completed` events of the period as design D6 describes (comparable searches only, `ok` pages matched by URL only, failed searches skipped as baselines, site moves left out), and write the aggregate results and a recommendation for the next change into the Results section of design.md (counts only, no production records)
 - [ ] 4.2 Remove the `official-page-check` CronJob from cloud-provisioning, merge, and confirm with kubectl that the CronJob no longer exists in prod
 - [ ] 4.3 Remove the `official-page-check` mode and the checker from backend, keeping the refactor of task 1.2 only if the searcher's code is simpler with it; verify the searcher's link-list tests still pass

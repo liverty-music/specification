@@ -47,10 +47,10 @@ Load: around 80 sites with a median of 22 listed links (2026-11-21). Artists are
 
 ### D4. One operational log line per page, and a `job_result` summary
 
-Each page gets one INFO line with the message `official page checked` and the fields `artist_id`, `page_url` (the URL requested), `page_kind` (`top` or `linked`), `status` (`ok`, `http_error`, `fetch_error` or `not_html`), `http_status`, `text_sha256` and `text_length`. The line is **not** marked for the analytics bucket:
+Each page gets one INFO line with the message `official page checked` and the fields `artist_id`, `page_url` (the URL the page was read from, after any redirect or `www.` fallback, as the searcher's fetch reports it), `page_kind` (`top` or `linked`), `status` (`ok`, `http_error`, `fetch_error` or `not_html`), `http_status`, `text_sha256` and `text_length`. The line is **not** marked for the analytics bucket:
 - the structured-logging spec allows only its listed topics, and none fits a per-page measurement;
 - adding a topic would be a spec change made only to remove it again after 8 days;
-- the operational logs keep the lines for 30 days, longer than the at most 16 runs. The analysis reads them with `gcloud logging read` filtered on that message.
+- the operational logs keep the lines for 30 days (the `_Default` bucket of `liverty-music-prod`, 30 days on 2026-11-27; task 3.1 checks it again before the first run), longer than the at most 16 runs. The analysis reads them with `gcloud logging read` filtered on that message.
 
 The run ends with the summary line the structured-logging spec requires ("Job summary lines report how far the run got"), on the existing `job_result` topic:
 - processed: Artists reached;
@@ -79,7 +79,7 @@ The checked Artists are the ones the search would search. Followed Artists are c
 **Which pages are compared.** For a comparable search, take the 17:00 JST snapshot of its start day and that of its baseline's start day. A page is compared only when it has `status = ok` in both. When the top page is not `ok` in either snapshot, the search is counted as "unreadable" and left out, because its link list is missing too. A page is matched by `page_url`. When the top page's `page_url` differs between the two snapshots (the OfficialSite was replaced by the daily official-site refresh, or the www. fallback read another host), the search is counted as "site moved" and left out, because every hash would differ for a reason that says nothing about an update. The search is **changed** when a compared page's `text_sha256` differs, or when the set of listed URLs differs between the two `ok` top pages. The search is **found** when its outcome is `found`.
 
 Reported, as aggregate counts only:
-- the counts of searches left out (no baseline, unreadable, site moved, failed outcome, no event because the first attempt found the Artist ended or represented);
+- the counts of searches left out (no baseline, unreadable, site moved, failed outcome);
 - over comparable searches, the 2x2 table of changed and found; recall = found and changed / found; trigger rate = changed / comparable searches;
 - of the changed searches, how many changed only through linked pages;
 - Artists whose top page text is shorter than 200 characters, and pages that failed to fetch on more than 2 runs;
@@ -100,7 +100,7 @@ If fewer than 10 comparable searches are `found` in the period, recall is not re
 1. backend PR (mode and hashing), merge, release. The release retags the images into prod and `bump-prod-pin.yml` in cloud-provisioning rewrites every backend prod pin and pushes to main (`k8s/namespaces/backend/overlays/prod/kustomization.yaml`, "Bumping on release"); there is no hand-edited pin. The daily search job runs the new image from then on, in its default mode.
 2. After the prod pins carry that release: cloud-provisioning PR that adds the CronJob. It goes live on merge through ArgoCD. Merged earlier, the CronJob would run an image without the mode and fail.
 3. Confirm the first run in prod (read-only): the Job completed, and the operational logs hold one `official page checked` line per page.
-4. After the 8th run (or the extension in D6), write the results below.
+4. After the last run (the 8th, or the extension in D6) **and** after the searches that started the day after it have ended, which takes until 21 hours past its 18:00 JST, write the results below: a joined sample that stops at the last run would leave out its last day, about 1/8 of the sample, and the 10-find rule of D6 would judge incomplete data.
 5. Remove the CronJob (cloud-provisioning) and the mode (backend). Removing the CronJob alone stops all traffic, so rollback at any time is deleting the manifest.
 
 ## Results
