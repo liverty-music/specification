@@ -5,6 +5,7 @@ See proposal.md for why. The current state this design builds on:
 - The daily concert search is the `concert-discovery` CronJob (18:00 JST). It lists followed Artists (`FollowRepo.ListAll`) and calls `ConcertUseCase.SearchNewConcerts` with trigger `daily_run`; a ConcertSearch completed less than 96h ago skips the external search.
 - Before each Gemini call the concert searcher fetches the OfficialSite's top page with `NewOfficialPageClient` (public addresses only, at most 3 redirects within the site's registrable domain, 5 s timeout, 2 MiB cap) and lists up to 60 of its links in the prompt, after dropping social, streaming, shop, ticket-vendor and site-information links (`officialPageLinks` in `internal/infrastructure/gcp/gemini/official_pages.go`).
 - Each search that reached Gemini sends a PostHog `concert.search.completed` event with `artist_id`, `trigger` and `outcome` (`found`, `nothing_new` or `failed`) and `event_count`.
+- Change `move-concert-search-to-flex-tier` (merged as a plan) moves the search into background attempts on the Flex tier. Once it is live, a daily search still starts at 18:00 JST but its event arrives when its last attempt ends, up to about 21 hours later, and a search may end as failed after 20 hours of a busy service. D6 reads the events so that the result is the same whether or not that change is live during the measurement.
 - `pkg/analyticslog` marks a log line for the analytics log bucket; a new topic needs no change to the Log Router sink, and the bucket is readable in BigQuery through the `logs_analytics` linked dataset.
 
 ## Goals / Non-Goals
@@ -52,29 +53,33 @@ The CronJob runs at 17:00 JST (`0 8 * * *` UTC), one hour before the daily searc
 
 ### D6. How the results are read
 
-For each `concert.search.completed` event with `trigger = daily_run` in the period, take the snapshot of the same day (the run before the search) and the snapshot of the day of the Artist's previous daily search. The search is **changed** when any page's `text_sha256` differs between the two snapshots, comparing pages by URL, or when the set of listed URLs differs. The search is **found** when its `outcome` is `found`.
+**Which searches are compared.** Each `concert.search.completed` event with `trigger = daily_run` and outcome `found` or `nothing_new` in the period is one search. Its start day is the day of the latest 18:00 JST at or before the event, which holds whether the search ran inline or in background attempts. Its **baseline** is the Artist's previous `daily_run` search with outcome `found` or `nothing_new`; a `failed` search is skipped, because it could not have found a concert the page announced. A search is **comparable** only when the snapshots of both start days exist; the others are counted as "no baseline" and left out of every rate below.
+
+**Which pages are compared.** For a comparable search, take the 17:00 JST snapshot of its start day and that of its baseline's start day. A page is compared only when it has `status = ok` in both. When the top page is not `ok` in either snapshot, the search is counted as "unreadable" and left out, because its link list is missing too. The search is **changed** when a compared page's `text_sha256` differs, or when the set of listed URLs differs between the two `ok` top pages. The search is **found** when its outcome is `found`.
 
 Reported, as aggregate counts only:
-- the 2x2 table of changed and found; recall = found and changed / found; trigger rate = changed / all searches;
+- the counts of searches left out (no baseline, unreadable, failed outcome);
+- over comparable searches, the 2x2 table of changed and found; recall = found and changed / found; trigger rate = changed / comparable searches;
 - of the changed searches, how many changed only through linked pages;
 - Artists whose top page text is shorter than 200 characters, and pages that failed to fetch on more than 2 runs;
 - the expected cost of change-triggered search against today's fixed interval, from the trigger rate.
 
-If fewer than 10 searches are `found` in the period, recall is not reliable: the report says so and the CronJob keeps running until 10 are reached or 16 runs have passed, whichever comes first.
+If fewer than 10 comparable searches are `found` in the period, recall is not reliable: the report says so and the CronJob keeps running until 10 are reached or 16 runs have passed, whichever comes first.
 
 ## Risks / Trade-offs
 
-- [A site rate-limits or blocks the extra GETs] → one request at a time per site, the existing User-Agent naming the service, and the 5 s timeout; a site that answers 429 or 403 is logged and skipped for that run.
+- [A site rate-limits or blocks the extra GETs] → one request at a time per site, the existing User-Agent naming the service, and the 5 s timeout; a site that answers 429 or 403 is logged with its status and left out of the comparison (D6), so a refusal never reads as a change.
 - [Text that changes on every load (a clock, a random banner) makes every search look changed] → the trigger rate shows it; the report lists the pages that changed on every run so the next change can decide how to handle them.
 - [A concert announced only off-site (a festival site, a ticket vendor) is never visible on the official pages] → it shows up as found without change, which is exactly what recall measures.
 - [The refactor of the top-page fetch changes what the searcher sends] → the searcher's existing link-list tests must pass unchanged.
 
 ## Migration Plan
 
-1. backend PR (mode and hashing), merge, release; cloud-provisioning PR that adds the CronJob and bumps the concert-discovery prod pin to that release. The merge goes live through ArgoCD.
-2. Confirm the first run in prod (read-only): the Job completed, and `logs_analytics` holds one line per page.
-3. After the 8th run (or the extension in D6), write the results below.
-4. Remove the CronJob (cloud-provisioning) and the mode (backend). Removing the CronJob alone stops all traffic, so rollback at any time is deleting the manifest.
+1. backend PR (mode and hashing), merge, release. The release retags the images into prod and `bump-prod-pin.yml` in cloud-provisioning rewrites every backend prod pin and pushes to main (`k8s/namespaces/backend/overlays/prod/kustomization.yaml`, "Bumping on release"); there is no hand-edited pin. The daily search job runs the new image from then on, in its default mode.
+2. After the prod pins carry that release: cloud-provisioning PR that adds the CronJob. It goes live on merge through ArgoCD. Merged earlier, the CronJob would run an image without the mode and fail.
+3. Confirm the first run in prod (read-only): the Job completed, and `logs_analytics` holds one line per page.
+4. After the 8th run (or the extension in D6), write the results below.
+5. Remove the CronJob (cloud-provisioning) and the mode (backend). Removing the CronJob alone stops all traffic, so rollback at any time is deleting the manifest.
 
 ## Results
 
