@@ -46,6 +46,21 @@ message Mbid {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
+// ArtistMbidStatus records whether an Artist's MBID was checked against the
+// music catalog's other artists of the same name. Only a Verified Artist is
+// offered to fans.
+enum ArtistMbidStatus {
+  // The status is not set. Never stored on an Artist.
+  ARTIST_MBID_STATUS_UNSPECIFIED = 0;
+  // The MBID has not been checked yet.
+  ARTIST_MBID_STATUS_UNVERIFIED = 1;
+  // The MBID was checked, automatically or by an admin, and names the artist.
+  ARTIST_MBID_STATUS_VERIFIED = 2;
+  // The check found namesakes it could not tell apart; an admin chooses the
+  // MBID.
+  ARTIST_MBID_STATUS_AMBIGUOUS = 3;
+}
+
 // OfficialSite represents an artist's official online presence.
 message OfficialSite {
   // The unique identifier for this official site record.
