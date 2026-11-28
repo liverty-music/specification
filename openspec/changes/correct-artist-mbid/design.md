@@ -8,12 +8,13 @@ The catalog cannot tell which same-named person a fan means, so the right MBID i
 
 **Goals:**
 - A correction survives later searches: the wrong MBID finds the corrected artist.
-- A correction removes everything that was read from the namesake.
+- A correction clears the artist's own attributes that were read from the namesake (images, official site, check time, activity status).
 - Every registered artist is checked once, and the wrong ones are corrected.
 
 **Non-Goals:**
 - Detecting a namesake automatically in Search or Refresh (no signal in the catalog separates same-named people).
 - Merging two artist rows. A correction to an MBID another row already has fails; the owner resolves the duplicate by hand.
+- Removing concerts already discovered for the artist. Concert discovery reads the official site, and a namesake with a site is searched; whatever it stored stays, because a concert may already have tickets journeys, notifications or a Series, and one rule cannot tell the namesake's shows from the artist's. Task 7.2 lists the corrected artist's concerts read-only so the owner can judge them; a wrong one is handled by hand.
 - An admin console screen or an RPC. Corrections are rare (6 known in the first month); a command is enough.
 
 ## Decisions
