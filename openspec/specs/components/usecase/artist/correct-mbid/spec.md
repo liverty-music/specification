@@ -5,16 +5,15 @@ ArtistUseCase.CorrectMBID lets an admin fix an artist registered with a namesake
 
 ```mermaid
 sequenceDiagram
-  participant Admin
-  participant Usecase as CorrectMBID
-  participant Catalog as Artist.GetArtist
-  participant Store as Artist.UpdateMBID
-  Admin->>Usecase: artist id, MBID
-  Usecase->>Catalog: look up the MBID
-  Catalog-->>Usecase: the artist of that MBID
-  Usecase->>Store: replace the MBID, keep the old one
-  Usecase->>Catalog: read the name and activity status
-  Usecase-->>Admin: the corrected artist
+autonumber
+participant UC as ArtistUseCase.CorrectMBID
+participant Artist
+UC->>Artist: GetArtist "the given MBID"
+break the catalog does not know it
+  Note over UC: report NotFound, store nothing
+end
+UC->>Artist: UpdateMBID "the canonical MBID"
+UC->>Artist: GetArtist "name and activity status"
 ```
 
 ## Requirements
