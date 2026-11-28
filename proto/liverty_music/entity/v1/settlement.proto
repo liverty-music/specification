@@ -37,6 +37,11 @@ enum SettlementStatus {
   // Reversed — a refund or dispute clawed the paid-out split(s) back (event
   // cancellation or chargeback).
   SETTLEMENT_STATUS_REVERSED = 3;
+
+  // Releasing — a release has claimed the Settlement and is paying it out. It
+  // becomes Released once every split is paid, or returns to Held when the
+  // payout could not start.
+  SETTLEMENT_STATUS_RELEASING = 4;
 }
 
 // SettlementSplit is one payee's share of a Settlement, plus the payment
@@ -129,14 +134,16 @@ message Settlement {
   // Order's captured amount.
   repeated SettlementSplit splits = 4 [(buf.validate.field).repeated.min_items = 1];
 
-  // The settlement's own status — `held` until the release gate passes, then
-  // `released`, or `reversed` after a refund/dispute clawback.
+  // The settlement's own status — `held` until the release gate passes,
+  // `releasing` while a release pays it out, then `released`, or `reversed` after
+  // a refund/dispute clawback.
   SettlementStatus status = 5 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // When the splits were paid out. Empty while the settlement is still held.
+  // When the splits were paid out. Empty while the settlement is held or
+  // releasing.
   // Server-owned.
   google.protobuf.Timestamp release_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
 
