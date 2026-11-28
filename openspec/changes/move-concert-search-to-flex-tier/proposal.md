@@ -16,7 +16,8 @@ This change moves the search into background attempts that retry a busy refusal 
   - A busy or timed-out attempt is followed by another, first after 1 minute and then at doubling intervals of at most 1 hour, as long as the next attempt would start less than 20 hours after the search time. Otherwise the search ends as failed, with one completed signal of outcome failed.
   - Every attempt first checks again that the search is still current and the Artist may still be searched (not ended, not represented by an active Organizer), because an attempt can run hours after the request.
 - **The pending timeout becomes 20 hours (from 3 minutes).** While a background search may still be running, no second search for the same Artist starts.
-- **Concert.Search asks for the lower-priced service level (Flex).** It waits up to 15 minutes for each answer. A busy refusal counts as a transient failure.
+- **Concert.Search asks for the lower-priced service level (Flex).** At that level it waits up to 15 minutes for each answer (120 seconds at the standard level).
+- **Concert.Search sends one request and classifies its failure.** The 3 tries inside it are removed: the background attempts are the only retry. A busy, rate-limited or failing service, a lost connection and a late answer are transient. A response that holds no usable result (no candidate, not completed, broken or empty) is not, so it is not repeated for 20 hours.
 - **The usage report of each Gemini call carries the service level.** Without it, cost in product analytics reads at twice the billed price.
 - **Removed: the previews SearchNewConcerts returned.** No caller reads them: the daily job and the first-follow search both discard them.
 - **Out of scope:**
@@ -39,15 +40,18 @@ None.
   - the search runs in the background, in attempts until 20 hours after the search time, at most 8 calling at once;
   - every attempt checks the search and the Artist again before calling;
   - the pending timeout becomes 20 hours;
-  - the status and the completed signal are set by the background search, once per search, including a search that gives up at 20 hours;
+  - the status and the completed signal are set by the background search, at most one signal per search, including a search that gives up at 20 hours;
   - the previews are removed.
   - (Purpose) The sequence diagram changes: SearchNewConcerts ends by starting the background search, and the steps after Upsert move into it. The diagram is fixed at archive.
+- `components/entity/concert-search/update-status`:
+  - UpdateStatus changes only the search with the given search time, so a search that ends late cannot end a later one.
 - `components/entity/concert/search`:
-  - Search asks for the lower-priced service level and waits up to 15 minutes for an answer;
-  - each call's usage report carries the service level.
+  - Search asks for the lower-priced service level and, at that level, waits up to 15 minutes for an answer;
+  - each call's usage report carries the service level;
+  - Search no longer retries a failed request, and an incomplete response is no longer a transient failure.
 
 Unchanged, and why:
-- **ConcertSearch and its operations (Upsert, UpdateStatus, MarkFound, GetByArtistID).** They are called as before, only from the background search; the pending timeout is a value SearchNewConcerts passes, and "Search still in progress" keeps its rule.
+- **ConcertSearch and its operations Upsert, MarkFound and GetByArtistID.** They are called as before, only from the background search (UpdateStatus changes, above); the pending timeout is a value SearchNewConcerts passes, and "Search still in progress" keeps its rule.
 - **`components/usecase/concert/search-new-concerts-on-first-follow`.** It still calls SearchNewConcerts and fails when SearchNewConcerts fails, which now means only that the search could not be recorded or started.
 - **`stories/follow-an-artist`.** It already describes the first search as a background one whose concerts arrive "once the search completes".
 
