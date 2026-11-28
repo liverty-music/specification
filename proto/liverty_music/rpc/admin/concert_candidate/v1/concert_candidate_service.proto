@@ -22,10 +22,13 @@ import "liverty_music/entity/v1/venue.proto";
 // holds for review: performances whose venue could not be resolved or that
 // collide with an Event already in the catalog. A developer approves a
 // ConcertCandidate to publish it (and trigger the new-concert notification) or
-// rejects it to drop it. Rejection is not permanent: a later discovery run may
-// re-surface the same concert for re-review, and every rejection is recorded
-// for search-quality analysis. Approve and Reject record the calling admin as
-// the reviewer. Published concerts are managed by
+// rejects it to drop it. Every rejection is recorded, for search-quality
+// analysis and so that discovery does not hold the same listing (same artist,
+// date, listed venue and start time) for review again; a listing found with a
+// correction, such as a start time, a venue announced later or a moved date,
+// is handled like any new discovery: published, or held for review only if
+// its venue is unresolved or it collides. Approve and Reject record the
+// calling admin as the reviewer. Published concerts are managed by
 // liverty_music.rpc.admin.concert.v1.ConcertService.
 //
 // All RPCs require a signed-in caller holding the admin role: a caller who is
