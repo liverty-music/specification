@@ -32,7 +32,7 @@ ArtistUseCase.Search SHALL look the query up with Artist.Search, reduce the matc
 - **THEN** Search does not return it
 
 ### Requirement: Search reuses a recent result
-ArtistUseCase.Search SHALL return the earlier result, without consulting the catalog or registering anything, when the same query was answered within the last 6 hours, including the matches it registered Unverified and did not return, and leaving out the artists not offered to fans at the time of this call: it SHALL read the current mbid_status and activity_ended of the earlier result's artists with one Artist.ListByMBIDs call.
+ArtistUseCase.Search SHALL return the earlier result, without consulting the catalog or registering anything, when the same query was answered within the last 6 hours, including every registered artist its matches resolved to, also the ones it did not return because they were not offered to fans then (registered by that call or earlier), and leaving out the artists not offered to fans at the time of this call: it SHALL read the current mbid_status and activity_ended of the earlier result's artists with one Artist.ListByMBIDs call.
 
 #### Scenario: Repeated query
 - **WHEN** Search is called twice with the same query 10 minutes apart
