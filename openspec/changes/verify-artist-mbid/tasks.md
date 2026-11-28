@@ -42,7 +42,7 @@
 - [ ] 8.1 Start the `artist-refresh` job by hand and watch it until no artist is Unverified, reading its log for stops; then list the Ambiguous artists read-only and record their count and names in the task report
 - [ ] 8.2 Measure `Search` for three names never searched before (Fan API logs or a timed request): if a first search exceeds 15 seconds, apply the fallback of design "Risks" (verify only the first matches, register the rest Unverified) in a follow-up commit of this change; record the timings in the task report
 - [ ] 8.3 Check read-only in prod that `ListSimilar` for sumika returns similar artists, and that `ListTop` for Japan, a name search for sumika and one for Penthouse return only Verified artists whose activity has not ended
-- [ ] 8.4 The owner chooses the right MBID for each Ambiguous artist on the screen (production writes the owner makes, including any of Ado, Aimer, Yama, Sumika, Saji and Penthouse still Ambiguous); then verify read-only for each: Verified, the chosen `mbid`, `listening_mbid` unchanged, and the next search for its name registers nothing
+- [ ] 8.4 The owner chooses or enters the right MBID for each Ambiguous artist on the screen (production writes the owner makes, including any of Ado, Aimer, Yama, Sumika, Saji and Penthouse still Ambiguous); then verify read-only for each: Verified, the chosen `mbid`, `listening_mbid` unchanged, and the next search for its name registers nothing
 
 ## 9. cloud-provisioning: runbook removal (design D7)
 
