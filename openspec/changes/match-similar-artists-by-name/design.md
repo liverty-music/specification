@@ -16,7 +16,7 @@ See proposal.md - Why. On backend v1.162.0 (`internal/usecase/artist_uc.go`), `L
 
 ### D1. One array column with a GIN index
 
-`artists.known_names TEXT[] NOT NULL`, holding the artist's known names, with `CREATE INDEX idx_artists_known_names ON artists USING gin (known_names)`. `ListByKnownNames` is one query, `WHERE known_names && $1`; `&&` (overlap) is one of the operators the built-in `array_ops` GIN operator class indexes, and GIN is meant for searching element values inside composite values (https://www.postgresql.org/docs/17/gin.html). The planner may still choose a sequential scan at the current size.
+`artists.known_names TEXT[] NOT NULL DEFAULT '{}'`, holding the artist's known names, with `CREATE INDEX idx_artists_known_names ON artists USING gin (known_names)`. `ListByKnownNames` is one query, `WHERE known_names && $1`; `&&` (overlap) is one of the operators the built-in `array_ops` GIN operator class indexes, and GIN is meant for searching element values inside composite values (https://www.postgresql.org/docs/17/gin.html). The planner may still choose a sequential scan at the current size.
 
 Alternative rejected: a table `artist_names (artist_id, name)` with a B-tree. It looks up as fast, but adds a table whose rows must be added and removed with every name change.
 
@@ -26,7 +26,7 @@ The cost of GIN is slower writes; artist rows are written on registration, verif
 
 ### D2. Normalized names
 
-NFKC normalization (`golang.org/x/text/unicode/norm`), `strings.ToLower`, surrounding white space removed and inner runs collapsed to one space. One entity function derives it for writes and lookups. The migration backfills `known_names` from `name` with `lower(regexp_replace(btrim(normalize(name, NFKC)), '\s+', ' ', 'g'))`.
+NFKC normalization (`golang.org/x/text/unicode/norm`), `strings.ToLower`, surrounding white space removed and inner runs collapsed to one space. One entity function derives it for writes and lookups. The migration backfills `known_names` from `name` with `lower(btrim(regexp_replace(normalize(name, NFKC), '\s+', ' ', 'g')))`.
 
 ### D3. Aliases arrive with the existing artist read
 
