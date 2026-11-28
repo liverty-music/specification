@@ -12,6 +12,7 @@ UC->>Artist: Get
 break mbid_status is not Unverified
   Note over UC: change nothing
 end
+UC->>Artist: GetArtist "the canonical form of its MBID"
 UC->>Artist: ListNamesakes "the artist's name"
 alt a namesake other than its MBID
   loop each namesake, its MBID included
@@ -31,11 +32,19 @@ end
 ## ADDED Requirements
 
 ### Requirement: VerifyMBID decides the artist's MBID from its namesakes
-ArtistUseCase.VerifyMBID SHALL take an artist id, get the artist with Artist.Get and, when its mbid_status is not Unverified, change nothing and succeed. Otherwise it SHALL look the artist's name up with Artist.ListNamesakes and decide:
-- when no namesake has an MBID other than the artist's mbid, the artist's mbid is verified;
-- otherwise it SHALL read the official homepage of every namesake and of the artist's mbid with Artist.ListOfficialSiteRelations and Artist.SelectOfficialSite; an MBID the catalog does not know (NotFound) counts as having no official homepage; when exactly one of them has an official homepage, that one's MBID is verified (it may be the artist's own mbid);
+ArtistUseCase.VerifyMBID SHALL take an artist id, get the artist with Artist.Get and, when its mbid_status is not Unverified, change nothing and succeed. Otherwise it SHALL first read the artist's mbid with Artist.GetArtist to learn its canonical form, the MBID the music catalog returns for it (a merged MBID is answered with the surviving artist; when the read fails with NotFound, the catalog does not know the mbid and the mbid is its own canonical form). The artist's mbid and its canonical form count as one candidate, the artist's own. It SHALL then look the artist's name up with Artist.ListNamesakes and decide:
+- when no namesake has an MBID other than the artist's own, its canonical form is verified;
+- otherwise it SHALL read the official homepage of the artist's own canonical form and of every other namesake with Artist.ListOfficialSiteRelations and Artist.SelectOfficialSite; an MBID the catalog does not know (NotFound) counts as having no official homepage; when exactly one of them has an official homepage, that one's MBID is verified (it may be the artist's own canonical form);
 - otherwise the MBID is ambiguous.
-For a verified MBID it SHALL read the catalog's name and activity status with Artist.GetArtist and then store the MBID, that name (when not empty; otherwise the current name) and that status with one Artist.UpdateMBID, which marks the artist Verified; nothing is stored before every catalog read has succeeded. An ambiguous MBID SHALL be recorded with Artist.MarkMBIDAmbiguous, leaving the artist's mbid, and an error SHALL be logged naming the artist's id, its name and the namesakes' MBIDs, so the owner is alerted.
+For a verified MBID it SHALL take the catalog's name and activity status from Artist.GetArtist for it (the first read, when it is the artist's own) and then store the MBID Artist.GetArtist returned, that name (when not empty; otherwise the current name) and that status with one Artist.UpdateMBID, which marks the artist Verified; nothing is stored before every catalog read has succeeded. An ambiguous MBID SHALL be recorded with Artist.MarkMBIDAmbiguous, leaving the artist's mbid, and an error SHALL be logged naming the artist's id, its name and the namesakes' MBIDs, so the owner is alerted.
+
+#### Scenario: Merged MBID
+- **WHEN** an Unverified artist's mbid M was merged in the catalog into X, and the catalog's only artist of its name is X
+- **THEN** the artist becomes Verified with mbid X, and no official homepage is read
+
+#### Scenario: Merged MBID with a namesake
+- **WHEN** an Unverified artist's mbid M was merged into X, the catalog lists X and a namesake Y for its name, and only X has an official homepage
+- **THEN** the artist becomes Verified with mbid X: M and X count as one candidate, so one candidate has an official homepage
 
 #### Scenario: No namesake
 - **WHEN** an Unverified artist's name has no catalog artist other than its own mbid
@@ -66,7 +75,7 @@ For a verified MBID it SHALL read the catalog's name and activity status with Ar
 - **THEN** it looks nothing up and changes nothing
 
 ### Requirement: VerifyMBID reports failures
-ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations, Artist.GetArtist or Artist.UpdateMBID, leaving the artist Unverified and unchanged, so a retry or the next daily run verifies it again, except in two cases that make the MBID ambiguous: Artist.GetArtist fails with NotFound for the MBID to verify, or Artist.UpdateMBID fails with AlreadyExists because another artist holds it. The error logged then also names that MBID and the reason.
+ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations, Artist.GetArtist or Artist.UpdateMBID, leaving the artist Unverified and unchanged, so a retry or the next daily run verifies it again, except in these cases: Artist.GetArtist failing with NotFound for the first read of the artist's mbid is not a failure (the mbid is its own canonical form); and two cases make the MBID ambiguous: the catalog does not know the MBID to verify (Artist.GetArtist fails with NotFound for it), or Artist.UpdateMBID fails with AlreadyExists because another artist holds it. The error logged then also names that MBID and the reason.
 
 #### Scenario: Catalog unavailable
 - **WHEN** Artist.ListNamesakes fails with Unavailable

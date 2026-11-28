@@ -1,7 +1,15 @@
 ## MODIFIED Requirements
 
 ### Requirement: Search returns the catalog's matches as registered artists
-ArtistUseCase.Search SHALL look the query up with Artist.Search, reduce the matches with Artist.FilterArtistsByMBID, and find the ones already registered with Artist.ListByMBIDs (under their mbid or listening_mbid). For each remaining match it SHALL decide the match's MBID as ArtistUseCase.VerifyMBID decides it, before registering anything, and register the match with Artist.Create with the match's MBID as its listening MBID, the decided MBID, and mbid_status Verified or Ambiguous; a Verified match is registered with the catalog's name and activity status for the decided MBID, read with Artist.GetArtist as part of the decision. An Ambiguous result is logged as an error as VerifyMBID logs it. A match whose decision fails SHALL be registered Unverified with its own MBID, and Search SHALL not fail for it. Search SHALL return one registered artist per match in the catalog's order, listing an artist once when several matches resolve to it, and only the artists offered to fans (Verified, activity not ended).
+ArtistUseCase.Search SHALL look the query up with Artist.Search, reduce the matches with Artist.FilterArtistsByMBID, and find the ones already registered with Artist.ListByMBIDs (under their mbid or listening_mbid). For each remaining match it SHALL decide the match's MBID as ArtistUseCase.VerifyMBID decides it, before registering anything, and register the match with Artist.Create with the match's MBID as its listening MBID, the decided MBID, and mbid_status Verified or Ambiguous; a Verified match is registered with the catalog's name and activity status for the decided MBID, read with Artist.GetArtist as part of the decision. An Ambiguous result is logged as an error as VerifyMBID logs it. Search SHALL decide the matches in the catalog's order and spend at most 15 seconds on the decisions; a match whose decision fails, or is not reached within the 15 seconds, SHALL be registered Unverified with its own MBID, and Search SHALL not fail for it. A match whose decided MBID is the mbid or listening_mbid of a registered artist resolves to that artist, which Artist.Create returns. Search SHALL return one registered artist per match in the catalog's order, listing an artist once when several matches resolve to it, and only the artists offered to fans (Verified, activity not ended).
+
+#### Scenario: New match corrected to a registered artist
+- **WHEN** an unregistered match with MBID N is decided to MBID M, the mbid of a registered Verified artist
+- **THEN** Search returns that artist and registers nothing
+
+#### Scenario: Decisions take longer than 15 seconds
+- **WHEN** the catalog answers so slowly that deciding the first new match takes 15 seconds
+- **THEN** the remaining new matches are registered Unverified without a decision, and Search answers without them
 
 #### Scenario: Known and new matches
 - **WHEN** the catalog matches a registered Verified artist and an unregistered artist with no namesake, in that order
