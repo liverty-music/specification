@@ -9,7 +9,7 @@ A CatalogArtist is an artist as the music catalog records it, not a registered A
 | country | the country the catalog associates with the artist | optional; an ISO 3166-1 alpha-2 code; absent when the catalog records none |
 | begin | when the artist's activity began, as precise as the catalog records it (year, year and month, or date) | optional |
 | end | when the artist's activity ended, as precise as the catalog records it | optional; absent while the catalog records no end |
-| disambiguation | the catalog's short note that tells the artist apart from others of the same name | optional; empty when the catalog has none |
+| disambiguation | the catalog's short note that tells the artist apart from others of the same name | optional; absent when the catalog has none |
 | official_site_url | the artist's official homepage, chosen from the catalog's links as Artist.SelectOfficialSite chooses | optional; absent when the catalog has no active official-homepage link |
 
 ```mermaid

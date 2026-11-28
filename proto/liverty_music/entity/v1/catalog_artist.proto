@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/type/date.proto";
+import "liverty_music/entity/v1/area.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/entity.proto";
+
+// CatalogArtist is an artist as the music catalog records it, not a
+// registered Artist: an admin compares the CatalogArtists that share a
+// registered Artist's name to decide which one that Artist is.
+message CatalogArtist {
+  // Required. The artist's identifier in the music catalog.
+  Mbid mbid = 1 [(buf.validate.field).required = true];
+
+  // Required. The artist's name in the catalog.
+  ArtistName name = 2 [(buf.validate.field).required = true];
+
+  // The country the catalog associates with the artist. Absent when the
+  // catalog records none.
+  optional CountryCode country = 3;
+
+  // When the artist's activity began, as precise as the catalog records it.
+  // Absent when the catalog records no beginning.
+  optional ActivityDate begin = 4;
+
+  // When the artist's activity ended, as precise as the catalog records it.
+  // Absent while the catalog records no end.
+  optional ActivityDate end = 5;
+
+  // The catalog's short note that tells the artist apart from others of the
+  // same name. Absent when the catalog has none.
+  optional Disambiguation disambiguation = 6;
+
+  // The artist's official homepage, chosen from the catalog's links the same
+  // way an Artist's official site is chosen. Absent when the catalog has no
+  // active official-homepage link.
+  optional Url official_site_url = 7;
+}
+
+// ActivityDate is a day an artist's activity began or ended, as precise as the
+// music catalog records it: a year, a year and month (day 0), or a full date.
+message ActivityDate {
+  // The date. The year is always set; month 0 means only the year is known,
+  // and day 0 means only the year and month are known.
+  google.type.Date value = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "activity_date.precision"
+      message: "must have a year, and a day only together with a month"
+      expression: "this.year >= 1 && this.year <= 9999 && this.month >= 0 && this.month <= 12 && this.day >= 0 && this.day <= 31 && (this.month != 0 || this.day == 0)"
+    }
+  ];
+}
+
+// Disambiguation is the music catalog's short note that tells an artist apart
+// from others of the same name (e.g., "Japanese singer", "UK indie rock band").
+message Disambiguation {
+  // The note, at least one character.
+  string value = 1 [(buf.validate.field).string.min_len = 1];
+}

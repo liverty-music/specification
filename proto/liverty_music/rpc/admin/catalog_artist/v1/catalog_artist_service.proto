@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.catalog_artist.v1 provides the admin-only
+// CatalogArtistService for reading the music catalog's artists from the
+// developer admin console. It is served by the admin Connect server behind the
+// admin-role gate.
+package liverty_music.rpc.admin.catalog_artist.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/catalog_artist.proto";
+
+// CatalogArtistService reads CatalogArtists: artists as the music catalog
+// records them, which an admin compares to choose a registered Artist's MBID.
+// Nothing it returns is stored.
+//
+// All RPCs are authorized only for the admin organization; callers outside it
+// are rejected with PERMISSION_DENIED at the admin server boundary.
+service CatalogArtistService {
+  // ListByArtist returns the music catalog's artists whose name equals the
+  // Artist's name, in the catalog's order, each with its official homepage.
+  // When the Artist's own MBID is not among them it is listed first, so the
+  // current MBID is always one of the choices. The catalog is read on every
+  // call.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The Artist id is missing or malformed.
+  // - NOT_FOUND: No Artist has the id.
+  // - UNAVAILABLE: The music catalog could not be reached.
+  rpc ListByArtist(ListByArtistRequest) returns (ListByArtistResponse);
+}
+
+// ListByArtistRequest names the Artist whose namesakes to list.
+message ListByArtistRequest {
+  // Required. The Artist whose name the catalog is searched for.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListByArtistResponse contains the Artist's namesake candidates.
+message ListByArtistResponse {
+  // The candidates: the Artist's current MBID first when the name search did
+  // not return it, then the catalog's artists of the same name in the
+  // catalog's order.
+  repeated entity.v1.CatalogArtist catalog_artists = 1;
+}

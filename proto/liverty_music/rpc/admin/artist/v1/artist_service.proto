@@ -37,6 +37,33 @@ service ArtistService {
   // - INVALID_ARGUMENT: The Organizer id is missing or malformed.
   // - NOT_FOUND: The Organizer does not exist.
   rpc ListByOrganizer(ListByOrganizerRequest) returns (ListByOrganizerResponse);
+
+  // ListByMbidStatus returns the Artists in one MBID status, the one
+  // registered first listed first, so the admin console can show the
+  // Ambiguous Artists waiting for an admin to choose their MBID.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The MBID status is missing or unspecified.
+  rpc ListByMbidStatus(ListByMbidStatusRequest) returns (ListByMbidStatusResponse);
+
+  // CorrectMbid gives an Artist the MBID an admin chose, keeping its id and
+  // followers. The music catalog is read first: the Artist takes the MBID the
+  // catalog returns for the given one (a merged MBID is redirected to its
+  // canonical MBID) with the catalog's name and activity status, and becomes
+  // Verified. A changed MBID clears the Artist's images and official site. On
+  // failure the Artist is unchanged.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The Artist id or the MBID is missing or malformed.
+  // - NOT_FOUND: No Artist has the id, or the music catalog does not know the
+  //   MBID.
+  // - ALREADY_EXISTS: Another Artist has the MBID.
+  // - UNAVAILABLE: The music catalog could not be reached.
+  rpc CorrectMbid(CorrectMbidRequest) returns (CorrectMbidResponse);
 }
 
 // GetRequest names the Artist to read.
@@ -63,4 +90,40 @@ message ListByOrganizerRequest {
 message ListByOrganizerResponse {
   // The artists represented by the Organizer. Empty when it represents none.
   repeated entity.v1.Artist artists = 1;
+}
+
+// ListByMbidStatusRequest names the MBID status whose Artists to list.
+message ListByMbidStatusRequest {
+  // Required. The MBID status to list; UNSPECIFIED is rejected.
+  entity.v1.ArtistMbidStatus mbid_status = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+}
+
+// ListByMbidStatusResponse contains the Artists in the requested MBID status.
+message ListByMbidStatusResponse {
+  // The Artists, the one registered first listed first. Empty when none is in
+  // the status.
+  repeated entity.v1.Artist artists = 1;
+}
+
+// CorrectMbidRequest names the Artist to correct and the MBID an admin chose.
+message CorrectMbidRequest {
+  // Required. The Artist whose MBID to correct.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The MBID the admin chose, usually one of the namesakes
+  // liverty_music.rpc.admin.catalog_artist.v1.CatalogArtistService.ListByArtist
+  // returned.
+  entity.v1.Mbid mbid = 2 [(buf.validate.field).required = true];
+}
+
+// CorrectMbidResponse returns the corrected Artist.
+message CorrectMbidResponse {
+  // The Artist with its new MBID and the catalog's name.
+  entity.v1.Artist artist = 1 [(buf.validate.field).required = true];
 }
