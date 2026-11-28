@@ -7,7 +7,7 @@ ArtistUseCase.Search finds artists whose names match a fan's query in the music 
 ## Requirements
 
 ### Requirement: Search returns the catalog's matches as registered artists
-ArtistUseCase.Search SHALL look the query up with Artist.Search, reduce the matches with Artist.FilterArtistsByMBID, find the ones already registered with Artist.ListByMBIDs, register the rest with Artist.Create, and return one registered artist per remaining match in the catalog's order.
+ArtistUseCase.Search SHALL look the query up with Artist.Search, reduce the matches with Artist.FilterArtistsByMBID, find the ones already registered with Artist.ListByMBIDs, register the rest with Artist.Create, and return one registered artist per remaining match in the catalog's order, listing an artist once when several matches resolve to it. A match whose MBID is one an artist was corrected from SHALL resolve to the corrected artist and register nothing.
 
 #### Scenario: Known and new matches
 - **WHEN** the catalog matches a registered artist and an unregistered artist, in that order
@@ -20,6 +20,14 @@ ArtistUseCase.Search SHALL look the query up with Artist.Search, reduce the matc
 #### Scenario: No match with an MBID
 - **WHEN** no catalog match has an MBID
 - **THEN** Search fails with NotFound and registers nothing
+
+#### Scenario: Match under a replaced MBID
+- **WHEN** the catalog matches MBID A and an artist was corrected from A to B
+- **THEN** Search returns that artist and registers nothing
+
+#### Scenario: Two matches of one artist
+- **WHEN** the catalog matches MBIDs A and B of one registered artist
+- **THEN** Search returns that artist once
 
 ### Requirement: Search reuses a recent result
 ArtistUseCase.Search SHALL return the earlier result, without consulting the catalog or registering anything, when the same query was answered within the last 6 hours.

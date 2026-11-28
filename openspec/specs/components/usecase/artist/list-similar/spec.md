@@ -24,7 +24,7 @@ Note over UC: leave out ended artists, then cut to the limit
 ## Requirements
 
 ### Requirement: ListSimilar returns the catalog's similar artists as registered artists
-ArtistUseCase.ListSimilar SHALL take an artist id and a limit from 0 to 50, get the seed artist with Artist.Get, look up similar artists with Artist.ListSimilar and a limit of 50 regardless of the requested limit, reduce them with Artist.FilterArtistsByMBID, find the ones already registered with Artist.ListByMBIDs, register the rest with Artist.Create, and return the first `limit` registered artists in the catalog's order among those whose activity has not ended. A limit of 0 returns every remaining result of the 50-artist lookup whose activity has not ended.
+ArtistUseCase.ListSimilar SHALL take an artist id and a limit from 0 to 50, get the seed artist with Artist.Get, look up similar artists with Artist.ListSimilar and a limit of 50 regardless of the requested limit, reduce them with Artist.FilterArtistsByMBID, find the ones already registered with Artist.ListByMBIDs, register the rest with Artist.Create, and return the first `limit` registered artists in the catalog's order among those whose activity has not ended, listing an artist once when several results resolve to it. A result whose MBID is one an artist was corrected from SHALL resolve to the corrected artist and register nothing. A limit of 0 returns every remaining result of the 50-artist lookup whose activity has not ended.
 
 #### Scenario: Known and new similar artists
 - **WHEN** the catalog lists a registered artist and an unregistered artist as similar
@@ -46,6 +46,10 @@ ArtistUseCase.ListSimilar SHALL take an artist id and a limit from 0 to 50, get 
 #### Scenario: No similar artists
 - **WHEN** the catalog lists no similar artist
 - **THEN** ListSimilar returns an empty list
+
+#### Scenario: Result under a replaced MBID
+- **WHEN** the catalog lists MBID A as similar and an artist was corrected from A to B
+- **THEN** ListSimilar returns that artist and registers nothing
 
 ### Requirement: ListSimilar reuses a recent result
 ArtistUseCase.ListSimilar SHALL return the earlier result, without the artists whose activity has ended by the time of this call and then cut to the requested limit, without looking up the seed or consulting the catalog, when the same artist id was answered within the last 6 hours, whatever limit either call used.

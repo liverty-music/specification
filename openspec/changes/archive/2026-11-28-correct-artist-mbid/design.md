@@ -58,6 +58,7 @@ For every registered artist, read the catalog record of its MBID (name, type, co
 - [A person picks the wrong MBID] → `CorrectMBID` shows the catalog's name and `activity_ended` in its output, and the same command corrects it again; the earlier MBID stays in `other_mbids`.
 - [A corrected artist's old MBID is the right one for another real artist the catalog returns later] → that artist is never registered under the old MBID. Accepted: the same name reaches the same Last.fm MBID only through the namesake this correction records.
 - [`Create` takes a global advisory lock] → creates are rare (new artists only) and short; a search that registers nothing never reaches `Create`.
+- [A refresh or sync job that read its batch before the correction writes the namesake's details back afterwards, and running the command again changes nothing] → the runbook says to run the command when none of those jobs is active, to re-check the next morning, and to run the command to another MBID and back to clear them again. Guarding every writer with the MBID the job read was rejected: five port signatures change for a rare, repairable case.
 - [A correction clears the official site] → the refresh registers the right one on its next run, within a day for a followed artist.
 
 ## Migration Plan
@@ -66,3 +67,5 @@ For every registered artist, read the catalog record of its MBID (name, type, co
 2. Release the backend, check read-only that the migration is `Ready` and the rollout finished.
 3. Run the audit (D6), then correct the wrong artists with the owner's approval, and check read-only that each corrected artist has the new MBID and name, that its replaced MBID is in `other_mbids` and that no second row exists under it.
 Rollback: the column is additive; the command is not run until the owner asks.
+
+Found after the audit, 2026-11-28: the corrections of step 3 were not run. Last.fm keys an artist by the MBID it returns, even when that MBID names a namesake: `artist.getsimilar` with sumika's right MBID answers "The artist you supplied could not be found", while the namesake MBID returns sumika's similar artists. Replacing `mbid` alone would therefore break `ListSimilar` for a corrected artist. The owner moved the corrections to change `verify-artist-mbid` (plan PR follows this archive), which keeps the MBID Last.fm returns apart from the artist's own MBID and lets an admin choose the right MBID on the admin console; the command of D5 is removed there.
