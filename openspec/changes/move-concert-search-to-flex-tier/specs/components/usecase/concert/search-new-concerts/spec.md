@@ -85,7 +85,7 @@ Before starting the background search, SearchNewConcerts SHALL restart the Artis
 - **failed** when Concert.Search fails with an error other than Unavailable or DeadlineExceeded, or when no further attempt may call it within 20 hours of the search time because it is still failing with one of them or has not been called yet;
 - **completed** otherwise.
 
-When new concerts are handed on, the background search SHALL record the discovery (ConcertSearch.MarkFound). A failure to update the status or record the discovery SHALL NOT change the result.
+When a later search has replaced the Artist's ConcertSearch by the time the background search ends, it SHALL leave the status unchanged. When new concerts are handed on, the background search SHALL record the discovery (ConcertSearch.MarkFound). A transient failure (Unavailable or DeadlineExceeded) to update the status SHALL be tried again until the status is written, because a ConcertSearch left pending keeps the Artist from being searched. A failure to update the status or record the discovery SHALL NOT change the result.
 
 #### Scenario: Productive search
 - **WHEN** the background search hands on two new concerts
@@ -98,6 +98,14 @@ When new concerts are handed on, the background search SHALL record the discover
 #### Scenario: External search fails
 - **WHEN** Concert.Search fails with a permanent error
 - **THEN** the ConcertSearch is failed and no further attempt starts
+
+#### Scenario: Status write fails for a moment
+- **WHEN** a background search ends and the status update fails with Unavailable once
+- **THEN** the update is tried again, and one concert search completed signal is sent
+
+#### Scenario: Replaced while the last call ran
+- **WHEN** a later search of the Artist is recorded while an earlier search's last call to Concert.Search is running
+- **THEN** the earlier search leaves the ConcertSearch status unchanged and still reports its outcome
 
 #### Scenario: Service busy for a whole day
 - **WHEN** Concert.Search still fails with Unavailable on the last attempt it may make within 20 hours of the search time
