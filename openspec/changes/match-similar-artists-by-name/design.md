@@ -30,7 +30,7 @@ NFKC normalization (`golang.org/x/text/unicode/norm`), `strings.ToLower`, surrou
 
 ### D3. Aliases arrive with the existing artist read
 
-`GetArtist` adds `inc=aliases` and returns every alias name; `entity.Artist` carries the derived `NameKeys`. `UpdateMBID` takes the keys and writes them in its single statement. `Refresh` calls the new `UpdateNameKeys` after `UpdateName`, also when the name did not change, since aliases change on their own. When `GetArtist` returns another canonical MBID or fails, the writers keep their current rules; keys are only taken from a successful read.
+`GetArtist` adds `inc=aliases` and returns every alias name; `entity.Artist` carries the derived `NameKeys`. `UpdateMBID` takes the keys and writes them in its single statement. `Refresh` calls the new `UpdateNameKeys` after `UpdateName`, also when the name did not change, since aliases change on their own. `UpdateNameKeys` writes `WHERE id = $1 AND mbid = $2`, as `UpdateFanart` does (change verify-artist-mbid), because a refresh can read an MBID that `CorrectMBID` replaces before the write. When `GetArtist` returns another canonical MBID or fails, the writers keep their current rules; keys are only taken from a successful read.
 
 Alternative rejected: have `UpdateName` take the keys. The name and the aliases change independently, and `Refresh` skips `UpdateName` when the name is equal.
 
@@ -50,8 +50,9 @@ The usecase logs at INFO `similar artists without MBID` with the seed id, the co
 
 1. The Atlas migration adds the column, backfills it from `name` and creates the index; merging applies it to prod.
 2. Release the backend.
-3. Rollback: the column and index are additive; the previous release ignores them. Its inserts need the column's default, so the column is declared `NOT NULL DEFAULT '{}'`.
+3. Once the rollout has finished, a second migration repeats the backfill for rows whose `name_keys` is empty: the previous release keeps registering artists between step 1 and the end of the rollout, and its inserts take the default.
+4. Rollback: the column and index are additive; the previous release ignores them and its inserts take `DEFAULT '{}'`. After rolling forward again, the same backfill is applied by one more migration; until then such artists are not found by name.
 
 ## Open Questions
 
-- Whether stage 2 (a background lookup of unmatched names in the music catalog) is built: decided from the logged counts once aliases have filled; tracked in an issue (task 3.2).
+- Whether stage 2 (a background lookup of unmatched names in the music catalog) is built: decided from the logged counts once aliases have filled; tracked in an issue (task 3.3).

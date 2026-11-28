@@ -12,8 +12,9 @@
 
 ## 3. backend: release and production check
 
-- [ ] 3.1 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: AtlasMigration `Ready`, every artist with at least one name key, the rollout finished, and one `ListSimilar` for sumika logging the match counts
-- [ ] 3.2 File an issue in liverty-music/backend to decide stage 2 from the logged counts 30 days after the release, with the 3.1 numbers as its baseline
+- [ ] 3.1 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: AtlasMigration `Ready`, the rollout finished, and one `ListSimilar` for sumika logging the match counts
+- [ ] 3.2 After the rollout, add the migration that repeats the backfill for rows with empty `name_keys` (design Migration Plan step 3), merge it, and verify read-only in prod: AtlasMigration `Ready` and no artist with empty `name_keys`
+- [ ] 3.3 File an issue in liverty-music/backend to decide stage 2 from the logged counts 30 days after the release, with the 3.1 numbers as its baseline
 
 ## 4. story check (stories/discover-artists)
 
