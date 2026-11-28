@@ -11,6 +11,7 @@ An Artist is a musical performer or group that fans follow for concert news. It 
 | mbid | the artist's identifier in the music catalog: the artist itself, which may differ from listening_mbid when the listening service's MBID names a namesake | required; a UUID of 36 characters; one artist per MBID |
 | listening_mbid | the MBID the listening service files the artist under; its name search, charts and similar artists are matched and asked by it | required; a UUID of 36 characters; equal to mbid unless mbid was corrected; an MBID is the mbid or listening_mbid of one artist only |
 | mbid_status | whether mbid is known to name this artist and not a namesake in the music catalog | required; Unverified, Verified or Ambiguous |
+| known_names | the names the artist is known by: its name and the music catalog's aliases for it, normalized so a name the listening service writes differently still matches | one or more once stored, each once; holds only the name until the catalog's aliases have been read; two artists may share a known name |
 | fanart | the artist's community-curated images, grouped by kind: artist_thumb (square portrait), artist_background (wide backdrop), music_banner (wide banner) | optional; absent when the images were never checked or the last check found none; each kind holds zero or more images |
 | fanart image | one image of a kind: its catalog id, URL, like count and language | URL required; like count 0 or more |
 | fanart_sync_time | when the artist's images were last checked | optional; absent means never checked |
