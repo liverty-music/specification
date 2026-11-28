@@ -105,7 +105,7 @@ When an artist is announced as created (Artist.Created), VerifyMBID SHALL run fo
 - **THEN** VerifyMBID runs for it
 
 #### Scenario: Artist announced already verified
-- **WHEN** an artist registered by ArtistUseCase.Search with mbid_status Verified is announced as created
+- **WHEN** an artist an admin registered with ArtistUseCase.Create, with mbid_status Verified, is announced as created
 - **THEN** VerifyMBID runs for it and changes nothing
 
 #### Scenario: Announcement retries exhausted

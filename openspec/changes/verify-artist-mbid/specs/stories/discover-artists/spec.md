@@ -6,11 +6,11 @@
 ## MODIFIED Requirements
 
 ### Requirement: A discovered artist is registered and enriched
-When ArtistUseCase.Search, ArtistUseCase.ListTop or ArtistUseCase.ListSimilar finds an artist that was not registered before, the artist SHALL be registered at once and announced as created. ArtistUseCase.Search SHALL verify the artist's MBID before registering it; ArtistUseCase.ListTop and ArtistUseCase.ListSimilar register it Unverified. The announcement SHALL run ArtistUseCase.VerifyMBID and ArtistImageSyncUseCase.SyncArtistImage for it, so that the artist then carries a verified MBID, the catalog's canonical name, whether its activity has ended, and its images.
+When ArtistUseCase.Search, ArtistUseCase.ListTop or ArtistUseCase.ListSimilar finds an artist that was not registered before, the artist SHALL be registered at once and announced as created. Each of them SHALL register it Unverified, so none of them returns it on the call that registers it. The announcement SHALL run ArtistUseCase.VerifyMBID and ArtistImageSyncUseCase.SyncArtistImage for it, so that the artist then carries a verified MBID, the catalog's canonical name, whether its activity has ended, and its images.
 
 #### Scenario: Newly discovered artist
 - **WHEN** a fan searches for a name and a result with no namesake in the catalog was not registered before
-- **THEN** the result is returned as a registered Verified artist with the catalog's canonical name and activity status, and after the announcement is handled it has its images
+- **THEN** the result is registered Unverified and not returned; after the announcement is handled it is Verified with the catalog's canonical name and activity status and has its images, and the next search for the name returns it
 
 #### Scenario: Already registered artist
 - **WHEN** a chart lists an artist that is already registered
@@ -37,11 +37,11 @@ ArtistUseCase.Search, ArtistUseCase.ListTop and ArtistUseCase.ListSimilar SHALL 
 
 #### Scenario: Ended artist found for the first time
 - **WHEN** ArtistUseCase.Search finds an artist not registered before whose activity the catalog marks as ended
-- **THEN** it is registered Verified with activity_ended true and that call does not return it
+- **THEN** that call does not return it, and after its announcement is handled it is Verified with activity_ended true and still not returned
 
 #### Scenario: Artist whose MBID is ambiguous
 - **WHEN** a fan searches for a name that two catalog artists without an official homepage share, and the result was not registered before
-- **THEN** the search does not return it, the owner is alerted, and the Artist MBIDs screen lists it with both namesakes
+- **THEN** the search does not return it; after its announcement is handled it is Ambiguous, the owner is alerted, the Artist MBIDs screen lists it with both namesakes, and searches still do not return it
 
 #### Scenario: Admin resolves an ambiguous artist
 - **WHEN** an admin chooses one of an Ambiguous artist's namesakes on the Artist MBIDs screen
