@@ -62,7 +62,7 @@ For a verified MBID it SHALL read the catalog's name and activity status with Ar
 - **THEN** it looks nothing up and changes nothing
 
 ### Requirement: VerifyMBID reports failures
-ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations, Artist.GetArtist or Artist.UpdateMBID, leaving the artist Unverified and unchanged, so a retry or the next daily run verifies it again. When Artist.GetArtist fails with NotFound for the MBID to verify, the MBID is ambiguous.
+ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations, Artist.GetArtist or Artist.UpdateMBID, leaving the artist Unverified and unchanged, so a retry or the next daily run verifies it again, except in two cases that make the MBID ambiguous: Artist.GetArtist fails with NotFound for the MBID to verify, or Artist.UpdateMBID fails with AlreadyExists because another artist holds it. The error logged then also names that MBID and the reason.
 
 #### Scenario: Catalog unavailable
 - **WHEN** Artist.ListNamesakes fails with Unavailable
@@ -78,7 +78,7 @@ ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and
 
 #### Scenario: Corrected MBID already registered
 - **WHEN** the namesake to verify is the mbid or listening_mbid of another artist
-- **THEN** Artist.UpdateMBID fails with AlreadyExists, VerifyMBID records the MBID as ambiguous and logs an error naming both artists
+- **THEN** Artist.UpdateMBID fails with AlreadyExists, VerifyMBID marks the artist Ambiguous and succeeds, and the error logged names the artist, the MBID and that another artist holds it
 
 ### Requirement: VerifyMBID runs when an artist is registered and daily for unverified artists
 When an artist is announced as created (Artist.Created), VerifyMBID SHALL run for it; when the run fails, it SHALL be retried up to 3 more times. An ambiguous result is not a failure and is not retried. Once a day at 05:00 Japan time, before the daily refresh of ArtistUseCase.Refresh, VerifyMBID SHALL run, one artist at a time, for every artist that Artist.ListByMBIDStatus returns as Unverified, oldest first; the run SHALL stop after 3 consecutive failed artists and when it is asked to shut down, and an artist that failed stays Unverified for the next day.

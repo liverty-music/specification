@@ -5,7 +5,7 @@ ArtistUseCase.ListNamesakes shows an admin the music catalog's artists that shar
 ## ADDED Requirements
 
 ### Requirement: ListNamesakes returns the artist's namesakes with their official sites
-ArtistUseCase.ListNamesakes SHALL take an artist id, get the artist with Artist.Get, look its name up with Artist.ListNamesakes, and return those CatalogArtists in the catalog's order, each with its official_site_url read with Artist.ListOfficialSiteRelations and chosen with Artist.SelectOfficialSite. When the artist's own mbid is not among them, it SHALL be listed first with the name Artist.GetArtist returns for it and its official_site_url, without country, life span or disambiguation, so the admin always sees the current MBID among the choices.
+ArtistUseCase.ListNamesakes SHALL take an artist id, get the artist with Artist.Get, look its name up with Artist.ListNamesakes, and return those CatalogArtists in the catalog's order, each with its official_site_url read with Artist.ListOfficialSiteRelations and chosen with Artist.SelectOfficialSite. When the artist's own mbid is not among them, it SHALL be listed first with the name Artist.GetArtist returns for it and its official_site_url, without country, life span or disambiguation, so the admin always sees the current MBID among the choices; when Artist.GetArtist fails with NotFound because the catalog no longer knows that MBID, it SHALL be listed with the artist's registered name and no official_site_url instead of failing.
 
 #### Scenario: Two namesakes
 - **WHEN** ListNamesakes is called for an artist whose name the catalog gives to a UK band (its mbid) and a Japanese band with an official homepage
@@ -15,8 +15,12 @@ ArtistUseCase.ListNamesakes SHALL take an artist id, get the artist with Artist.
 - **WHEN** the catalog's search by the artist's name does not return the artist's own mbid
 - **THEN** the artist's mbid is listed first, followed by the namesakes
 
+#### Scenario: Current MBID unknown to the catalog
+- **WHEN** Artist.GetArtist fails with NotFound for the artist's own mbid
+- **THEN** that MBID is listed first with the artist's registered name, followed by the namesakes, and ListNamesakes succeeds
+
 ### Requirement: ListNamesakes reports failures
-ArtistUseCase.ListNamesakes SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations or Artist.GetArtist unchanged.
+ArtistUseCase.ListNamesakes SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations or Artist.GetArtist other than the NotFound above, unchanged.
 
 #### Scenario: Unknown artist
 - **WHEN** no artist has the id
