@@ -31,11 +31,15 @@ end
 ## ADDED Requirements
 
 ### Requirement: VerifyMBID decides the artist's MBID from its namesakes
-ArtistUseCase.VerifyMBID SHALL take an artist id, get the artist with Artist.Get and, when its mbid_status is not Unverified, change nothing and succeed. Otherwise it SHALL look the artist's name up with Artist.ListNamesakes and decide:
-- when no namesake has an MBID other than the artist's mbid, the artist's mbid is verified;
+ArtistUseCase.VerifyMBID SHALL take an artist id, get the artist with Artist.Get and, when its mbid_status is not Unverified, change nothing and succeed. Otherwise it SHALL read the artist's mbid with Artist.GetArtist, so it is compared in the canonical form the music catalog returns for it (a merged MBID is answered with the surviving artist), look the artist's name up with Artist.ListNamesakes and decide:
+- when no namesake has an MBID other than the artist's mbid or its canonical form, the artist's mbid is verified;
 - otherwise it SHALL read the official homepage of every namesake and of the artist's mbid with Artist.ListOfficialSiteRelations and Artist.SelectOfficialSite; an MBID the catalog does not know (NotFound) counts as having no official homepage; when exactly one of them has an official homepage, that one's MBID is verified (it may be the artist's own mbid);
 - otherwise the MBID is ambiguous.
 For a verified MBID it SHALL read the catalog's name and activity status with Artist.GetArtist and then store the MBID, that name (when not empty; otherwise the current name) and that status with one Artist.UpdateMBID, which marks the artist Verified; nothing is stored before every catalog read has succeeded. An ambiguous MBID SHALL be recorded with Artist.MarkMBIDAmbiguous, leaving the artist's mbid, and an error SHALL be logged naming the artist's id, its name and the namesakes' MBIDs, so the owner is alerted.
+
+#### Scenario: Merged MBID
+- **WHEN** an Unverified artist's mbid M was merged in the catalog into X, and the catalog's only artist of its name is X
+- **THEN** the artist becomes Verified with mbid X, and no official homepage is read
 
 #### Scenario: No namesake
 - **WHEN** an Unverified artist's name has no catalog artist other than its own mbid
