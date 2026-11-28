@@ -30,7 +30,7 @@
 
 ## 6. backend: release and production check
 
-- [ ] 6.1 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: AtlasMigration `Ready` with the new column, the rollout finished, and the next 09:00 JST concert-discovery run logs no `create-from-discovered` ERROR and no `workflow needs an admin`
+- [ ] 6.1 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: AtlasMigration `Ready` with the new column, the rollout finished, and the next 18:00 JST (09:00 UTC) concert-discovery run logs no `create-from-discovered` ERROR and no `workflow needs an admin`
 
 ## 7. frontend: approval queue conflict dialog (design D9)
 
@@ -44,7 +44,7 @@
 - [ ] 8.1 Start `create-from-discovered` on a new queue `concert-discovery` of global concurrency 1, registered beside `ConcertSearchQueue`, with a 6-hour deadline whose clock is read in a step (under a patch, since search runs of the earlier release are in flight); verify a unit test for `components/usecase/concert/create-from-discovered` "Two Artists of one concert found together" that the workflow is started on that queue with the deadline, and one that a search run from before the patch starts the batch as before
 - [ ] 8.2 Make `Series.DeleteOrphaned` take a creation time and remove the empty discovered Series created before it (`uuid_extract_timestamp(id)`), keeping the `SKIP LOCKED`; verify one contract test per scenario of `components/entity/series/delete-orphaned`
 - [ ] 8.3 Add `ConcertCreationUseCase.RemoveEmptyDiscoveredSeries`, started by a daily DBOS schedule as a workflow on the queue of 8.1 so it waits for any batch being processed (both starts with a deadline, design D11), and remove the `DeleteOrphaned` calls of `CreateFromDiscovered`, `Approve` and `Reject` with the tests annotated with their removed scenarios; verify one unit test per scenario of `components/usecase/series/remove-empty-discovered-series` (including "Batch being processed": the removal is started on the `concert-discovery` queue of 8.1 with the same 6-hour deadline, its clock read in a step of the schedule's own function, which only runs of this new schedule take, so no patch; the cutoff is the scheduled time minus 24 hours, passed to the removal as its input) and the "Last staged row of an empty series" scenario of `components/usecase/concert-candidate/approve`
-- [ ] 8.4 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: the rollout finished, the next 09:00 JST discovery runs its batches one at a time with no `create-from-discovered` ERROR, and the first daily run of `RemoveEmptyDiscoveredSeries` succeeds
+- [ ] 8.4 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: the rollout finished, the next 18:00 JST (09:00 UTC) discovery runs its batches one at a time with no `create-from-discovered` ERROR, and the first daily run of `RemoveEmptyDiscoveredSeries` succeeds
 
 ## 9. backend: data migration (design D10, after 6.1 and 8.4 are live)
 
