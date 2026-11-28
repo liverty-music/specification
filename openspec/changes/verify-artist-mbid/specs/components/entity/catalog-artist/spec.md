@@ -1,6 +1,6 @@
 ## Purpose
 
-A CatalogArtist is an artist as the music catalog records it, not a registered Artist: an admin compares CatalogArtists that share a name to decide which one a registered Artist is.
+A CatalogArtist is an artist as the music catalog records it, not a registered Artist: an admin compares CatalogArtists that share a name to decide which one a registered Artist is. Its life span is its begin, end and activity_ended together.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -9,6 +9,7 @@ A CatalogArtist is an artist as the music catalog records it, not a registered A
 | country | the country the catalog associates with the artist | optional; an ISO 3166-1 alpha-2 code; absent when the catalog records none |
 | begin | when the artist's activity began, as precise as the catalog records it (year, year and month, or date) | optional |
 | end | when the artist's activity ended, as precise as the catalog records it | optional; absent while the catalog records no end |
+| activity_ended | whether the catalog marks the artist's activity as ended (a group dissolved, a solo artist died), also when it records no end | required; false when the catalog does not mark it ended |
 | disambiguation | the catalog's short note that tells the artist apart from others of the same name | optional; absent when the catalog has none |
 | official_site_url | the artist's official homepage, chosen from the catalog's links as Artist.SelectOfficialSite chooses | optional; absent when the catalog has no active official-homepage link |
 

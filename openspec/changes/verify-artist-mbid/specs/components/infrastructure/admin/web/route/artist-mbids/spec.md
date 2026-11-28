@@ -20,12 +20,17 @@ The admin console's navigation SHALL offer `Artist MBIDs`. The screen SHALL list
 
 ### Requirement: Selecting an artist shows its namesakes
 
-Selecting a listed artist SHALL read CatalogArtistService.ListByArtist for it and show each CatalogArtist in the returned order with its name, country, life span (begin to end, or begin and `active` when there is no end), disambiguation and official site as a link. Each MBID SHALL link to the artist's page in the music catalog, opening in a new tab. The artist's current MBID SHALL be labelled `Current`. While the read is in progress the list shows `Loading namesakes…`; when it fails, the screen SHALL show `The music catalog could not be reached. Try again.` with a `Try again` button that reads it again.
+Selecting a listed artist SHALL read CatalogArtistService.ListByArtist for it and show each CatalogArtist in the returned order with its name, country, life span (begin to end; begin and `ended` when activity_ended is true and there is no end; begin and `active` otherwise), disambiguation and official site as a link. Each MBID SHALL link to the artist's page in the music catalog, opening in a new tab. The artist's current MBID SHALL be labelled `Current`. While the read is in progress the list shows `Loading namesakes…`; when it fails, the screen SHALL show `The music catalog could not be reached. Try again.` with a `Try again` button that reads it again.
 
 #### Scenario: Namesakes shown
 
 - **WHEN** the admin selects an artist whose current MBID names a UK band ended in 2002 and whose name a Japanese band with an official site shares
 - **THEN** both are shown, the UK band labelled `Current` with life span 1995-10 to 2002-11, the Japanese band with its official site link
+
+#### Scenario: Namesake ended without an end date
+
+- **WHEN** a namesake has begin 1998, no end and activity_ended true
+- **THEN** its life span is shown as 1998 and `ended`, not `active`
 
 #### Scenario: Catalog unreachable
 

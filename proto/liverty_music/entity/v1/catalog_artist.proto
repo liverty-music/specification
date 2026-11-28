@@ -38,6 +38,11 @@ message CatalogArtist {
   // way an Artist's official site is chosen. Absent when the catalog has no
   // active official-homepage link.
   optional Url official_site_url = 7;
+
+  // Whether the catalog marks the artist's activity as ended (a group
+  // dissolved, a solo artist died). The catalog records this apart from the
+  // end date, so it can be true while end is absent.
+  bool activity_ended = 8;
 }
 
 // ActivityDate is a day an artist's activity began or ended, as precise as the
