@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Looks up, in the music catalog, artists musically similar to a given artist.
+Looks up, in the listening service, artists musically similar to a given artist.
 
 ## Requirements
 
