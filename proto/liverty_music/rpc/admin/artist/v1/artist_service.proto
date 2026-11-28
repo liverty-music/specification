@@ -17,6 +17,18 @@ import "liverty_music/entity/v1/organizer.proto";
 // All RPCs are authorized only for the admin organization; callers outside it
 // are rejected with PERMISSION_DENIED at the admin server boundary.
 service ArtistService {
+  // Create registers an artist under the name and MBID an admin gives, such
+  // as a test artist with a generated MBID. The artist takes the music
+  // catalog's name for the MBID when the catalog knows it, and its MBID is
+  // Verified, since the admin names it. When the MBID is already registered,
+  // the registered Artist is returned unchanged.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The name is missing or empty, or the MBID is not a UUID.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
   // Get returns one Artist by its id.
   //
   // Possible errors:
@@ -64,6 +76,22 @@ service ArtistService {
   // - ALREADY_EXISTS: Another Artist has the MBID.
   // - UNAVAILABLE: The music catalog could not be reached.
   rpc CorrectMbid(CorrectMbidRequest) returns (CorrectMbidResponse);
+}
+
+// CreateRequest names the artist to register.
+message CreateRequest {
+  // Required. The name of the artist to register.
+  entity.v1.ArtistName name = 1 [(buf.validate.field).required = true];
+
+  // Required. The artist's MBID in the music catalog.
+  entity.v1.Mbid mbid = 2 [(buf.validate.field).required = true];
+}
+
+// CreateResponse returns the registered Artist.
+message CreateResponse {
+  // The registered Artist: the new one, or the one already registered under
+  // the MBID.
+  entity.v1.Artist artist = 1 [(buf.validate.field).required = true];
 }
 
 // GetRequest names the Artist to read.
