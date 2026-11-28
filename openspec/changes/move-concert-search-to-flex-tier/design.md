@@ -87,8 +87,10 @@ That gap is accepted rather than adding a transactional start.
 ### D2. One attempt, step by step
 
 1. `check`: read the Artist and its ConcertSearch. The attempt ends without searching in two cases:
-   - **The search was replaced.** The ConcertSearch is no longer pending with this search time. The attempt changes nothing.
+   - **The search was replaced.** The ConcertSearch is no longer pending with this search time. The attempt changes nothing and sends no signal, also when an earlier attempt called Concert.Search. A missing ConcertSearch counts as replaced.
    - **The Artist may no longer be searched.** Its activity has ended, or an active Organizer represents it. The attempt goes to `record-end` as nothing new. The signal is sent only when an earlier attempt called Concert.Search, that is, when the attempt number is above 1.
+
+   A read of the ConcertSearch or the Artist that fails with Unavailable or DeadlineExceeded is retried by the platform. Any other failure of it fails the run itself: `record-end` does not run, so the ConcertSearch stays pending (the pending timeout frees the Artist), no signal is sent, and the run is reported for an admin.
 
    Both checks ran only before the pending upsert before this change. They are repeated because an attempt can start hours after the request.
 2. `search`: if the search time is 20 h or more in the past, skip the call and treat the attempt as busy. Otherwise:
@@ -120,7 +122,7 @@ That gap is accepted rather than adding a transactional start.
 
 `record-end` writes the status first. A transient failure of that write is the step's error, so the platform tries it again until it succeeds; the metric and the signal follow only then. A ConcertSearch left pending would keep the Artist from being searched for 20 h. A failed Search call or read of a run that is itself being cancelled is returned as the step's error, never recorded as an outcome.
 
-A failure to start `create-from-discovered` is a permanent error and ends as failed, as today. The run itself ends successfully in every case above, so no outcome is reported for an admin. A run that fails outside these paths (a bug) still is, per durable-workflows.
+A failure to start `create-from-discovered` is a permanent error and ends as failed, as today. Apart from the failed check read of step 1, the run itself ends successfully in every case above, so no outcome is reported for an admin. A run that fails outside these paths (a bug) still is, per durable-workflows.
 
 Attempt numbers count from 1, and every attempt reports its call (Concert.Search "Each external call reports its usage"). The observation therefore sees each attempt.
 

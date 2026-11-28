@@ -130,7 +130,7 @@ When at least one event remains, the background search SHALL start ConcertCreati
 
 ### Requirement: Each search reports its outcome
 
-Every background search that calls Concert.Search SHALL send one "concert search completed" signal for product analytics when it ends, under the trace of that search. The signal SHALL carry:
+Every background search that calls Concert.Search SHALL send one "concert search completed" signal for product analytics when it ends (except in the cases below), under the trace of that search. The signal SHALL carry:
 - the Artist;
 - what started it (the daily run, a first follow, or by hand);
 - the outcome (failed, nothing new, or new concerts found);
@@ -138,7 +138,7 @@ Every background search that calls Concert.Search SHALL send one "concert search
 
 A failed search SHALL also carry the kind of error that failed it, or unknown when the error states no kind, and SHALL NOT carry the error's message. Examples of an error kind are deadline exceeded, unavailable and permission denied. A search that ended because no further attempt could start within 20 hours of the search time SHALL carry the kind of the error its last call returned.
 
-Retried attempts SHALL NOT send a signal of their own. A search that finds itself replaced when an attempt starts sends no signal, also when an earlier attempt called Concert.Search. A search that ends before any call to Concert.Search sends no signal, including a search whose first attempt could only start 20 hours or more after the search time. A failure to send the signal SHALL NOT change the outcome.
+Retried attempts SHALL NOT send a signal of their own. A search that finds itself replaced when an attempt starts sends no signal, also when an earlier attempt called Concert.Search; neither does a background search that fails because a check read failed. A search that ends before any call to Concert.Search sends no signal, including a search whose first attempt could only start 20 hours or more after the search time. A failure to send the signal SHALL NOT change the outcome.
 
 #### Scenario: Nothing new
 - **WHEN** the daily run searches an Artist and every event found is already known
