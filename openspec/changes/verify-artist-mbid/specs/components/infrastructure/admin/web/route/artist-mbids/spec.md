@@ -20,7 +20,7 @@ The admin console's navigation SHALL offer `Artist MBIDs`. The screen SHALL list
 
 ### Requirement: Selecting an artist shows its namesakes
 
-Selecting a listed artist SHALL read ArtistService.ListNamesakes for it and show each CatalogArtist in the returned order with its name, country, life span (begin to end, or begin and `active` when there is no end), disambiguation and official site as a link. Each MBID SHALL link to the artist's page in the music catalog, opening in a new tab. The artist's current MBID SHALL be labelled `Current`. While the read is in progress the list shows `Loading namesakes…`; when it fails, the screen SHALL show `The music catalog could not be reached. Try again.` with a `Try again` button that reads it again.
+Selecting a listed artist SHALL read CatalogArtistService.ListByArtist for it and show each CatalogArtist in the returned order with its name, country, life span (begin to end, or begin and `active` when there is no end), disambiguation and official site as a link. Each MBID SHALL link to the artist's page in the music catalog, opening in a new tab. The artist's current MBID SHALL be labelled `Current`. While the read is in progress the list shows `Loading namesakes…`; when it fails, the screen SHALL show `The music catalog could not be reached. Try again.` with a `Try again` button that reads it again.
 
 #### Scenario: Namesakes shown
 
@@ -29,7 +29,7 @@ Selecting a listed artist SHALL read ArtistService.ListNamesakes for it and show
 
 #### Scenario: Catalog unreachable
 
-- **WHEN** ArtistService.ListNamesakes fails with Unavailable
+- **WHEN** CatalogArtistService.ListByArtist fails with Unavailable
 - **THEN** the screen shows `The music catalog could not be reached. Try again.` and `Try again`
 
 ### Requirement: Choose sets the artist's MBID after a confirmation

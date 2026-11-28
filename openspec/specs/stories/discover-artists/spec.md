@@ -22,7 +22,7 @@ rf 13 pcr Schedule_DailyArtistImageSync
 tf 14 cmd ArtistImageSyncUseCase_SyncArtistImage
 rf 15 ui Admin_ArtistMbids
 tf 16 rmo ArtistUseCase_ListByMBIDStatus
-tf 17 rmo ArtistUseCase_ListNamesakes
+tf 17 rmo CatalogArtistUseCase_ListByArtist
 tf 18 cmd ArtistUseCase_CorrectMBID
 ```
 

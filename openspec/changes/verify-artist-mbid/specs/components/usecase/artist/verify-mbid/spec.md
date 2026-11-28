@@ -33,7 +33,7 @@ end
 ### Requirement: VerifyMBID decides the artist's MBID from its namesakes
 ArtistUseCase.VerifyMBID SHALL take an artist id, get the artist with Artist.Get and, when its mbid_status is not Unverified, change nothing and succeed. Otherwise it SHALL look the artist's name up with Artist.ListNamesakes and decide:
 - when no namesake has an MBID other than the artist's mbid, the artist's mbid is verified;
-- otherwise it SHALL read the official homepage of every namesake and of the artist's mbid with Artist.ListOfficialSiteRelations and Artist.SelectOfficialSite; when exactly one of them has an official homepage, that one's MBID is verified (it may be the artist's own mbid);
+- otherwise it SHALL read the official homepage of every namesake and of the artist's mbid with Artist.ListOfficialSiteRelations and Artist.SelectOfficialSite; an MBID the catalog does not know (NotFound) counts as having no official homepage; when exactly one of them has an official homepage, that one's MBID is verified (it may be the artist's own mbid);
 - otherwise the MBID is ambiguous.
 For a verified MBID it SHALL read the catalog's name and activity status with Artist.GetArtist and then store the MBID, that name (when not empty; otherwise the current name) and that status with one Artist.UpdateMBID, which marks the artist Verified; nothing is stored before every catalog read has succeeded. An ambiguous MBID SHALL be recorded with Artist.MarkMBIDAmbiguous, leaving the artist's mbid, and an error SHALL be logged naming the artist's id, its name and the namesakes' MBIDs, so the owner is alerted.
 
@@ -52,6 +52,10 @@ For a verified MBID it SHALL read the catalog's name and activity status with Ar
 #### Scenario: No namesake has an official site
 - **WHEN** the catalog has three artists of the name and none has an official homepage
 - **THEN** the artist becomes Ambiguous with its mbid unchanged, and an error naming the artist and the three MBIDs is logged
+
+#### Scenario: Its own MBID unknown to the catalog
+- **WHEN** the artist's name has a namesake with an official homepage, and Artist.ListOfficialSiteRelations fails with NotFound for the artist's own mbid
+- **THEN** the artist's mbid becomes the namesake's MBID and it becomes Verified
 
 #### Scenario: Several have an official site
 - **WHEN** two of the artists of the name have an official homepage

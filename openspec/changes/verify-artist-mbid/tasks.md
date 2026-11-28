@@ -1,6 +1,6 @@
 ## 1. specification: proto (design D6)
 
-- [ ] 1.1 Add `entity.v1.CatalogArtist` (mbid, name, country, begin, end, disambiguation, official_site_url, wrapper types with protovalidate per the attribute table of `components/entity/catalog-artist`) and `entity.v1.ArtistMbidStatus` (UNSPECIFIED, UNVERIFIED, VERIFIED, AMBIGUOUS); add `ListByMbidStatus`, `ListNamesakes` and `CorrectMbid` to `rpc.admin.artist.v1.ArtistService` with their request and response messages and error comments; verify `buf lint`, `buf format` and the breaking check pass in the proto PR
+- [ ] 1.1 Add `entity.v1.CatalogArtist` (mbid, name, country, begin, end, disambiguation, official_site_url, wrapper types with protovalidate per the attribute table of `components/entity/catalog-artist`) and `entity.v1.ArtistMbidStatus` (UNSPECIFIED, UNVERIFIED, VERIFIED, AMBIGUOUS); add `ListByMbidStatus` and `CorrectMbid` to `rpc.admin.artist.v1.ArtistService` and a new `rpc.admin.catalog_artist.v1.CatalogArtistService` with `ListByArtist`, with their request and response messages and error comments; verify `buf lint`, `buf format` and the breaking check pass in the proto PR
 - [ ] 1.2 Merge the proto PR, cut the specification release, and verify the BSR generation run (`buf-release.yml`) succeeds
 
 ## 2. backend: schema and entity (components/entity/artist, components/entity/catalog-artist; design D1, D2)
@@ -20,11 +20,11 @@
 - [ ] 4.1 Implement `ArtistUseCase.VerifyMBID` with the decision of D3 and its ERROR log; verify one unit test per scenario of `components/usecase/artist/verify-mbid` with the operations mocked
 - [ ] 4.2 Run `VerifyMBID` instead of `Refresh` in the `refresh-artist` consumer, and make the `artist-refresh` job verify every Unverified artist before its slot of `Refresh`; verify the consumer test (announced artist, ambiguous result returns success) and the job test (Unverified first, stop after 3 consecutive failures), covering the trigger scenarios of `components/usecase/artist/verify-mbid` and the REMOVED requirement of `components/usecase/artist/refresh`
 - [ ] 4.3 Change `ArtistUseCase.Search` to decide the MBID of each new match before `Create`, and `Search`, `ListTop` and `ListSimilar` to return only artists offered to fans, also on a cache hit (the cache keeps the result before the filter); verify one unit test per scenario of `components/usecase/artist/search`, `list-top` and `list-similar` with the operations mocked
-- [ ] 4.4 Change `ArtistUseCase.CorrectMBID` and `ArtistUseCase.Create` to register or mark the artist Verified, and add `ArtistUseCase.ListNamesakes` and `ListByMBIDStatus`; verify one unit test per scenario of `components/usecase/artist/correct-mbid`, `create`, `list-namesakes` and `list-by-mbid-status`
+- [ ] 4.4 Change `ArtistUseCase.CorrectMBID` to store the catalog's details with one `UpdateMBID` and `ArtistUseCase.Create` to register Unverified, and add `ArtistUseCase.ListByMBIDStatus` and `CatalogArtistUseCase.ListByArtist`; verify one unit test per scenario of `components/usecase/artist/correct-mbid`, `create`, `list-by-mbid-status` and `components/usecase/catalog-artist/list-by-artist`
 
 ## 5. backend: admin RPC, removals and documentation (design D6, D7; after 1.2)
 
-- [ ] 5.1 Upgrade the generated package and add the admin `ListByMbidStatus`, `ListNamesakes` and `CorrectMbid` handlers with their mappers, registered in the admin list of `internal/di/provider.go`; verify one handler test per scenario of `components/adapter/admin/api/rpc/artist` (ADDED requirements)
+- [ ] 5.1 Upgrade the generated package and add the admin `ArtistService.ListByMbidStatus`, `ArtistService.CorrectMbid` and `CatalogArtistService.ListByArtist` handlers with their mappers, registered in the admin list of `internal/di/provider.go`; verify one handler test per scenario of `components/adapter/admin/api/rpc/artist` (ADDED requirements) and `components/adapter/admin/api/rpc/catalog-artist`
 - [ ] 5.2 Remove the `worker artist correct-mbid` command, its DI and tests; verify `make check` passes and `worker artist` no longer lists it
 - [ ] 5.3 Rewrite the Last.fm client doc comment from the current Terms of Service and API intro page as design D7 states, keeping `rateLimitInterval` at 200 ms; verify the comment cites https://www.last.fm/api/tos clauses 2.3, 3.1, 4.3 and 4.4 and liverty-music/backend#953
 

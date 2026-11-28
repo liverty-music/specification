@@ -19,25 +19,6 @@ ListByMbidStatus, which only the admin console offers, SHALL take an mbid_status
 - **WHEN** a signed-in caller without the admin role calls ListByMbidStatus
 - **THEN** it fails with PermissionDenied and no usecase runs
 
-### Requirement: ListNamesakes returns an artist's namesake candidates
-
-ListNamesakes, which only the admin console offers, SHALL take an ArtistId and fail with InvalidArgument, before any usecase runs, when it is missing or malformed. It SHALL run ArtistUseCase.ListNamesakes and return the CatalogArtists it returns, in its order; errors from the usecase SHALL be returned unchanged.
-
-#### Scenario: Admin reads the candidates
-
-- **WHEN** a signed-in admin calls ListNamesakes for an artist whose name two catalog artists share
-- **THEN** the two CatalogArtists are returned with their MBID, name, country, life span, disambiguation and official site
-
-#### Scenario: Unknown artist
-
-- **WHEN** ArtistUseCase.ListNamesakes fails with NotFound
-- **THEN** ListNamesakes fails with NotFound
-
-#### Scenario: Non-admin reads candidates
-
-- **WHEN** a signed-in caller without the admin role calls ListNamesakes
-- **THEN** it fails with PermissionDenied and no usecase runs
-
 ### Requirement: CorrectMbid sets the MBID an admin chose
 
 CorrectMbid, which only the admin console offers, SHALL take an ArtistId and an MBID and fail with InvalidArgument, before any usecase runs, when either is missing or malformed. It SHALL run ArtistUseCase.CorrectMBID and return the corrected Artist; errors from the usecase SHALL be returned unchanged.

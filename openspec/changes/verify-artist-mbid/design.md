@@ -38,7 +38,7 @@ Uniqueness: an MBID is the `mbid` or `listening_mbid` of at most one artist (one
 
 | writer | from | to |
 |---|---|---|
-| `Artist.Create` | (new) | the status it is given; `ListTop`/`ListSimilar` give Unverified, `Search` gives the verified result, `ArtistUseCase.Create` gives Verified |
+| `Artist.Create` | (new) | the status it is given; `ListTop`, `ListSimilar` and `ArtistUseCase.Create` give Unverified (Create is the fan `ArtistService.Create`, open to any signed-in caller, so its MBID is checked like any other), `Search` gives the verified result |
 | `ArtistUseCase.VerifyMBID` via `UpdateMBID` (with the catalog's name and activity status, in the same write) | Unverified | Verified |
 | `ArtistUseCase.VerifyMBID` via `MarkMBIDAmbiguous` | Unverified | Ambiguous |
 | `ArtistUseCase.CorrectMBID` via `UpdateMBID` | any | Verified |
@@ -80,12 +80,12 @@ New admin RPCs on `rpc.admin.artist.v1.ArtistService`:
 | RPC | request | response | usecase |
 |---|---|---|---|
 | `ListByMbidStatus` | `mbid_status` (required, `ArtistMbidStatus`) | `artists` (`entity.v1.Artist`) | `ArtistUseCase.ListByMBIDStatus` |
-| `ListNamesakes` | `artist_id` | `catalog_artists` (`entity.v1.CatalogArtist`) | `ArtistUseCase.ListNamesakes` |
+| `CatalogArtistService.ListByArtist` (new service `rpc.admin.catalog_artist.v1`) | `artist_id` | `catalog_artists` (`entity.v1.CatalogArtist`) | `CatalogArtistUseCase.ListByArtist` |
 | `CorrectMbid` | `artist_id`, `mbid` | `artist` | `ArtistUseCase.CorrectMBID` |
 
-The screen (`admin/artist-mbids/`, nav entry "Artist MBIDs") reads every value from these responses: the artist's name and MBID from `ListByMbidStatus.artists[].name/mbid`; each candidate's MBID, name, country, life span, disambiguation and official homepage from `ListNamesakes.catalog_artists[]`. It links each candidate's MBID to its MusicBrainz page so the admin can check details the list does not show. Candidates are read live when an artist is opened, not stored: an Ambiguous artist is rare, and stored candidates would go stale.
+The screen (`admin/artist-mbids/`, nav entry "Artist MBIDs") reads every value from these responses: the artist's name and MBID from `ListByMbidStatus.artists[].name/mbid`; each candidate's MBID, name, country, life span, disambiguation and official homepage from `CatalogArtistService.ListByArtist.catalog_artists[]`. It links each candidate's MBID to its MusicBrainz page so the admin can check details the list does not show. Candidates are read live when an artist is opened, not stored: an Ambiguous artist is rare, and stored candidates would go stale.
 
-`ArtistUseCase.ListNamesakes` runs D3 steps 1 and 3 for the artist (search, then official homepage per candidate).
+`CatalogArtistUseCase.ListByArtist` runs D3 steps 1 and 3 for the artist (search, then official homepage per candidate). It lives on a CatalogArtist service and usecase because it returns CatalogArtists, not Artists (`rpc-design` skill: a read of another resource goes to that resource's service); `ListBy<Key>` because `artist_id` is a required field that selects the set.
 
 ### D7. Removals and documentation
 

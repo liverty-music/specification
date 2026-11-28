@@ -24,7 +24,8 @@ Not in this change: a listener-count floor (a namesake's MBID comes with the rig
 - `components/entity/artist/mark-mbid-ambiguous`: Artist.MarkMBIDAmbiguous, records that an artist's MBID could not be verified.
 - `components/entity/artist/list-by-mbid-status`: Artist.ListByMBIDStatus, the registered artists in one `mbid_status`.
 - `components/usecase/artist/verify-mbid`: ArtistUseCase.VerifyMBID, the check of an Unverified artist's MBID, its triggers and its alert.
-- `components/usecase/artist/list-namesakes`: ArtistUseCase.ListNamesakes, an artist's namesake candidates with their official homepages, for the admin console.
+- `components/usecase/catalog-artist/list-by-artist`: CatalogArtistUseCase.ListByArtist, an artist's namesake candidates with their official homepages, for the admin console.
+- `components/adapter/admin/api/rpc/catalog-artist`: the admin CatalogArtistService and its ListByArtist.
 - `components/usecase/artist/list-by-mbid-status`: ArtistUseCase.ListByMBIDStatus, for the admin console.
 - `components/infrastructure/admin/web/route/artist-mbids`: the admin console's Artist MBIDs screen.
 
@@ -40,15 +41,15 @@ Not in this change: a listener-count floor (a namesake's MBID comes with the rig
 - `components/usecase/artist/list-similar` (Purpose, at archive): the same, and the seed is looked up by its `listening_mbid`.
 - `components/usecase/artist/refresh`: no longer runs on registration (VerifyMBID does); the daily run is unchanged.
 - `components/usecase/artist/correct-mbid` (Purpose, at archive): reads the catalog first and stores the MBID, name and activity status with one write that marks the artist Verified; reached from the admin console.
-- `components/usecase/artist/create`: an artist an admin registers with its MBID is Verified.
-- `components/adapter/admin/api/rpc/artist`: ListByMbidStatus, ListNamesakes and CorrectMbid.
+- `components/usecase/artist/create`: registers the artist Unverified, so its MBID is verified on its announcement.
+- `components/adapter/admin/api/rpc/artist`: ListByMbidStatus and CorrectMbid.
 - `stories/discover-artists` (Purpose): only Verified artists whose activity has not ended are offered, by every discovery path; a discovered artist's MBID is verified.
 
 Entity operations used and unchanged: Artist.Get, Artist.GetArtist, Artist.ListOfficialSiteRelations, Artist.SelectOfficialSite, Artist.UpdateName, Artist.UpdateActivityEnded, Artist.FilterArtistsByMBID, Artist.Search, Artist.ListTop.
 
 ## Impact
 
-- specification: `entity/v1` gains `CatalogArtist` and `ArtistMbidStatus`; the admin `ArtistService` gains ListByMbidStatus, ListNamesakes and CorrectMbid; a proto release.
+- specification: `entity/v1` gains `CatalogArtist` and `ArtistMbidStatus`; the admin `ArtistService` gains ListByMbidStatus and CorrectMbid, and a new admin `CatalogArtistService` offers ListByArtist; a proto release.
 - backend: `artists` columns `listening_mbid` and `mbid_status` replace `other_mbids` (migration with backfill, Penthouse's `listening_mbid` set to the MBID the listening service returns for it); MusicBrainz name search; ArtistUseCase changes; the event consumer `refresh-artist` runs VerifyMBID; the daily job verifies Unverified artists; the admin RPC handlers; the `worker artist correct-mbid` command removed; Last.fm client doc comment.
 - frontend: the admin console's Artist MBIDs screen and its navigation entry.
 - cloud-provisioning: the runbook `docs/runbooks/correct-artist-mbid.md` removed.

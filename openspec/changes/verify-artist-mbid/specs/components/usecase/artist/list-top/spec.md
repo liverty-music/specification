@@ -13,8 +13,8 @@ ArtistUseCase.ListTop SHALL take a country, a tag of at most 50 characters and a
 - **THEN** each chart artist with an MBID is registered Unverified, and none of them is returned by this call
 
 #### Scenario: Repeated call keeps identities
-- **WHEN** ListTop is called twice for the same country
-- **THEN** both calls return the same artist for each MBID
+- **WHEN** ListTop is called twice for the same country and a chart artist is Verified by the second call
+- **THEN** both calls resolve that MBID to the same artist, which was registered once
 
 #### Scenario: Chart artist already registered
 - **WHEN** a chart artist's MBID is already registered
