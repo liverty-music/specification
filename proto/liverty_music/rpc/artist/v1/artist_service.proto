@@ -2,8 +2,9 @@ syntax = "proto3";
 
 // Package liverty_music.rpc.artist.v1 provides gRPC service definitions for artist management.
 //
-// This package includes the ArtistService which handles artist discovery,
-// lifecycle management, and integration with external recommendation engines.
+// This package includes the ArtistService which handles artist discovery and
+// integration with external recommendation engines. Registering an artist
+// directly is an admin operation (liverty_music.rpc.admin.artist.v1).
 package liverty_music.rpc.artist.v1;
 
 import "buf/validate/validate.proto";
@@ -21,15 +22,6 @@ service ArtistService {
   // - UNAUTHENTICATED: The caller is not signed in.
   // - INTERNAL: An unexpected database error occurred.
   rpc List(ListRequest) returns (ListResponse);
-
-  // Create registers a new musical performer or band in the system. It
-  // requires a signed-in caller.
-  //
-  // Possible errors:
-  // - UNAUTHENTICATED: The caller is not signed in.
-  // - ALREADY_EXISTS: An artist with the specified name is already registered.
-  // - INVALID_ARGUMENT: The name is missing or empty, or the MBID is not a UUID.
-  rpc Create(CreateRequest) returns (CreateResponse);
 
   // Search performs an incremental search for artists by name.
   // It searches both the local database and external discovery sources to provide
@@ -64,21 +56,6 @@ message ListRequest {}
 message ListResponse {
   // The collection of artist entities retrieved from the database.
   repeated entity.v1.Artist artists = 1;
-}
-
-// CreateRequest provides the necessary details to register a new artist.
-message CreateRequest {
-  // Required. The professional name of the artist to be registered.
-  entity.v1.ArtistName name = 1 [(buf.validate.field).required = true];
-
-  // Required. The unique identifier for the artist in MusicBrainz.
-  entity.v1.Mbid mbid = 2 [(buf.validate.field).required = true];
-}
-
-// CreateResponse returns the artist record as successfully created.
-message CreateResponse {
-  // The newly created artist entity, including its assigned identifier.
-  entity.v1.Artist artist = 1;
 }
 
 // SearchRequest specifies the name query for finding artists.
