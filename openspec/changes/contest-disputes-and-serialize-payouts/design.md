@@ -58,14 +58,14 @@ The question for each dispute is: under the sale, is the cardholder entitled to 
 | 3 | Event CANCELLED | Fan | Accept | 中止 entitles the fan to the money |
 | 4 | The Event's cancellation limit (24 hours after its start) passed and no Ticket of the Event was admitted (`Admission.CountByEvent` = 0), any reason | Unknown | Review | It may be an Organizer that does not scan tickets, or a concert that did not happen and was never cancelled (an Organizer no-show); contesting the latter, even a verified fraud claim, would pay the Organizer for a performance it did not give |
 | 5 | Fraud claim, cardholder verified the payment (3DS `authenticated`, or a wallet cryptogram) | Organizer | Contest | The verification shows the cardholder authorized it. `attempt_acknowledged` means no one authenticated the cardholder, so it is no evidence of authorization, whatever the liability shift |
-| 5 | Fraud claim, not verified | Probably the cardholder | Accept | Nothing shows the cardholder authorized it; keeping the ticket valid would let a buyer with someone else's card enter |
+| 5 | Fraud claim, not verified | Probably the cardholder | Accept | Nothing shows the cardholder authorized it; keeping the ticket valid would let someone who paid with another person's card enter |
 | 6 | Duplicate, not as described, card-network compliance | Unknown | Review | A double tap, a misdescribed sale or a broken network rule is a fact the records do not hold |
 | 7 | Any other reason (not received, not recognized, cancelled, refund not processed, other) | Organizer | Contest | The cardholder authorized it, the Ticket was delivered to their account, and the sale has no returns except 中止 (返品特約). Before the event the service is still available; after it the fan entered or did not come |
 
 **Review** pages an admin (Decision 10), who answers in the Stripe Dashboard. Without an answer by 48 hours before the due time, the dispute is contested.
 
 **Inquiries** follow the same rule:
-- Accepting an inquiry means `Respond` refunds the disputed amount first, at most the fan's remaining claim (`Order.CreateRefund`, written as the Order's own refund, skipped when nothing is left), then records it Accepted. The provider took nothing back, and a full refund resolves an inquiry without a dispute fee.
+- Accepting an inquiry means `Respond` refunds the disputed amount first, at most the fan's remaining claim (`Order.CreateRefund` for the Dispute, key `dispute-refund:<dispute>`, skipped when nothing is left), then records it Accepted. The provider took nothing back, and a full refund resolves an inquiry without a dispute fee.
 - When the refund fails because the inquiry escalated meanwhile (the provider refuses a refund on a charged-back payment), `Respond` syncs the dispute and answers the chargeback.
 - Accepting a chargeback is `POST /v1/disputes/{id}/close`.
 
@@ -247,6 +247,7 @@ Settle has a 14-day deadline, after which it ends with an error and pages an adm
    - **Reversed** (a 中止 refund or full resale already reversed it): nothing is left to take back; `Dispute.MarkSettled` alone, and the fan-paid-twice check below pages an admin when the Order's own refund was made.
 6. **Status moved**: a FailedPrecondition from a compare-and-set means the Settlement's status changed; the workflow reads it again and takes the new branch.
 7. **Fan paid twice**: when the Order's own refund had been made and the Dispute was not an accepted inquiry, the fan got the money twice. Settle still settles the Organizer's share, then pages an admin.
+8. **Rest of a 中止 refund owed**: a partial Dispute settled while the Event is CANCELLED leaves the Order Paid with its Tickets Issued; `Refund` was refused during the dispute, so Settle pages an admin to refund the rest, as the Won branch does.
 
 **`ReversePayout` once per claw-back.** It is keyed by the claw-back it is for: `settlement-reversal:<settlement>:<transfer>` for the Order's refund, as today, and `dispute-reversal:<dispute>:<transfer>` for a partial Dispute. The create request now also writes that key into the reversal's `metadata`. Before creating, it lists the transfer's reversals (`GET /v1/transfers/{id}/reversals`, all pages) and returns the one whose metadata carries the key. A retry days later, after the idempotency key was pruned, then neither errors on a fully reversed transfer nor reverses twice.
 
@@ -258,7 +259,7 @@ Settle has a 14-day deadline, after which it ends with an error and pages an adm
 
 - Disputes no longer pass through `Refund`. Its Dispute branch and the webhook's call to it go away, and the admin `RefundOrder` RPC answers InvalidArgument for `REFUND_REASON_DISPUTE` (the enum value stays, since `Order.refund reason` uses the same values).
 - `Refund` refuses a disputed Order (open or unsettled Dispute) with FailedPrecondition, inquiries included. The dispute's answer decides the money, and for a cancelled Event that answer is to accept, which refunds the fan. For a chargeback, Stripe would answer `charge_disputed` anyway.
-- `Order.CreateRefund` writes the Order's own refund with a metadata marker (`purpose: order_refund`, `order_id`) next to its key `order-refund:<order>`. `Order.GetProviderOwnRefund` finds it by that marker among the Charge's refunds and tells it apart from resale refunds, which carry their listing's marker. Refunds made before this change carry no marker, but no Order has a Dispute yet.
+- `Order.CreateRefund` writes each refund's purpose into its metadata next to its key: the Order's own refund (`order-refund:<order>`, `purpose: order_refund`), a listing's (as today), and an accepted inquiry's (`dispute-refund:<dispute>`, `purpose: dispute_refund`). The keys differ, so an inquiry refund and a later 中止 refund of the rest are separate refunds. `Order.GetProviderOwnRefund` finds the `order_refund` one among the Charge's refunds. Refunds made before this change carry no marker, but no Order has a Dispute yet.
 - The 中止 refund is the price of the Tickets still Issued less the amounts of settled partial Disputes, which the fan already got back, so it never asks for more than is left on the charge.
 - A Cancellation refund can only meet a Held or Reversed Settlement: a CANCELLED Event is never eligible for release, and since Decision 5 it cannot become CANCELLED after its payout is due. A Releasing or Released Settlement there is reported as Internal.
 

@@ -85,7 +85,7 @@ For a Lost or Accepted Dispute, Settle SHALL read the Order with Order.Get, its 
 - **Released**: claw back what is left of each paid split, its amount less the claw-backs already made for partial Disputes, with Settlement.ReversePayout for the Order's refund, then record with the Settlement given as Released and the provider payout reversal IDs.
 - **Reversed**: record without a Settlement.
 
-For a partial Dispute, the Order and its Tickets stay as they are and only the Organizer's share is taken back: from a Held Settlement with Settlement.GiveUpDisputedShare, which also marks the Dispute settled; from a Released one with Settlement.ReversePayout for the Dispute and the share, spread over the paid splits, followed by Dispute.MarkSettled with the reversal IDs; from a Reversed one, which has nothing left to take back, with Dispute.MarkSettled alone. When the compare-and-set of Order.CommitRefund or Settlement.GiveUpDisputedShare fails with FailedPrecondition because the Settlement's status changed, Settle SHALL read it again and settle from its new status. When the Order's own refund had been made and the Dispute was not an accepted inquiry, the fan got the money twice: Settle SHALL still settle the Organizer's share and then end with FailedPrecondition, so an admin is paged.
+For a partial Dispute, the Order and its Tickets stay as they are and only the Organizer's share is taken back: from a Held Settlement with Settlement.GiveUpDisputedShare, which also marks the Dispute settled; from a Released one with Settlement.ReversePayout for the Dispute and the share, spread over the paid splits, followed by Dispute.MarkSettled with the reversal IDs; from a Reversed one, which has nothing left to take back, with Dispute.MarkSettled alone. When the compare-and-set of Order.CommitRefund or Settlement.GiveUpDisputedShare fails with FailedPrecondition because the Settlement's status changed, Settle SHALL read it again and settle from its new status. When the Order's own refund had been made and the Dispute was not an accepted inquiry, the fan got the money twice: Settle SHALL still settle the Organizer's share and then end with FailedPrecondition, so an admin is paged. When a partial Dispute is settled while the Order's Event is CANCELLED and the Order is still Paid, the rest of the 中止 refund is owed: Settle SHALL end with FailedPrecondition, so an admin refunds it.
 
 #### Scenario: Lost before the payout
 - **WHEN** Settle runs with Lost for a whole-order chargeback whose Settlement is Held
@@ -118,6 +118,10 @@ For a partial Dispute, the Order and its Tickets stay as they are and only the O
 #### Scenario: Partial dispute after a cancellation refund
 - **WHEN** Settle runs with Lost for a Dispute of 5000 yen on a 10000 yen Order refunded for a 中止, whose Settlement is Reversed
 - **THEN** the Dispute is settled with no claw-back and Settle fails with FailedPrecondition so an admin is paged
+
+#### Scenario: Partial dispute on a cancelled concert
+- **WHEN** Settle runs with Accepted for a Dispute of 5000 yen on a Paid 10000 yen Order whose Event is CANCELLED
+- **THEN** the Organizer's share is taken back, the Dispute is settled, and Settle fails with FailedPrecondition so an admin refunds the rest
 
 #### Scenario: Whole dispute after a partial claw-back
 - **WHEN** Settle runs with Lost for a whole-order Dispute on an Order whose 9500 yen payout already had 4750 yen clawed back for a partial Dispute

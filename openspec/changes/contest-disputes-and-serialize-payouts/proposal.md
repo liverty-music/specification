@@ -20,7 +20,7 @@ The change follows one goal: each yen ends with the party entitled to it under t
   - **Accept**:
     - a fraud claim with no such verification;
     - a dispute on an Order of a CANCELLED Event that was not yet refunded. That fan is owed the money anyway.
-  - **Review by an admin**: a duplicate, not-as-described or card-network-rule claim, and any claim on a concert at which no Ticket was admitted. The records cannot tell whether the fan was charged twice, got something other than what was sold, or whether the concert took place at all, so it is contested by default only if no admin answers by 48 hours before the deadline.
+  - **Review by an admin**: a duplicate, not-as-described or card-network-rule claim, and any claim on a concert at which no Ticket was admitted by its cancellation limit (24 hours after the start). The records cannot tell whether the fan was charged twice, got something other than what was sold, or whether the concert took place at all, so it is contested by default only if no admin answers by 48 hours before the deadline.
   - **Accept** also covers a chargeback the payment provider accepts no evidence for.
   - **Contest by showing the refund**: an Order whose own refund was made, including one the payment provider made that is not yet recorded.
 
@@ -98,6 +98,8 @@ The change follows one goal: each yen ends with the party entitled to it under t
 - `components/entity/resale-listing/create`: refused, atomically, while the Ticket's Order has an open Dispute.
 - `components/usecase/resale-listing/create`: returns that refusal.
 - `components/usecase/resale-entry/draw`: a listing of a disputed Order is not allocated.
+- `components/entity/order/create-refund`: a refund for an accepted inquiry is its own purpose, apart from the Order's own refund.
+- `components/usecase/notification/send-order-refunded`: the tickets refunded are the ones not resold, and the email says when part was already returned through a dispute.
 - `components/entity/concert/delete`, `components/entity/organizer/delete`: refused while an Order is disputed; the Disputes of removed Orders are removed.
 - `components/entity/card-authorization/create`: asks for 3D Secure whenever the card supports it.
 

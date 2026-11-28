@@ -58,7 +58,7 @@
   - `Ticket.ListByOrder` and `Admission.CountByEvent`;
   - `ResaleListing.ListByOrder` and `ResaleListing.CancelListedByOrder` (which leaves only a listing allocated to a Won entry alone).
 
-  Make `Order.CreateRefund` write the `order_refund` metadata marker. Verify with DB integration tests annotated `@spec` for every scenario of `dispute/get`, `dispute/list-by-order`, `dispute/mark-settled`, `ticket/list-by-order`, `admission/count-by-event`, `resale-listing/list-by-order` and `resale-listing/cancel-listed-by-order`.
+  Make `Order.CreateRefund` take the Dispute purpose (key `dispute-refund:<dispute>`) and write each purpose into the refund's metadata. Verify with the scenarios of "Refund once per order", including Inquiry refund, then the cancellation refund. Verify with DB integration tests annotated `@spec` for every scenario of `dispute/get`, `dispute/list-by-order`, `dispute/mark-settled`, `ticket/list-by-order`, `admission/count-by-event`, `resale-listing/list-by-order` and `resale-listing/cancel-listed-by-order`.
 - [ ] 4.4 Make event removal (`event_removal.go`) refuse while an Order of the events has an open or unsettled Dispute, and delete the Disputes of the Orders it removes. Verify with DB integration tests annotated `@spec` for the modified requirements of `concert/delete` and `organizer/delete` (Concert with a contested dispute, Refunded order with a settled dispute, Settled dispute, Contested dispute, and the unchanged scenarios).
 
 ## 5. backend: Settlement claim and serialized release (components/entity/settlement, claim, unclaim, list-releasing, give-up-disputed-share, mark-released, reverse-payout, components/usecase/settlement/release, release-due-settlements; design Decision 4)
@@ -71,7 +71,7 @@
   - `Settlement.MarkReleased` changed to require Releasing under the claim, and to succeed unchanged when it is already Released under the same claim and payout IDs.
 
   Verify with DB integration tests annotated `@spec` for every scenario of `settlement/claim`, `settlement/unclaim`, `settlement/list-releasing`, `settlement/give-up-disputed-share` and "Release recorded once, from Releasing". Add one test that runs `Claim` and `Order.CommitRefund`, with a Settlement read as Held, concurrently on two connections, and shows exactly one of them succeeds.
-- [ ] 5.3 Change `Settlement.ReversePayout` (design Decision 7):
+- [ ] 5.3 Map Stripe 429 and 503 to Unavailable and 5xx to Internal in the settlement port (`CreatePayout`, `ReversePayout`, `CreateRefund`; design Decision 4), and verify with a unit test per status. Change `Settlement.ReversePayout` (design Decision 7):
   - take the claw-back it is for, which keys it as `settlement-reversal:...` or `dispute-reversal:...`;
   - write that key into the reversal's `metadata` on create;
   - before creating, list the transfer's reversals (all pages) and return the one with that key.
@@ -149,6 +149,8 @@
   - usecase tests annotated `@spec` for "No listing while the payment is disputed" and for "Draw every stock due at a time" (all eight scenarios, including Listing of a disputed order);
   - a two-connection DB test of `ResaleListing.Create` against `Order.CommitRefund` on the same Order that shows no deadlock.
 
+- [ ] 6.8 Make `NotificationUseCase.SendOrderRefunded` count the tickets refunded as the Order's ticket count less its Sold resale listings (`ResaleListing.ListByOrder`), and add the line saying the rest was already returned through the card issuer when the amount is below their price. Use the fan copy tone of the existing refund email, in Japanese and English. Verify with usecase tests annotated `@spec` for every scenario of "The refund notice once per refunded order", including Part returned through a dispute.
+
 ## 7. backend: 3D Secure on every card authorization (components/entity/card-authorization/create; design Decision 6)
 
 - [ ] 7.1 Set `payment_method_options.card.request_three_d_secure = any` in `StripeCardAuthorizationProvider.Create`. Verify with a unit test annotated `@spec` for "Authentication asked for every card" that checks the parameter on every purpose (Checkout, lottery entry, resale entry). Read the frontend's confirm flow for each purpose and confirm that it handles a 3DS challenge with `handleNextAction` or `confirmCardPayment`; a purpose that does not is fixed in this change, with a Playwright run against the deployed app using the 3DS test card `4000002760003184`.
@@ -167,8 +169,8 @@
   - `4000000000001976` (inquiry): recorded as an inquiry. Record whether an escalation arrives as `funds_withdrawn` on the same dispute or as a new dispute (design Risks);
   - `4000000404000079`: two disputes, each handled.
 - [ ] 8.3 Before archiving, edit the main specs' Purposes that this change lists as (Purpose):
-  - `components/entity/settlement`: Releasing in the status row, the release claim row, and the state diagram (`Held --> Releasing --> Released`, `Releasing --> Held`);
-  - `components/entity/order`: the refund reason Dispute and the refund amount of an accepted inquiry;
+  - `components/entity/settlement`: Releasing in the status row, the release claim row, the release time row (empty while Held or Releasing), and the state diagram (`Held --> Releasing --> Released`, `Releasing --> Held`);
+  - `components/entity/order`: the refund reason Dispute, the refund amount of an accepted inquiry, and the provider refund ID row (also present for an accepted inquiry's Dispute refund);
   - `components/usecase/settlement/release-due-settlements`: the sequence diagram claims and starts SettlementUseCase.Release instead of paying;
   - `components/usecase/order/refund`: the sequence diagram drops the Dispute and Released branches;
   - `components/adapter/fan/api/webhook/payment-events`: the Purpose says a dispute is answered, not refunded.

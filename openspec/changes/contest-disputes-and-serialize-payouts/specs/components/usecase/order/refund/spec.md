@@ -96,7 +96,7 @@ Refund SHALL read the Order's Settlement with Settlement.GetByOrderID; every Pai
 
 ### Requirement: Refund recorded
 
-After the money has moved, Refund SHALL record the refund with Order.CommitRefund — the Order Refunded with the reason Cancellation, the price of the Tickets still Issued, its provider refund ID and the current time, all of its Tickets Voided, its Settlement Reversed — and return the Refunded Order. When Order.CommitRefund fails with FailedPrecondition because another refund of the same Order got there first, Refund SHALL return the Order as read again with Order.Get. When a money movement fails, its error SHALL be returned and nothing is recorded; a retried Refund refunds at most once.
+After the money has moved, Refund SHALL record the refund with Order.CommitRefund — the Order Refunded with the reason Cancellation, the amount refunded, its provider refund ID and the current time, all of its Tickets Voided, its Settlement Reversed — and return the Refunded Order. When Order.CommitRefund fails with FailedPrecondition because another refund of the same Order got there first, Refund SHALL return the Order as read again with Order.Get. When a money movement fails, its error SHALL be returned and nothing is recorded; a retried Refund refunds at most once.
 
 #### Scenario: Tickets voided
 - **WHEN** an Order with 2 Issued Tickets is refunded
