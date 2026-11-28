@@ -38,7 +38,7 @@ Not in this change: a listener-count floor (a namesake's MBID comes with the rig
 - `components/entity/artist/update-mbid`: also stores the catalog's name and activity status in the same change, keeps `listening_mbid`, marks the artist Verified, no longer keeps replaced MBIDs.
 - `components/entity/artist/list-similar` (Purpose): looks the artist up by its `listening_mbid`; the Purpose names the listening service.
 - `components/entity/artist/update-fanart`: takes the MBID the images were resolved for and stores nothing once the artist's MBID was replaced, so an image sync that finishes after a correction cannot store the namesake's images.
-- `components/usecase/artist/search` (Purpose, at archive): verifies new matches before registering them; returns only Verified artists whose activity has not ended, also from a reused result.
+- `components/usecase/artist/search` (Purpose, at archive): registers new matches Unverified, without reading the catalog; returns only Verified artists whose activity has not ended, also from a reused result.
 - `components/usecase/artist/list-top` (Purpose, at archive): returns only Verified artists whose activity has not ended.
 - `components/usecase/artist/list-similar` (Purpose, at archive): the same, and the seed is looked up by its `listening_mbid`.
 - `components/usecase/artist/refresh`: no longer runs on registration (VerifyMBID does); the daily run is unchanged.

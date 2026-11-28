@@ -32,7 +32,7 @@ ArtistUseCase.Search SHALL look the query up with Artist.Search, reduce the matc
 - **THEN** Search does not return it
 
 ### Requirement: Search reuses a recent result
-ArtistUseCase.Search SHALL return the earlier result, without consulting the catalog or registering anything, when the same query was answered within the last 6 hours, leaving out the artists no longer offered to fans at the time of this call: it SHALL read the current mbid_status and activity_ended of the earlier result's artists with one Artist.ListByMBIDs call.
+ArtistUseCase.Search SHALL return the earlier result, without consulting the catalog or registering anything, when the same query was answered within the last 6 hours, including the matches it registered Unverified and did not return, and leaving out the artists not offered to fans at the time of this call: it SHALL read the current mbid_status and activity_ended of the earlier result's artists with one Artist.ListByMBIDs call.
 
 #### Scenario: Repeated query
 - **WHEN** Search is called twice with the same query 10 minutes apart
@@ -41,6 +41,10 @@ ArtistUseCase.Search SHALL return the earlier result, without consulting the cat
 #### Scenario: Result older than 6 hours
 - **WHEN** Search is called with the same query more than 6 hours after the last such call
 - **THEN** the catalog is consulted again
+
+#### Scenario: Match registered by the earlier call and Verified since
+- **WHEN** Search registered a new match Unverified 1 hour ago, and its announcement has made it Verified since
+- **THEN** a second call with the same query returns it, without a catalog lookup
 
 #### Scenario: Artist marked ended after the result was reused
 - **WHEN** Search answered a query 1 hour ago, and an artist in that answer has had activity_ended true since then
