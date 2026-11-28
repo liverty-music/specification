@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.official_site.v1 provides the admin-only
+// OfficialSiteService for setting and correcting the official sites of
+// artists. It is served by the admin Connect server behind the admin-role
+// gate.
+package liverty_music.rpc.admin.official_site.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/entity.proto";
+
+// OfficialSiteService creates and corrects an artist's official site: the
+// official website or social media channel the artist is reached at. The
+// concert search reads it as the artist's own page, so only the admin
+// organization may set it.
+//
+// All RPCs are authorized only for the admin organization; callers outside it
+// are rejected with PERMISSION_DENIED at the admin server boundary.
+service OfficialSiteService {
+  // Create stores an official site for an artist that has none.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The artist ID is missing or not a UUID, or the URL is
+  //   not a valid URI of 1 to 2048 characters.
+  // - ALREADY_EXISTS: The artist already has an official site; use Update.
+  // - FAILED_PRECONDITION: The specified artist does not exist.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Update replaces the URL of an artist's official site, keeping the site's
+  // id. The stored site is unchanged on failure.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The artist ID is missing or not a UUID, or the URL is
+  //   not a valid URI of 1 to 2048 characters.
+  // - NOT_FOUND: The artist has no official site, or does not exist.
+  rpc Update(UpdateRequest) returns (UpdateResponse);
+}
+
+// CreateRequest specifies the artist and the URL of its new official site.
+message CreateRequest {
+  // Required. The unique identifier of the artist the official site belongs to.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The URL of the official site.
+  entity.v1.Url url = 2 [(buf.validate.field).required = true];
+}
+
+// CreateResponse is returned once the official site is stored.
+message CreateResponse {}
+
+// UpdateRequest specifies the artist whose official site is corrected and the
+// URL that replaces the stored one.
+message UpdateRequest {
+  // Required. The unique identifier of the artist the official site belongs to.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The URL that replaces the stored one.
+  entity.v1.Url url = 2 [(buf.validate.field).required = true];
+}
+
+// UpdateResponse is returned once the official site is replaced.
+message UpdateResponse {}
