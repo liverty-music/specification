@@ -33,13 +33,13 @@ Not in this change: a listener-count floor (a namesake's MBID comes with the rig
 - `components/entity/artist` (Purpose): attributes `listening_mbid` and `mbid_status` replace `other_mbids`; requirements "One MBID names one artist" and "A new artist starts without images" change.
 - `components/entity/artist/create`: a registration matches `mbid` or `listening_mbid`, sets `listening_mbid`, and takes the artist's `mbid_status`.
 - `components/entity/artist/list-by-mbids`: matches `mbid` or `listening_mbid`.
-- `components/entity/artist/update-mbid`: keeps `listening_mbid`, marks the artist Verified, no longer keeps replaced MBIDs.
+- `components/entity/artist/update-mbid`: also stores the catalog's name and activity status in the same change, keeps `listening_mbid`, marks the artist Verified, no longer keeps replaced MBIDs.
 - `components/entity/artist/list-similar` (Purpose): looks the artist up by its `listening_mbid`; the Purpose names the listening service.
 - `components/usecase/artist/search` (Purpose, at archive): verifies new matches before registering them; returns only Verified artists whose activity has not ended, also from a reused result.
 - `components/usecase/artist/list-top` (Purpose, at archive): returns only Verified artists whose activity has not ended.
 - `components/usecase/artist/list-similar` (Purpose, at archive): the same, and the seed is looked up by its `listening_mbid`.
 - `components/usecase/artist/refresh`: no longer runs on registration (VerifyMBID does); the daily run is unchanged.
-- `components/usecase/artist/correct-mbid`: marks the artist Verified; reached from the admin console.
+- `components/usecase/artist/correct-mbid` (Purpose, at archive): reads the catalog first and stores the MBID, name and activity status with one write that marks the artist Verified; reached from the admin console.
 - `components/usecase/artist/create`: an artist an admin registers with its MBID is Verified.
 - `components/adapter/admin/api/rpc/artist`: ListByMbidStatus, ListNamesakes and CorrectMbid.
 - `stories/discover-artists` (Purpose): only Verified artists whose activity has not ended are offered, by every discovery path; a discovered artist's MBID is verified.

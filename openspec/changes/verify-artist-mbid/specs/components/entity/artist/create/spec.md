@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Create registers each MBID once
-Create SHALL take artists each with a name, a listening MBID, an MBID (the listening MBID unless a verification corrected it) and an mbid_status, register every given artist none of whose two MBIDs is the mbid or listening_mbid of a registered artist, and SHALL return, for each given artist in input order, the registered artist found under either of its MBIDs. An artist found under an MBID SHALL be returned as registered, unchanged, and SHALL NOT be registered a second time. A new artist SHALL keep the id it was given, or get a fresh id when it has none, and SHALL be registered with the given listening MBID as its listening_mbid, the given MBID as its mbid and the given mbid_status.
+Create SHALL take artists each with a name, a listening MBID, an MBID (the listening MBID unless a verification corrected it), an mbid_status and, for a Verified artist, its activity status, register every given artist none of whose two MBIDs is the mbid or listening_mbid of a registered artist, and SHALL return, for each given artist in input order, the registered artist found under either of its MBIDs. An artist found under an MBID SHALL be returned as registered, unchanged, and SHALL NOT be registered a second time. A new artist SHALL keep the id it was given, or get a fresh id when it has none, and SHALL be registered with the given listening MBID as its listening_mbid, the given MBID as its mbid, the given mbid_status and the given activity status.
 
 #### Scenario: New MBID
 - **WHEN** Create is called with an artist whose MBID is not registered

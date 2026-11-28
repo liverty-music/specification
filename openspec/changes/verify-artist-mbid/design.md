@@ -39,7 +39,7 @@ Uniqueness: an MBID is the `mbid` or `listening_mbid` of at most one artist (one
 | writer | from | to |
 |---|---|---|
 | `Artist.Create` | (new) | the status it is given; `ListTop`/`ListSimilar` give Unverified, `Search` gives the verified result, `ArtistUseCase.Create` gives Verified |
-| `ArtistUseCase.VerifyMBID` via `UpdateMBID` | Unverified | Verified |
+| `ArtistUseCase.VerifyMBID` via `UpdateMBID` (with the catalog's name and activity status, in the same write) | Unverified | Verified |
 | `ArtistUseCase.VerifyMBID` via `MarkMBIDAmbiguous` | Unverified | Ambiguous |
 | `ArtistUseCase.CorrectMBID` via `UpdateMBID` | any | Verified |
 
@@ -55,7 +55,7 @@ For an artist with name N and MBID M (both from Last.fm):
 2. Candidates other than M = 0 → Verified with M. (M not among the results is treated the same: the search index lags, and M is what Last.fm vouches for.)
 3. Otherwise, read each candidate's official homepage (`Artist.ListOfficialSiteRelations` + `Artist.SelectOfficialSite`, M included). Exactly one candidate has one → `UpdateMBID` to it (it may be M) and Verified. Zero or more than one → `MarkMBIDAmbiguous`, and log at ERROR `artist MBID is ambiguous` with the artist id, name and candidate MBIDs.
 
-Then, for a Verified artist, adopt the name and activity status as `Refresh` does (`Artist.GetArtist` on the final MBID). For a corrected artist `UpdateMBID` has already cleared images, official site and check time (correct-artist-mbid D3).
+Then, for a Verified result, read the catalog's name and activity status of the final MBID (`Artist.GetArtist`) and store MBID, name, `activity_ended` and Verified with one `UpdateMBID` (one `UPDATE`, inside the advisory-lock transaction of D1); for a corrected artist the same statement clears images, official site and check time (correct-artist-mbid D3). Every catalog read happens before the write, so a failed read leaves the artist Unverified and the retry or the daily run decides again. Writing the status first and the name afterwards was rejected: a failure between them leaves a Verified artist with the listening service's name, and the retry skips it because it is no longer Unverified. `Search` does the same reads before `Artist.Create` and registers the match with the catalog's name and activity status.
 
 The official-homepage rule picked the intended artist in all 7 known wrong cases of the correct-artist-mbid audit; the rule was derived from the same 7 cases, so it is kept narrow (exactly one candidate) and every other case goes to a person.
 

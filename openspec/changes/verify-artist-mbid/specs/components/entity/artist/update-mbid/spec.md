@@ -5,12 +5,19 @@
 
 ## MODIFIED Requirements
 
+### Requirement: UpdateMBID clears what came from the replaced MBID
+When UpdateMBID changes the MBID, it SHALL in the same change remove the artist's images (fanart) and fanart_sync_time, remove its official_site_check_time and remove its official site, so that none of them still describes the person of the replaced MBID; activity_ended takes the given status.
+
+#### Scenario: Namesake's details removed
+- **WHEN** an artist with images, an official site, an official_site_check_time and activity_ended true has its MBID replaced, with activity status false given
+- **THEN** it has no images, no fanart_sync_time, no official site and no official_site_check_time, and activity_ended is false
+
 ### Requirement: UpdateMBID replaces the MBID and marks it verified
-UpdateMBID SHALL set the mbid of the artist with the given id to the given MBID and its mbid_status to Verified, and SHALL keep its listening_mbid. It SHALL fail with NotFound when no artist has the id, with InvalidArgument when the MBID is not a UUID of 36 characters, and with AlreadyExists, changing nothing, when another artist has the MBID as its mbid or its listening_mbid. Given the artist's own mbid, it SHALL set mbid_status to Verified and change nothing else. It SHALL announce nothing.
+UpdateMBID SHALL take an artist id, an MBID and the music catalog's name and activity status for that MBID, and set, in one change, the artist's mbid to the MBID, its name to the given name, its activity_ended to the given status and its mbid_status to Verified, keeping its listening_mbid. All of them are stored or none. It SHALL fail with NotFound when no artist has the id, with InvalidArgument when the MBID is not a UUID of 36 characters, and with AlreadyExists, changing nothing, when another artist has the MBID as its mbid or its listening_mbid. Given the artist's own mbid, it SHALL set the name, activity_ended and mbid_status and clear nothing. It SHALL announce nothing.
 
 #### Scenario: New MBID
 - **WHEN** UpdateMBID is called for an Unverified artist with mbid A and listening_mbid A, with MBID B
-- **THEN** the artist's mbid is B, its listening_mbid is A and its mbid_status is Verified
+- **THEN** the artist's mbid is B, its listening_mbid is A, its name and activity_ended are the given ones, and its mbid_status is Verified
 
 #### Scenario: Second correction
 - **WHEN** the artist's mbid is B and its listening_mbid is A, and UpdateMBID is called with C
@@ -22,7 +29,7 @@ UpdateMBID SHALL set the mbid of the artist with the given id to the given MBID 
 
 #### Scenario: Own MBID
 - **WHEN** UpdateMBID is called for an Ambiguous artist with its current mbid
-- **THEN** its mbid_status becomes Verified and nothing else changes, including the images, the official site and activity_ended
+- **THEN** its mbid_status becomes Verified, its name and activity_ended are the given ones, and its images and official site are kept
 
 #### Scenario: MBID of another artist
 - **WHEN** another artist has the given MBID as its mbid or its listening_mbid

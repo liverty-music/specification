@@ -20,10 +20,8 @@ alt a namesake other than its MBID
   end
 end
 alt no other namesake, or exactly one namesake with an official site
-  UC->>Artist: UpdateMBID "that MBID, Verified"
-  UC->>Artist: GetArtist
-  UC->>Artist: UpdateName
-  UC->>Artist: UpdateActivityEnded
+  UC->>Artist: GetArtist "name and activity status of that MBID"
+  UC->>Artist: UpdateMBID "that MBID, name, activity status, Verified"
 else otherwise
   UC->>Artist: MarkMBIDAmbiguous
   Note over UC: log an error naming the artist and its namesakes
@@ -37,7 +35,7 @@ ArtistUseCase.VerifyMBID SHALL take an artist id, get the artist with Artist.Get
 - when no namesake has an MBID other than the artist's mbid, the artist's mbid is verified;
 - otherwise it SHALL read the official homepage of every namesake and of the artist's mbid with Artist.ListOfficialSiteRelations and Artist.SelectOfficialSite; when exactly one of them has an official homepage, that one's MBID is verified (it may be the artist's own mbid);
 - otherwise the MBID is ambiguous.
-A verified MBID SHALL be stored with Artist.UpdateMBID, which marks the artist Verified, and the catalog's name and activity status SHALL then be adopted for that MBID as ArtistUseCase.Refresh adopts them. An ambiguous MBID SHALL be recorded with Artist.MarkMBIDAmbiguous, leaving the artist's mbid, and an error SHALL be logged naming the artist's id, its name and the namesakes' MBIDs, so the owner is alerted.
+For a verified MBID it SHALL read the catalog's name and activity status with Artist.GetArtist and then store the MBID, that name (when not empty; otherwise the current name) and that status with one Artist.UpdateMBID, which marks the artist Verified; nothing is stored before every catalog read has succeeded. An ambiguous MBID SHALL be recorded with Artist.MarkMBIDAmbiguous, leaving the artist's mbid, and an error SHALL be logged naming the artist's id, its name and the namesakes' MBIDs, so the owner is alerted.
 
 #### Scenario: No namesake
 - **WHEN** an Unverified artist's name has no catalog artist other than its own mbid
@@ -64,11 +62,15 @@ A verified MBID SHALL be stored with Artist.UpdateMBID, which marks the artist V
 - **THEN** it looks nothing up and changes nothing
 
 ### Requirement: VerifyMBID reports failures
-ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations or Artist.GetArtist other than NotFound, leaving the artist Unverified when nothing was stored yet. An MBID the catalog no longer knows when its name and activity status are read SHALL be handled as ArtistUseCase.Refresh handles it.
+ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations, Artist.GetArtist or Artist.UpdateMBID, leaving the artist Unverified and unchanged, so a retry or the next daily run verifies it again. When Artist.GetArtist fails with NotFound for the MBID to verify, the MBID is ambiguous.
 
 #### Scenario: Catalog unavailable
 - **WHEN** Artist.ListNamesakes fails with Unavailable
 - **THEN** VerifyMBID fails with Unavailable and the artist stays Unverified
+
+#### Scenario: Catalog unavailable when reading the name
+- **WHEN** the MBID is decided and Artist.GetArtist then fails with Unavailable
+- **THEN** VerifyMBID fails with Unavailable, nothing is stored, and the artist stays Unverified for the retry
 
 #### Scenario: Unknown artist
 - **WHEN** no artist has the id

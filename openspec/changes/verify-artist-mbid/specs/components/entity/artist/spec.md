@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: A new artist starts without images
-A new Artist SHALL get a fresh unique id and SHALL start with no fanart, no fanart_sync_time, no official_site_check_time and activity_ended false. Its listening_mbid SHALL be the MBID the listening service returned for it, and its mbid_status SHALL be Unverified unless it is created with its MBID already verified or found ambiguous.
+A new Artist SHALL get a fresh unique id and SHALL start with no fanart, no fanart_sync_time and no official_site_check_time. Its listening_mbid SHALL be the MBID the listening service returned for it, and its mbid_status SHALL be Unverified unless it is created with its MBID already verified or found ambiguous. Its activity_ended SHALL be false unless it is created Verified with the activity status the music catalog gives for its mbid.
 
 #### Scenario: New artist
 - **WHEN** an artist is created from a name and an MBID
@@ -12,8 +12,8 @@ A new Artist SHALL get a fresh unique id and SHALL start with no fanart, no fana
 - **THEN** their ids differ
 
 #### Scenario: New artist created verified
-- **WHEN** an artist is created from a name, listening MBID A, MBID B and mbid_status Verified
-- **THEN** its listening_mbid is A, its mbid is B and its mbid_status is Verified
+- **WHEN** an artist is created from a name, listening MBID A, MBID B, mbid_status Verified and activity ended true
+- **THEN** its listening_mbid is A, its mbid is B, its mbid_status is Verified and its activity_ended is true
 
 ### Requirement: One MBID names one artist
 An MBID SHALL be the mbid or the listening_mbid of at most one Artist; one Artist may hold the same MBID as both. An Artist whose mbid was corrected keeps its listening_mbid, so the listening service's results still find the same Artist, with the same id.
