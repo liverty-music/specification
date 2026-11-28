@@ -1,0 +1,98 @@
+## Purpose
+
+ArtistUseCase.VerifyMBID checks that an Unverified artist's MBID names that artist and not a namesake in the music catalog: it marks the artist Verified, corrects it to the namesake that is clearly the artist, or marks it Ambiguous and alerts the owner so an admin decides.
+
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as ArtistUseCase.VerifyMBID
+participant Artist
+Artist-->>UC: Created
+UC->>Artist: Get
+break mbid_status is not Unverified
+  Note over UC: change nothing
+end
+UC->>Artist: ListNamesakes "the artist's name"
+alt a namesake other than its MBID
+  loop each namesake, its MBID included
+    UC->>Artist: ListOfficialSiteRelations
+    UC->>Artist: SelectOfficialSite
+  end
+end
+alt no other namesake, or exactly one namesake with an official site
+  UC->>Artist: UpdateMBID "that MBID, Verified"
+  UC->>Artist: GetArtist
+  UC->>Artist: UpdateName
+  UC->>Artist: UpdateActivityEnded
+else otherwise
+  UC->>Artist: MarkMBIDAmbiguous
+  Note over UC: log an error naming the artist and its namesakes
+end
+```
+
+## ADDED Requirements
+
+### Requirement: VerifyMBID decides the artist's MBID from its namesakes
+ArtistUseCase.VerifyMBID SHALL take an artist id, get the artist with Artist.Get and, when its mbid_status is not Unverified, change nothing and succeed. Otherwise it SHALL look the artist's name up with Artist.ListNamesakes and decide:
+- when no namesake has an MBID other than the artist's mbid, the artist's mbid is verified;
+- otherwise it SHALL read the official homepage of every namesake and of the artist's mbid with Artist.ListOfficialSiteRelations and Artist.SelectOfficialSite; when exactly one of them has an official homepage, that one's MBID is verified (it may be the artist's own mbid);
+- otherwise the MBID is ambiguous.
+A verified MBID SHALL be stored with Artist.UpdateMBID, which marks the artist Verified, and the catalog's name and activity status SHALL then be adopted for that MBID as ArtistUseCase.Refresh adopts them. An ambiguous MBID SHALL be recorded with Artist.MarkMBIDAmbiguous, leaving the artist's mbid, and an error SHALL be logged naming the artist's id, its name and the namesakes' MBIDs, so the owner is alerted.
+
+#### Scenario: No namesake
+- **WHEN** an Unverified artist's name has no catalog artist other than its own mbid
+- **THEN** the artist becomes Verified with its mbid, and the catalog's name and activity status are adopted
+
+#### Scenario: Its own MBID is the only one with an official site
+- **WHEN** the catalog has two artists of the name and only the artist's own mbid has an official homepage
+- **THEN** the artist becomes Verified with its own mbid
+
+#### Scenario: A namesake is the only one with an official site
+- **WHEN** the artist's mbid names a UK band without an official homepage and the only other artist of the name, a Japanese band, has one
+- **THEN** the artist's mbid becomes the Japanese band's MBID, it becomes Verified, its listening_mbid is unchanged, and the Japanese band's name and activity status are adopted
+
+#### Scenario: No namesake has an official site
+- **WHEN** the catalog has three artists of the name and none has an official homepage
+- **THEN** the artist becomes Ambiguous with its mbid unchanged, and an error naming the artist and the three MBIDs is logged
+
+#### Scenario: Several have an official site
+- **WHEN** two of the artists of the name have an official homepage
+- **THEN** the artist becomes Ambiguous and an error is logged
+
+#### Scenario: Already verified
+- **WHEN** VerifyMBID is called for an artist whose mbid_status is Verified or Ambiguous
+- **THEN** it looks nothing up and changes nothing
+
+### Requirement: VerifyMBID reports failures
+ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations or Artist.GetArtist other than NotFound, leaving the artist Unverified when nothing was stored yet. An MBID the catalog no longer knows when its name and activity status are read SHALL be handled as ArtistUseCase.Refresh handles it.
+
+#### Scenario: Catalog unavailable
+- **WHEN** Artist.ListNamesakes fails with Unavailable
+- **THEN** VerifyMBID fails with Unavailable and the artist stays Unverified
+
+#### Scenario: Unknown artist
+- **WHEN** no artist has the id
+- **THEN** VerifyMBID fails with NotFound
+
+#### Scenario: Corrected MBID already registered
+- **WHEN** the namesake to verify is the mbid or listening_mbid of another artist
+- **THEN** Artist.UpdateMBID fails with AlreadyExists, VerifyMBID records the MBID as ambiguous and logs an error naming both artists
+
+### Requirement: VerifyMBID runs when an artist is registered and daily for unverified artists
+When an artist is announced as created (Artist.Created), VerifyMBID SHALL run for it; when the run fails, it SHALL be retried up to 3 more times. An ambiguous result is not a failure and is not retried. Once a day at 05:00 Japan time, before the daily refresh of ArtistUseCase.Refresh, VerifyMBID SHALL run, one artist at a time, for every artist that Artist.ListByMBIDStatus returns as Unverified, oldest first; the run SHALL stop after 3 consecutive failed artists and when it is asked to shut down, and an artist that failed stays Unverified for the next day.
+
+#### Scenario: Artist announced
+- **WHEN** an artist is announced as created with mbid_status Unverified
+- **THEN** VerifyMBID runs for it
+
+#### Scenario: Artist announced already verified
+- **WHEN** an artist registered by ArtistUseCase.Search with mbid_status Verified is announced as created
+- **THEN** VerifyMBID runs for it and changes nothing
+
+#### Scenario: Announcement retries exhausted
+- **WHEN** VerifyMBID failed for an announced artist on every retry
+- **THEN** the artist stays Unverified and the next daily run verifies it
+
+#### Scenario: Consecutive failures in the daily run
+- **WHEN** the catalog is unreachable for 3 Unverified artists in a row
+- **THEN** the daily run stops verifying and those artists stay Unverified

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan finds artists to follow by searching by name, browsing popular charts or exploring artists similar to one they know; every artist found is a registered artist that soon shows the catalog's canonical name and its community images, and charts and similar artists suggest only artists whose activity has not ended.
+A fan finds artists to follow by searching by name, browsing popular charts or exploring artists similar to one they know; every artist found is a registered artist whose MBID was checked against its namesakes in the music catalog, that shows the catalog's canonical name and soon its community images, and discovery offers only verified artists whose activity has not ended. An artist whose MBID cannot be decided automatically reaches an admin, who chooses it on the admin console.
 
 ```mermaid
 eventmodeling
@@ -13,12 +13,17 @@ rf 04 cmd ArtistUseCase_ListSimilar ->> 01
 rf 05 ui Admin_Organizers
 tf 06 cmd ArtistUseCase_Create
 rf 07 evt Artist_Created ->> 02 ->> 03 ->> 04 ->> 06
-tf 08 cmd ArtistUseCase_Refresh
+tf 08 cmd ArtistUseCase_VerifyMBID
 rf 09 cmd ArtistImageSyncUseCase_SyncArtistImage ->> 07
 rf 10 pcr Schedule_DailyArtistRefresh
-tf 11 cmd ArtistUseCase_Refresh
-rf 12 pcr Schedule_DailyArtistImageSync
-tf 13 cmd ArtistImageSyncUseCase_SyncArtistImage
+tf 11 cmd ArtistUseCase_VerifyMBID
+tf 12 cmd ArtistUseCase_Refresh
+rf 13 pcr Schedule_DailyArtistImageSync
+tf 14 cmd ArtistImageSyncUseCase_SyncArtistImage
+rf 15 ui Admin_ArtistMbids
+tf 16 rmo ArtistUseCase_ListByMBIDStatus
+tf 17 rmo ArtistUseCase_ListNamesakes
+tf 18 cmd ArtistUseCase_CorrectMBID
 ```
 
 ## Requirements
