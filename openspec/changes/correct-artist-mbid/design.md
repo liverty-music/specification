@@ -21,7 +21,7 @@ The catalog cannot tell which same-named person a fan means, so the right MBID i
 
 ### D1. `artists.other_mbids TEXT[]`, not a separate table
 
-`other_mbids TEXT[] NOT NULL DEFAULT '{}'` with a GIN index and a `COMMENT ON COLUMN`, as `events.other_listed_venue_names` does for venue names. Lookups use `a.other_mbids @> ARRAY[t.mbid]`, so the index serves them. `entity.Artist` gains `OtherMBIDs []string`. Alternative: an `artist_other_mbids(mbid PRIMARY KEY, artist_id)` table, which makes cross-artist uniqueness a database rule but adds a join to every artist query and a second entity; rejected because corrections are rare and `UpdateMBID` checks uniqueness under the lock of D3.
+`other_mbids TEXT[] NOT NULL DEFAULT '{}'` with a `COMMENT ON COLUMN`, as `events.other_listed_venue_names` does for venue names, and no index: lookups use `a.other_mbids @> ARRAY[t.mbid]` over a table of a few thousand artists. `entity.Artist` gains `OtherMBIDs []string`. Alternative: an `artist_other_mbids(mbid PRIMARY KEY, artist_id)` table, which makes cross-artist uniqueness a database rule but adds a join to every artist query and a second entity; rejected because corrections are rare and `UpdateMBID` checks uniqueness under the lock of D3.
 
 ### D2. Resolution by any MBID the artist has had
 
@@ -60,7 +60,7 @@ For every registered artist, read the catalog record of its MBID (name, type, co
 
 ## Migration Plan
 
-1. The Atlas migration adds the column and index (backward compatible; the column defaults to empty).
+1. The Atlas migration adds the column (backward compatible; the column defaults to empty).
 2. Release the backend, check read-only that the migration is `Ready` and the rollout finished.
 3. Run the audit (D6), then correct the wrong artists with the owner's approval, and check read-only that each corrected artist has the new MBID and name, that its replaced MBID is in `other_mbids` and that no second row exists under it.
 Rollback: the column is additive; the command is not run until the owner asks.

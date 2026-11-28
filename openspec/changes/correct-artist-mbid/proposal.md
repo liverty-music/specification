@@ -22,7 +22,7 @@ For a shared name, the music catalog lookup used by artist search can return a n
 - `components/entity/artist` (Purpose): the attribute table gains `other_mbids`; a delta adds the rule that one MBID names one artist.
 - `components/entity/artist/list-by-mbids`: finds an artist under any MBID it has had, once per artist.
 - `components/entity/artist/create`: an MBID an artist was corrected from counts as registered.
-- `components/usecase/artist/search`: returns one registered artist per match, finding the corrected artist under a replaced MBID. It relies on the modified `Artist.ListByMBIDs` and `Artist.Create`; `Artist.FilterArtistsByMBID` is unchanged.
+- `components/usecase/artist/search`, `components/usecase/artist/list-similar`, `components/usecase/artist/list-top`: return one registered artist per match, entry or chart item, finding the corrected artist under a replaced MBID. They rely on the modified `Artist.ListByMBIDs` and `Artist.Create`; `Artist.FilterArtistsByMBID` is unchanged.
 
 ## Impact
 

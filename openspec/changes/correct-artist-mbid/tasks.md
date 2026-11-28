@@ -1,6 +1,6 @@
 ## 1. backend: schema and entity (components/entity/artist, design D1)
 
-- [ ] 1.1 Add `artists.other_mbids TEXT[] NOT NULL DEFAULT '{}'` with a GIN index and a `COMMENT ON COLUMN` to `schema.sql`, generate the Atlas migration, and add `OtherMBIDs` to `entity.Artist` and `scanArtist`; verify the migration test applies it and `make lint-schema` passes
+- [ ] 1.1 Add `artists.other_mbids TEXT[] NOT NULL DEFAULT '{}'` with a `COMMENT ON COLUMN` to `schema.sql`, generate the Atlas migration, and add `OtherMBIDs` to `entity.Artist` and `scanArtist`; verify the migration test applies it and `make lint-schema` passes
 
 ## 2. backend: entity operations (components/entity/artist/update-mbid, list-by-mbids, create; design D2, D3)
 
@@ -10,7 +10,7 @@
 
 ## 3. backend: usecases (components/usecase/artist/correct-mbid, search; design D2, D4)
 
-- [ ] 3.1 Resolve a match under an other MBID in `persistArtists` and list an artist once; verify one unit test per MODIFIED scenario of `components/usecase/artist/search` with the operations mocked, and one for `ListSimilar` finding a similar artist under a replaced MBID
+- [ ] 3.1 Resolve a match under an other MBID in `persistArtists` and list an artist once; verify one unit test per MODIFIED scenario of `components/usecase/artist/search`, `list-similar` and `list-top` with the operations mocked
 - [ ] 3.2 Implement `ArtistUseCase.CorrectMBID` as in design D4; verify one unit test per scenario of `components/usecase/artist/correct-mbid` with the operations mocked
 
 ## 4. backend: admin command (design D5)
