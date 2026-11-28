@@ -12,7 +12,6 @@ participant Follow
 participant ConcertSearch
 participant Concert
 participant DiscoveredSeries
-participant RejectedConcert
 Note over UC: also run by any caller and by SearchNewConcertsOnFirstFollow
 Note over UC: a schedule runs it every day at 18.00 JST
 Follow-->>UC: ListAll (each followed Artist, one at a time)
@@ -34,8 +33,6 @@ UC->>Concert: Search "from the current date"
 UC->>Concert: ListUpcomingByArtist
 UC->>DiscoveredSeries: FilterNewSeries
 Note over UC: drop events pending review as a ConcertCandidate
-UC->>RejectedConcert: ListByArtist
-Note over UC: drop events with the same listing as a RejectedConcert
 alt at least one event remains
   Note over UC: start ConcertCreationUseCase.CreateFromDiscovered once
   UC->>ConcertSearch: MarkFound

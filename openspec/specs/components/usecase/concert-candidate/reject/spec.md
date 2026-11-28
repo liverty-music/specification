@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Reject lets an admin drop a ConcertCandidate with a reason and record it in the RejectedConcert. Discovery then leaves out the same listing; a corrected listing is handled like any new discovery.
+Reject lets an admin drop a ConcertCandidate with a reason and record it in the analysis-only RejectedConcert. The rejection is not permanent: a later discovery of the same concert is handled like any new discovery.
 
 ## Requirements
 

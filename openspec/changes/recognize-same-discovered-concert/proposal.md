@@ -36,12 +36,11 @@ Concert discovery does not recognize that two found events are one concert, or t
 - `components/entity/event` (Purpose and a new requirement): new attribute "other listed venue names"; an Event is listed under a name when its listed venue name or one of its other listed venue names is that name.
 - `components/entity/concert/create`: fails when an Event with a publish state holds a slot, so an Organizer who publishes while a discovery or an approval is storing a Concert keeps the Event as published.
 - `components/entity/series/delete-orphaned` (and Purpose at archive): removes empty discovered Series by age, keeping one with a TicketSale or being written.
-- `components/usecase/concert-candidate/reject` (and Purpose diagram at archive): no longer removes the emptied Series.
-- `components/entity/rejected-concert` (and Purpose): "The log never suppresses" becomes "Same listing", the rule discovery uses to leave out a settled listing.
-- `components/usecase/concert/search-new-concerts` (and Purpose diagram): leaves out the same listing as one of the Artist's RejectedConcert entries.
+- `components/usecase/concert-candidate/reject` (and Purpose at archive: its diagram, and that the rejection keeps the same listing out of discovery): no longer removes the emptied Series.
+- `components/entity/rejected-concert` (and Purpose at archive: the log also keeps discovery from staging the same listing): "The log never suppresses" becomes "Same listing", the rule discovery uses to leave out a settled listing.
+- `components/usecase/concert/search-new-concerts` (and Purpose diagram at archive: a `RejectedConcert.ListByArtist` call and the drop after the pending one): leaves out the same listing as one of the Artist's RejectedConcert entries.
 - `components/entity/venue`: "会場未定", "会場後日発表予定" and similar names are missing names.
-- `stories/review-concert-candidates` (and Purpose): "Rejection is not permanent" becomes "Only a corrected listing is reviewed again".
-- `components/usecase/concert-candidate/reject`: Purpose only (the rejection now keeps the same listing out of discovery).
+- `stories/review-concert-candidates` (and Purpose at archive: a rejected concert is reviewed again only with a corrected listing): "Rejection is not permanent" becomes "Only a corrected listing is reviewed again".
 - Relied on and unchanged: ConcertCandidate.Upsert, Series.Create, Venue lookups, RejectedConcert.Append (keep existing still records the candidate, which now also keeps that listing out of discovery).
 
 ## Impact

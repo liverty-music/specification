@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An admin reviews concerts held back from automatic publishing, publishing the good ones, reconciling duplicates, and dropping the wrong ones, while a rejected concert is reviewed again only when it is found with a corrected listing.
+An admin reviews concerts held back from automatic publishing, publishing the good ones, reconciling duplicates, and dropping the wrong ones, while rejected concerts stay eligible for later discovery.
 
 ```mermaid
 eventmodeling

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A RejectedConcert entry is an append-only record of a concert candidate an admin dropped, kept to analyse the quality of concert discovery and so that discovery does not stage the same listing again; a corrected listing is discovered again.
+A RejectedConcert entry is an append-only record of a concert candidate an admin dropped, kept only to analyse the quality of concert discovery. It never influences discovery: a rejected concert can be discovered again.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
