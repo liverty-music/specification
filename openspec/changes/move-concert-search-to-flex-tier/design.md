@@ -118,7 +118,7 @@ That gap is accepted rather than adding a transactional start.
 
    No attempt starts at or past 20 h after the search time. An attempt that gets its slot only after 20 h skips the call (step 2) and ends here as failed, with the kind of the previous attempt's error, which the input carries.
 
-   **When the signal is sent.** Only when some attempt of the search called Concert.Search, that is, when this attempt called it or the attempt number is above 1. Attempt 1 that gets its slot after 20 h records failed without a signal, as the spec's "Each search reports its outcome" requires.
+   **When the signal is sent.** Only when some attempt of the search called Concert.Search, that is, when this attempt called it or the attempt number is above 1, and never on the two step 1 paths that skip `record-end` (a replaced search, a failed check read). Attempt 1 that gets its slot after 20 h records failed without a signal, as the spec's "Each search reports its outcome" requires.
 
 `record-end` writes the status first. A transient failure of that write is the step's error, so the platform tries it again until it succeeds; the metric and the signal follow only then. A ConcertSearch left pending would keep the Artist from being searched for 20 h. A failed Search call or read of a run that is itself being cancelled is returned as the step's error, never recorded as an outcome.
 
@@ -172,7 +172,7 @@ Attempt numbers count from 1, and every attempt reports its call (Concert.Search
 ### D7. Reporting
 
 - **Service tier on each generation.** `posthog.LLMGeneration` gets `ServiceTier`, reported as `service_tier`. Cost from PostHog's own price table reads as standard pricing; the billing export stays the source of truth for money. Sending our own cost figures was rejected: it would put a price table in code that goes stale on each repricing.
-- **Every search that reached the external search ends with one signal.** `concert.search.completed` is sent once per search, from the `record-end` of its last attempt, including a search that gave up at 20 h (outcome failed, error kind unavailable). A search that never called Concert.Search sends none, as a skipped search does today: one ended by the `check` step on attempt 1, or one whose attempt 1 got its slot only after 20 h (D2 step 5).
+- **A search that called Concert.Search sends at most one signal.** `concert.search.completed` is sent from the `record-end` of the search's last attempt, including a search that gave up at 20 h (outcome failed, error kind unavailable). A search that called Concert.Search sends none when a later attempt finds it replaced, or when a `check` read fails permanently, because neither reaches `record-end` (D2 step 1). A search that never called Concert.Search sends none, as a skipped search does today: one ended by the `check` step on attempt 1, or one whose attempt 1 got its slot only after 20 h (D2 step 5).
 
 ### D8. Model and tier pins follow the process that calls Gemini
 

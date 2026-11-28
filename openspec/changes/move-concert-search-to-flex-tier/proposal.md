@@ -40,7 +40,7 @@ None.
   - the search runs in the background, in attempts until 20 hours after the search time, at most 8 calling at once;
   - every attempt checks the search and the Artist again before calling;
   - the pending timeout becomes 20 hours;
-  - the status and the completed signal are set by the background search, once per search, including a search that gives up at 20 hours;
+  - the status and the completed signal are set by the background search, at most one signal per search, including a search that gives up at 20 hours;
   - the previews are removed.
   - (Purpose) The sequence diagram changes: SearchNewConcerts ends by starting the background search, and the steps after Upsert move into it. The diagram is fixed at archive.
 - `components/entity/concert-search/update-status`:
