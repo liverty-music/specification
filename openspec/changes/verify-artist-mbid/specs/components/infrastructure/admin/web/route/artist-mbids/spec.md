@@ -1,6 +1,6 @@
 ## Purpose
 
-The admin console's Artist MBIDs screen lists the artists whose MBID could not be verified automatically and lets an admin compare each one's namesakes in the music catalog and choose the right MBID.
+The admin console's Artist MBIDs screen lists the artists whose MBID could not be verified automatically and lets an admin compare each one's namesakes in the music catalog and choose the right MBID, or enter it when the namesakes do not include it.
 
 ## ADDED Requirements
 
@@ -70,3 +70,23 @@ Each namesake SHALL offer `Choose`. Activating it SHALL open a modal confirmatio
 
 - **WHEN** ArtistService.CorrectMbid fails with AlreadyExists
 - **THEN** the screen shows `Another artist already has this MBID.` and the artist stays listed
+
+### Requirement: An admin can enter an MBID the namesakes do not include
+
+Below the namesakes of the selected artist, the screen SHALL offer an `MBID` field and `Set MBID`, for an artist whose right MBID the name search does not find (the catalog records it under another spelling, or no namesake is listed). The screen SHALL refuse a value that is not a UUID of 36 characters with `Enter an MBID of 36 characters.` and make no call. Otherwise `Set MBID` SHALL open the same modal confirmation as `Choose`, naming the artist and the entered MBID, and on confirmation call ArtistService.CorrectMbid with it; success and AlreadyExists are shown as for `Choose`. When the call fails with NotFound, the screen SHALL show `The music catalog has no artist with this MBID.` and keep the artist listed.
+
+#### Scenario: MBID entered for an artist without namesakes
+
+- **WHEN** the selected artist has no namesake listed and the admin enters an MBID the catalog knows and confirms
+- **THEN** ArtistService.CorrectMbid is called with that MBID, the artist leaves the list and the screen shows `<artist name> is verified.`
+
+#### Scenario: Malformed MBID entered
+
+- **WHEN** the admin enters `abc` and activates `Set MBID`
+- **THEN** the screen shows `Enter an MBID of 36 characters.` and makes no call
+
+#### Scenario: MBID unknown to the catalog
+
+- **WHEN** ArtistService.CorrectMbid fails with NotFound for the entered MBID
+- **THEN** the screen shows `The music catalog has no artist with this MBID.` and the artist stays listed
+
