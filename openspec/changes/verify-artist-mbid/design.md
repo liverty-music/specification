@@ -38,7 +38,7 @@ Uniqueness: an MBID is the `mbid` or `listening_mbid` of at most one artist (one
 
 | writer | from | to |
 |---|---|---|
-| `Artist.Create` | (new) | the status it is given; `ListTop`, `ListSimilar` and `ArtistUseCase.Create` give Unverified (Create is the fan `ArtistService.Create`, open to any signed-in caller, so its MBID is checked like any other), `Search` gives the verified result |
+| `Artist.Create` | (new) | the status it is given; `ListTop` and `ListSimilar` give Unverified, `Search` gives the verified result, `ArtistUseCase.Create` gives Verified (only an admin reaches it, D8) |
 | `ArtistUseCase.VerifyMBID` via `UpdateMBID` (with the catalog's name and activity status, in the same write) | Unverified | Verified |
 | `ArtistUseCase.VerifyMBID` via `MarkMBIDAmbiguous` | Unverified | Ambiguous |
 | `ArtistUseCase.CorrectMBID` via `UpdateMBID` | any | Verified |
@@ -53,7 +53,7 @@ For an artist with name N and MBID M (both from Last.fm):
 
 1. `Artist.ListNamesakes(N)`: MusicBrainz `GET /ws/2/artist?query=artist:"N"`, keeping results whose name equals N ignoring case. Each candidate carries MBID, name, country, life span and disambiguation (`entity.CatalogArtist`).
 2. Candidates other than M = 0 → Verified with M. (M not among the results is treated the same: the search index lags, and M is what Last.fm vouches for.)
-   When the catalog does not know M either (`GetArtist` NotFound) and the name has no namesake, the artist is Verified with its registered name and `activity_ended` false. This is the admin console's test artist (`Create test artist` on the Organizers screen registers a random MBID and tells the admin to use a name no real artist uses); a test artist given a real artist's name may be corrected to that artist, which the screen's hint already guards against.
+   When the catalog does not know M either (`GetArtist` NotFound), the MBID is ambiguous: an Unverified artist always comes from the listening service, and an MBID MusicBrainz does not know needs a person. The admin console's test artists never reach this: `ArtistUseCase.Create` registers them Verified (D8).
 3. Otherwise, read each candidate's official homepage (`Artist.ListOfficialSiteRelations` + `Artist.SelectOfficialSite`, M included). Exactly one candidate has one → `UpdateMBID` to it (it may be M) and Verified. Zero or more than one → `MarkMBIDAmbiguous`, and log at ERROR `artist MBID is ambiguous` with the artist id, name and candidate MBIDs.
 
 Then, for a Verified result, read the catalog's name and activity status of the final MBID (`Artist.GetArtist`) and store MBID, name, `activity_ended` and Verified with one `UpdateMBID` (one `UPDATE`, inside the advisory-lock transaction of D1); for a corrected artist the same statement clears images, official site and check time (correct-artist-mbid D3). Every catalog read happens before the write, so a failed read leaves the artist Unverified and the retry or the daily run decides again. Writing the status first and the name afterwards was rejected: a failure between them leaves a Verified artist with the listening service's name, and the retry skips it because it is no longer Unverified. `Search` does the same reads before `Artist.Create` and registers the match with the catalog's name and activity status.
@@ -92,6 +92,14 @@ The screen (`admin/artist-mbids/`, nav entry "Artist MBIDs") reads every value f
 
 - `worker artist correct-mbid` (backend `cmd/worker`) and its DI and tests are removed; cloud-provisioning `docs/runbooks/correct-artist-mbid.md` is removed and its links updated.
 - The Last.fm client doc comment (`lastfm/client.go`, "Usage Guidelines") is rewritten from https://www.last.fm/api/tos and https://www.last.fm/api/intro (read 2026-11-28): 3.1 non-commercial use only (liverty-music/backend#953); 2.3 storage under the law of the country of residence, 4.3 caching per the HTTP headers (the comment's "permanent storage is prohibited" is not in the current terms); 4.4 limits set at Last.fm's discretion with no published number, and the intro page's warning against "continuously making several calls per second". The throttle stays at 200 ms (5 requests per second), the value chosen when the client was written; the comment says so.
+
+### D8. Create moves from the fan API to the admin API
+
+Today the fan server mounts `rpc.artist.v1.ArtistService` with `Create` and checks only that the caller is signed in (backend `internal/di/api_wiring.go:653`), so any signed-in fan can register an artist with any name and MBID. The fan app never calls it (frontend `src/adapter/rpc/client/artist-client.ts` has no `create`); the only caller is the admin console's `Create test artist` (`admin/organizers/organizers-route.ts:494`), which reaches the same handler through the admin server's admin-role gate (`api_wiring.go:774`).
+
+`Create` is removed from `rpc.artist.v1.ArtistService` and added to `rpc.admin.artist.v1.ArtistService` (breaking proto change, labelled `buf skip breaking`; no fan client uses it). The admin console's artist client calls the admin `Create`. With only admins reaching it, `ArtistUseCase.Create` registers the artist Verified with the activity status its `GetArtist` lookup returned, and VerifyMBID skips it.
+
+Alternative rejected: keep `Create` on the fan service and return PermissionDenied for callers without the admin role. A fan API with an admin-only method mixes audiences, which the per-audience packages (`rpc-design` skill, "Packages name the caller") and servers exist to keep apart, and it leaves an unused method exposed to every fan.
 
 ## Risks / Trade-offs
 

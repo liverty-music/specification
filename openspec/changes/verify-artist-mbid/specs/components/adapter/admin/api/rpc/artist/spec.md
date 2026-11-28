@@ -42,3 +42,22 @@ CorrectMbid, which only the admin console offers, SHALL take an ArtistId and an 
 
 - **WHEN** a signed-in caller without the admin role calls CorrectMbid
 - **THEN** it fails with PermissionDenied and no usecase runs
+
+### Requirement: Create registers an artist an admin names
+
+Create on the admin artist service SHALL take a name and an MBID and fail with InvalidArgument, before any usecase runs, when the name is missing or empty or the MBID is not a UUID. It SHALL run ArtistUseCase.Create and return the registered Artist; errors from the usecase SHALL be returned unchanged. It is the only way to register an artist directly; the fan boundary does not offer it.
+
+#### Scenario: Admin registers a test artist
+
+- **WHEN** a signed-in admin calls Create with the name "E2E Test Artist" and a generated MBID
+- **THEN** ArtistUseCase.Create runs and the registered Artist is returned
+
+#### Scenario: Malformed MBID
+
+- **WHEN** Create is called with an MBID that is not a UUID
+- **THEN** it fails with InvalidArgument and no artist is created
+
+#### Scenario: Non-admin registers an artist
+
+- **WHEN** a signed-in caller without the admin role calls Create
+- **THEN** it fails with PermissionDenied and no usecase runs
