@@ -9,6 +9,7 @@ The fan `OfficialSiteService` is registered in `fanHandlers` of `internal/di/api
 
 **Non-Goals:**
 - Deleting an official site, or stopping the daily refresh from replacing a corrected URL (see Risks).
+- An admin console screen for official sites, and an admin read of an artist's current official site. Until a console change adds them, staff call `Create` and `Update` directly on the admin server with an admin sign-in, and read the current URL from the database.
 
 ## Decisions
 
@@ -20,7 +21,7 @@ Alternative: keep the fan service and add a role check in the handler. Rejected:
 
 ### D2. Update takes the artist id and the URL
 
-An artist has at most one official site, and `Artist.UpdateOfficialSiteURL` is keyed by the artist id, so `Update` takes `artist_id` and `url` instead of an official site id the console would have to look up first. `OfficialSiteUseCase.Update(ctx, artistID, url)` returns the error of `Artist.UpdateOfficialSiteURL` unchanged.
+An artist has at most one official site, and `Artist.UpdateOfficialSiteURL` is keyed by the artist id, so `Update` takes `artist_id` and `url` instead of an official site id the caller would have to look up first. `OfficialSiteUseCase.Update(ctx, artistID, url)` returns the error of `Artist.UpdateOfficialSiteURL` unchanged.
 
 Alternative: `SetUrl` as a `Set<Attribute>` call. Rejected: `Update` replaces the resource's mutable fields, and the URL is the only one.
 

@@ -2,7 +2,7 @@
 
 ### Requirement: Official site calls need the admin role
 
-Every official site call reached through the admin console SHALL require a signed-in caller holding the admin role. A caller who is not signed in SHALL fail with Unauthenticated; a signed-in caller without the admin role SHALL fail with PermissionDenied. Both checks come before the request is validated and before any usecase runs.
+Every official site call on the admin server SHALL require a signed-in caller holding the admin role. A caller who is not signed in SHALL fail with Unauthenticated; a signed-in caller without the admin role SHALL fail with PermissionDenied. Both checks come before the request is validated and before any usecase runs.
 
 #### Scenario: Admin creates a site
 

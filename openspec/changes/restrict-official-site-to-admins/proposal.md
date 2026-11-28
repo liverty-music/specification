@@ -1,6 +1,6 @@
 ## Why
 
-`OfficialSiteService.Create` on the fan boundary accepts any signed-in fan (backend#919). It sets the official site of an artist that has none, and no call can change or delete it afterwards. The concert search reads that URL as the artist's own page, so one fan's input decides what the search finds for that artist. Only Liverty Music staff should set it, and staff must be able to correct a wrong one.
+`OfficialSiteService.Create` on the fan boundary accepts any signed-in fan (backend#919). It sets the official site of an artist that has none, and no call can change or delete it afterwards. The concert search reads that URL as the artist's own page, so one fan's input decides what the search finds for that artist. Only Liverty Music staff should set it, and staff must be able to correct a wrong one. This change gives staff the calls; the admin console has no screen for official sites and no read of an artist's current URL, so until a console change adds them staff call the RPCs directly with an admin sign-in.
 
 ## What Changes
 
@@ -9,6 +9,7 @@
 - Add `OfficialSiteUseCase.Update`, a thin call to the existing `Artist.UpdateOfficialSiteURL`.
 - Stop registering the official site handler on the fan server; register an admin handler on the admin server.
 - The reserved `Delete` is not carried over: no requirement reads it.
+- No admin console screen is added: it is a follow-up change.
 
 ## Capabilities
 
@@ -27,4 +28,4 @@ The usecase `components/usecase/official-site/create` and the entity operations 
 
 - specification: new proto package `rpc/admin/official_site/v1`, removal of `rpc/official_site/v1` (the PR carries the `buf skip breaking` label), one proto Release.
 - backend: `internal/adapter/rpc/official_site_handler.go` becomes an admin handler, `internal/di/api_wiring.go` moves its registration from `fanHandlers` to `adminHandlers`, `OfficialSiteUseCase` gains `Update`.
-- frontend and cloud-provisioning: no change.
+- frontend and cloud-provisioning: no change (the admin console screen is a follow-up).
