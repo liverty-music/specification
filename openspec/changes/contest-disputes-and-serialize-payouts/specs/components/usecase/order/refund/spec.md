@@ -43,7 +43,7 @@ Refund SHALL take an Order and the reason Cancellation, and SHALL act at the cur
 
 ### Requirement: Fan refunded the full amount
 
-Refund SHALL refund the price of the Order's Tickets that are still Issued — the Order's amount divided by its number of Tickets, times the number still Issued — to the fan's original payment with Order.CreateRefund for the Order's own refund, against the charge recorded on the Order's Settlement or, when none is recorded, the charge found by Order.GetProviderChargeID. Tickets the fan resold through official resale were already refunded less the resale fee and are not refunded again. When no Ticket of the Order is Issued, it SHALL issue no refund. It SHALL fail with FailedPrecondition when the Order's payment provider cannot issue refunds or the Order has no provider payment ID.
+Refund SHALL refund the price of the Order's Tickets that are still Issued — the Order's amount divided by its number of Tickets, times the number still Issued — less the amounts of the Order's settled partial Disputes, which the fan already got back, and not below 0, to the fan's original payment with Order.CreateRefund for the Order's own refund, against the charge recorded on the Order's Settlement or, when none is recorded, the charge found by Order.GetProviderChargeID. Tickets the fan resold through official resale were already refunded less the resale fee and are not refunded again. When no Ticket of the Order is Issued, it SHALL issue no refund. It SHALL fail with FailedPrecondition when the Order's payment provider cannot issue refunds or the Order has no provider payment ID.
 
 #### Scenario: Cancellation refund
 
@@ -59,6 +59,11 @@ Refund SHALL refund the price of the Order's Tickets that are still Issued — t
 
 - **WHEN** an event is cancelled and every Ticket of the Order was resold
 - **THEN** no refund is issued and the Order is recorded Refunded
+
+#### Scenario: After a settled partial dispute
+
+- **WHEN** an event is cancelled and a 10000 yen Order for 2 Issued Tickets has a settled partial Dispute of 5000 yen
+- **THEN** 5000 yen is refunded to the fan's card
 
 #### Scenario: Dispute
 

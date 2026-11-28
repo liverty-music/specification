@@ -45,6 +45,8 @@ else Lost or Accepted
       UC->>Settlement: ReversePayout "the Organizer's share"
     end
     UC->>Dispute: MarkSettled
+  else partial, Reversed
+    UC->>Dispute: MarkSettled "nothing to take back"
   end
 end
 ```
@@ -80,10 +82,10 @@ For a Won Dispute, Settle SHALL read the Order with Order.Get and its Event with
 For a Lost or Accepted Dispute, Settle SHALL read the Order with Order.Get, its own refund with Order.GetProviderOwnRefund and its Settlement with Settlement.GetByOrderID. A Releasing Settlement SHALL be read again every 10 minutes until its release ends, at most 12 hours. For a Dispute that covers the whole Order, Settle SHALL record the refund with Order.CommitRefund, with the reason Dispute, the amount and provider refund ID of the accepted inquiry's refund or 0 and none for a chargeback, and the Dispute marked settled:
 
 - **Held**: with the Settlement given as Held, so it becomes Reversed and is never paid out.
-- **Released**: claw back each paid split not yet reversed with Settlement.ReversePayout for the Order's refund and the split's amount, then record with the Settlement given as Released and the provider payout reversal IDs.
+- **Released**: claw back what is left of each paid split, its amount less the claw-backs already made for partial Disputes, with Settlement.ReversePayout for the Order's refund, then record with the Settlement given as Released and the provider payout reversal IDs.
 - **Reversed**: record without a Settlement.
 
-For a partial Dispute, the Order and its Tickets stay as they are and only the Organizer's share is taken back: from a Held Settlement with Settlement.GiveUpDisputedShare, which also marks the Dispute settled; from a Released one with Settlement.ReversePayout for the Dispute and the share, spread over the paid splits, followed by Dispute.MarkSettled with the reversal IDs. When the compare-and-set of Order.CommitRefund or Settlement.GiveUpDisputedShare fails with FailedPrecondition because the Settlement's status changed, Settle SHALL read it again and settle from its new status. When the Order's own refund had been made and the Dispute was not an accepted inquiry, the fan got the money twice: Settle SHALL still settle the Organizer's share and then end with FailedPrecondition, so an admin is paged.
+For a partial Dispute, the Order and its Tickets stay as they are and only the Organizer's share is taken back: from a Held Settlement with Settlement.GiveUpDisputedShare, which also marks the Dispute settled; from a Released one with Settlement.ReversePayout for the Dispute and the share, spread over the paid splits, followed by Dispute.MarkSettled with the reversal IDs; from a Reversed one, which has nothing left to take back, with Dispute.MarkSettled alone. When the compare-and-set of Order.CommitRefund or Settlement.GiveUpDisputedShare fails with FailedPrecondition because the Settlement's status changed, Settle SHALL read it again and settle from its new status. When the Order's own refund had been made and the Dispute was not an accepted inquiry, the fan got the money twice: Settle SHALL still settle the Organizer's share and then end with FailedPrecondition, so an admin is paged.
 
 #### Scenario: Lost before the payout
 - **WHEN** Settle runs with Lost for a whole-order chargeback whose Settlement is Held
@@ -112,6 +114,14 @@ For a partial Dispute, the Order and its Tickets stay as they are and only the O
 #### Scenario: Partial dispute lost after the payout
 - **WHEN** Settle runs with Lost for a Dispute of 5000 yen on an Order of 10000 yen whose Released Settlement paid 9500 yen
 - **THEN** 4750 yen is clawed back for the Dispute, the Order stays Paid and the Dispute is settled with that reversal
+
+#### Scenario: Partial dispute after a cancellation refund
+- **WHEN** Settle runs with Lost for a Dispute of 5000 yen on a 10000 yen Order refunded for a 中止, whose Settlement is Reversed
+- **THEN** the Dispute is settled with no claw-back and Settle fails with FailedPrecondition so an admin is paged
+
+#### Scenario: Whole dispute after a partial claw-back
+- **WHEN** Settle runs with Lost for a whole-order Dispute on an Order whose 9500 yen payout already had 4750 yen clawed back for a partial Dispute
+- **THEN** the remaining 4750 yen is clawed back and the Order is Refunded
 
 #### Scenario: Lost after a cancellation refund
 - **WHEN** Settle runs with Lost for a contested Dispute on an Order already refunded for a 中止

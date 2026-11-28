@@ -65,7 +65,7 @@ The question for each dispute is: under the sale, is the cardholder entitled to 
 **Review** pages an admin (Decision 10), who answers in the Stripe Dashboard. Without an answer by 48 hours before the due time, the dispute is contested.
 
 **Inquiries** follow the same rule:
-- Accepting an inquiry means `Respond` refunds the rest of the payment first (`Order.CreateRefund`, the price of the Tickets not resold, written as the Order's own refund), then records it Accepted. The provider took nothing back, and a full refund resolves an inquiry without a dispute fee.
+- Accepting an inquiry means `Respond` refunds the disputed amount first, at most the fan's remaining claim (`Order.CreateRefund`, written as the Order's own refund, skipped when nothing is left), then records it Accepted. The provider took nothing back, and a full refund resolves an inquiry without a dispute fee.
 - When the refund fails because the inquiry escalated meanwhile (the provider refuses a refund on a charged-back payment), `Respond` syncs the dispute and answers the chargeback.
 - Accepting a chargeback is `POST /v1/disputes/{id}/close`.
 
@@ -223,7 +223,7 @@ Webhook mapping:
 | Notice | Workflow started |
 |---|---|
 | `charge.dispute.created` | `dispute:<id>` (Respond) |
-| `charge.dispute.funds_withdrawn` | `dispute:<id>:escalated` (Respond), whether or not the dispute is stored yet |
+| `charge.dispute.funds_withdrawn` | `dispute:<id>:escalated` (Respond), whether or not the dispute is stored yet. Stripe sends it for every chargeback, not only an escalated inquiry, so this run answers only when its `Dispute.Sync` recorded an escalation of a stored inquiry; otherwise the run for `created` answers, and each stage is answered (and alerted) once |
 | `charge.dispute.closed` | `dispute-settle:<id>:won` for `won` and `warning_closed`; `dispute-settle:<id>:lost` for `lost` and `prevented` |
 
 The accept paths of `Respond` and `SubmitEvidence` start `dispute-settle:<id>:lost` themselves, so the later closed notice of an accepted dispute starts nothing new. A late `won` (a late win, or an accepted inquiry's `warning_closed`) starts its own run:
@@ -237,13 +237,14 @@ Settle has a 14-day deadline, after which it ends with an error and pages an adm
 1. `Dispute.Sync`.
 2. **Won**: when the Order is Paid and its Event became CANCELLED while the dispute was open, the fan is owed a 中止 refund that `Refund` refused during the dispute. Settle ends with FailedPrecondition so an admin runs it; `DisputeUseCase` does not call `OrderUseCase` (schema rule). Otherwise Won ends here.
 3. **Lost or Accepted**: read the Order, its own refund at the provider (`Order.GetProviderOwnRefund`), and the Settlement. A Releasing Settlement is read again every 10 minutes, at most 72 times (12 hours, the release's deadline), using `f.Recv` on an unused topic with a 10-minute timeout as the durable sleep. `Workflows.Await` is not available inside a workflow (`usecase.Flow` has Step, Start, Recv and the patch calls), and a loop of steps with a bounded count replays deterministically.
-4. **Whole Order** (the amount covers the price of the Tickets not resold): `Order.CommitRefund` with the reason Dispute and the Dispute, which records its settle time in the same transaction:
+4. **Whole Order** (the amount covers the fan's remaining claim: the price of the Tickets not resold, less the amounts of settled partial Disputes): `Order.CommitRefund` with the reason Dispute and the Dispute, which records its settle time in the same transaction:
    - **Held**: the Settlement is given as Held, so it becomes Reversed.
-   - **Released**: one step per paid split, `Settlement.ReversePayout` for the Order's refund; then `CommitRefund` with the reversal IDs and the Settlement given as Released.
+   - **Released**: one step per paid split, `Settlement.ReversePayout` for the Order's refund of what is left of the split (its amount less the claw-backs already made for partial Disputes); then `CommitRefund` with the reversal IDs and the Settlement given as Released.
    - **Reversed**: `CommitRefund` without a Settlement.
-5. **Partial**: the Order keeps its Tickets and stays Paid. Only the Organizer's share (the amount × splits ÷ Order amount, rounded down) is taken back:
+5. **Partial**: the Order keeps its Tickets and stays Paid. Only the Organizer's share is taken back: the amount × the Organizer's remaining share (splits less earlier partial claw-backs) ÷ the fan's remaining claim, rounded down, so a split already lowered by a resale or an earlier partial dispute is weighed against what the fan can still claim:
    - **Held**: `Settlement.GiveUpDisputedShare`, which lowers the splits and records the settle time together, and makes the Settlement Reversed when nothing is left.
    - **Released**: `Settlement.ReversePayout` for this Dispute, for the share spread over the paid splits, then `Dispute.MarkSettled` with the reversal IDs.
+   - **Reversed** (a 中止 refund or full resale already reversed it): nothing is left to take back; `Dispute.MarkSettled` alone, and the fan-paid-twice check below pages an admin when the Order's own refund was made.
 6. **Status moved**: a FailedPrecondition from a compare-and-set means the Settlement's status changed; the workflow reads it again and takes the new branch.
 7. **Fan paid twice**: when the Order's own refund had been made and the Dispute was not an accepted inquiry, the fan got the money twice. Settle still settles the Organizer's share, then pages an admin.
 
@@ -258,6 +259,7 @@ Settle has a 14-day deadline, after which it ends with an error and pages an adm
 - Disputes no longer pass through `Refund`. Its Dispute branch and the webhook's call to it go away, and the admin `RefundOrder` RPC answers InvalidArgument for `REFUND_REASON_DISPUTE` (the enum value stays, since `Order.refund reason` uses the same values).
 - `Refund` refuses a disputed Order (open or unsettled Dispute) with FailedPrecondition, inquiries included. The dispute's answer decides the money, and for a cancelled Event that answer is to accept, which refunds the fan. For a chargeback, Stripe would answer `charge_disputed` anyway.
 - `Order.CreateRefund` writes the Order's own refund with a metadata marker (`purpose: order_refund`, `order_id`) next to its key `order-refund:<order>`. `Order.GetProviderOwnRefund` finds it by that marker among the Charge's refunds and tells it apart from resale refunds, which carry their listing's marker. Refunds made before this change carry no marker, but no Order has a Dispute yet.
+- The 中止 refund is the price of the Tickets still Issued less the amounts of settled partial Disputes, which the fan already got back, so it never asks for more than is left on the charge.
 - A Cancellation refund can only meet a Held or Reversed Settlement: a CANCELLED Event is never eligible for release, and since Decision 5 it cannot become CANCELLED after its payout is due. A Releasing or Released Settlement there is reported as Internal.
 
 ### 9. Data
@@ -302,7 +304,7 @@ Settle has a 14-day deadline, after which it ends with an error and pages an adm
 - **Every dispute**: `Respond` logs each opened dispute at Warn with the Order, the Organizer, the reason and the answer it chose. A log-based alert in cloud-provisioning, next to the one on `workflow.needs_admin`, notifies the admin of each.
 - **Admin pages**: a page must come from a workflow that ends in error, because the `needs_admin` reporter selects workflows by their terminal status, not failed steps (`internal/infrastructure/workflow/admin.go`).
   - A Review answer starts a child workflow `dispute-review:<id>:<due time>`, whose only step ends with FailedPrecondition carrying the dispute, while `Respond` or `SubmitEvidence` carries on.
-  - A partial-dispute anomaly, a late win, a cancellation refund owed after a win, a fan paid twice, and an evidence submission that misses its deadline end their own workflow with an error.
+  - A late win, a cancellation refund owed after a win, a fan paid twice, and an evidence submission that misses its deadline end their own workflow with an error.
 
 At the pilot's volume, one notice per dispute is the monitoring: it shows a concentration on one Organizer or one sale before a network program would (`disputes/measuring`).
 

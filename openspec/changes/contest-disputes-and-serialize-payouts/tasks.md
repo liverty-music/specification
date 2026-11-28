@@ -8,14 +8,14 @@
 - [ ] 2.1 Add `charge.dispute.funds_withdrawn` to the Stripe webhook endpoint's `enabledEvents` in `src/index.ts`. Add a log-based alert, next to the one on `workflow.needs_admin`, that notifies the admin of each "dispute opened" log line of design Decision 10. Verify with the Pulumi unit tests for both and a clean `pulumi preview`. Merging runs the dev `pulumi up`; ask the owner for the prod `pulumi up`, then confirm read-only that the endpoint lists the event (Stripe API `GET /v1/webhook_endpoints/{id}`) and the alert policy exists (`gcloud alpha monitoring policies list --configuration=liverty-music`).
 - [ ] 2.2 Add a section to `docs/runbooks/workflow-needs-admin.md` for each new admin case, with the read-only commands to inspect it and the `workflow` subcommand or Stripe Dashboard action that finishes it:
   - a Review dispute (duplicate or not as described): answer it in the Stripe Dashboard;
-  - a partial dispute: settle it by hand (reverse a share of the transfer, record the refund), after which the Settlement is no longer held;
+  - a partial dispute after a 中止 refund, where the fan was paid twice and nothing is left to take back (partial disputes are otherwise settled automatically by `DisputeUseCase.Settle`; never reverse a transfer in the Dashboard for one, since a Dashboard reversal carries no claw-back key and would be taken twice);
   - a late win;
   - a cancellation refund owed after a win: run the admin refund;
   - an evidence submission that missed its deadline;
   - a Releasing Settlement whose release failed after a payout;
   - a resale seller refund refused on a disputed charge.
 
-  Verify by following the Review and partial sections against sandbox disputes in task 8.2.
+  Verify by following the Review section against a sandbox dispute in task 8.2.
 
 ## 3. backend: Event cancellation ends 24 hours after the start (components/entity/event, components/entity/series/cancel-events, components/usecase/series/cancel; design Decision 5)
 

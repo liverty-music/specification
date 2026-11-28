@@ -134,7 +134,7 @@ A Dispute under review is decided by an admin; without a decision by 48 hours be
 
 ### Requirement: Whole or partial dispute
 
-A Dispute SHALL cover the whole Order when its amount is at least the price of the Order's Tickets that were not resold, the Order's amount divided by its number of Tickets times the Tickets not Voided by a resale, and be partial otherwise. A resold Ticket was paid back to the fan through the resale, so it is no longer the fan's to claim.
+The fan's remaining claim on an Order SHALL be the price of its Tickets that were not resold (the Order's amount divided by its number of Tickets, times the Tickets not Voided by a resale) less the amounts of its settled partial Disputes. A resold Ticket was paid back to the fan through the resale, and a settled partial Dispute already returned its amount, so neither is the fan's to claim again. A Dispute SHALL cover the whole Order when its amount is at least the fan's remaining claim, and be partial otherwise.
 
 #### Scenario: Whole order disputed
 - **WHEN** a Dispute of 10000 yen is on an Order of 10000 yen for 2 Tickets, none resold
@@ -148,13 +148,25 @@ A Dispute SHALL cover the whole Order when its amount is at least the price of t
 - **WHEN** a Dispute of 5000 yen is on an Order of 10000 yen for 2 Tickets, none resold
 - **THEN** it is partial
 
+#### Scenario: Rest after a settled partial dispute
+- **WHEN** a Dispute of 5000 yen is on an Order of 10000 yen for 2 Tickets, none resold, that already has a settled partial Dispute of 5000 yen
+- **THEN** it covers the whole Order
+
 ### Requirement: Organizer's share of a partial dispute
 
-The Organizer's share of a partial Dispute SHALL be its amount times the Settlement's split amounts over the Order's amount, rounded down to the yen, so rounding favours the Organizer and the platform bears the rest.
+The Organizer's remaining share SHALL be the Settlement's split amounts less the claw-backs already made for partial Disputes after the payout. The Organizer's share of a partial Dispute SHALL be its amount times the Organizer's remaining share over the fan's remaining claim, rounded down to the yen, so rounding favours the Organizer and the platform bears the rest.
 
 #### Scenario: Half of an order lost
-- **WHEN** a partial Dispute of 5000 yen is on an Order of 10000 yen whose Settlement has a split of 9500 yen
+- **WHEN** a partial Dispute of 5000 yen is on an Order of 10000 yen for 2 Tickets whose Settlement has a split of 9500 yen
 - **THEN** the Organizer's share is 4750 yen
+
+#### Scenario: After a resale
+- **WHEN** a partial Dispute of 2500 yen is on an Order of 10000 yen for 2 Tickets, one resold, whose Settlement's split fell to 4750 yen
+- **THEN** the Organizer's share is 2375 yen
+
+#### Scenario: Second partial dispute
+- **WHEN** a partial Dispute of 2500 yen is on an Order of 10000 yen for 2 Tickets whose split fell to 4750 yen when an earlier partial Dispute of 5000 yen was settled
+- **THEN** the Organizer's share is 2375 yen
 
 ### Requirement: Amount and provider dispute ID
 

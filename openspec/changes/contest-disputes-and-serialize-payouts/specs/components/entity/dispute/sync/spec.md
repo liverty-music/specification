@@ -8,7 +8,7 @@ Records a dispute as the payment provider reports it now, so notices that arrive
 
 ### Requirement: Recorded from the payment provider's current state
 
-Sync SHALL take an Order and a provider dispute ID, read the dispute from the payment provider, and store or update the Dispute with it: whether it is an inquiry, the reason, the amount, the evidence due time, the open time and the status the provider reports, returning the Dispute. A dispute not yet stored SHALL be stored with the provider's status. An update SHALL only move forward: an inquiry becomes a chargeback, not back, and an escalation makes a Contested inquiry Open with the chargeback's evidence due time; a provider outcome closes an Open or Contested Dispute as Won or Lost with its close time. An Accepted Dispute SHALL stay Accepted whatever the provider reports. It SHALL fail with FailedPrecondition, changing nothing, when the provider reports Won for a Dispute recorded Lost, or Lost for one recorded Won; with NotFound when no Order has the id or the provider has no such dispute; and with Unavailable when the payment provider cannot be reached.
+Sync SHALL take an Order and a provider dispute ID, read the dispute from the payment provider, and store or update the Dispute with it: whether it is an inquiry, the reason, the amount, the evidence due time, the open time and the status the provider reports, returning the Dispute and whether this call recorded an escalation (a stored inquiry becoming a chargeback). A dispute not yet stored SHALL be stored with the provider's status. An update SHALL only move forward: an inquiry becomes a chargeback, not back, and an escalation makes a Contested inquiry Open with the chargeback's evidence due time; a provider outcome closes an Open or Contested Dispute as Won or Lost with its close time. An Accepted Dispute SHALL stay Accepted whatever the provider reports. It SHALL fail with FailedPrecondition, changing nothing, when the provider reports Won for a Dispute recorded Lost, or Lost for one recorded Won; with NotFound when no Order has the id or the provider has no such dispute; and with Unavailable when the payment provider cannot be reached.
 
 #### Scenario: New dispute recorded
 - **WHEN** Sync is called for a Paid Order with a provider dispute ID no Dispute has, which the provider reports awaiting a response
@@ -24,7 +24,7 @@ Sync SHALL take an Order and a provider dispute ID, read the dispute from the pa
 
 #### Scenario: Contested inquiry escalates
 - **WHEN** Sync is called for a Contested inquiry that the provider now reports as a chargeback awaiting a response
-- **THEN** the Dispute is Open, no longer an inquiry, with the chargeback's evidence due time
+- **THEN** the Dispute is Open, no longer an inquiry, with the chargeback's evidence due time, and the escalation is reported
 
 #### Scenario: Outcome reported
 - **WHEN** Sync is called for a Contested Dispute that the provider reports won
