@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Create registers the artist under the catalog's canonical name
-ArtistUseCase.Create, which only an admin reaches, SHALL take an artist with a name and an MBID, look the MBID up with Artist.GetArtist and, when the catalog's name differs from the given name, register the artist with the catalog's name and MBID; otherwise with the given name. When the lookup fails, Create SHALL register the artist with the given name and activity_ended false and SHALL NOT fail. The artist is registered with Artist.Create with the MBID as both its listening MBID and its MBID, mbid_status Verified, since the admin chose the MBID, and the activity status the lookup returned. Create returns the artist that Artist.Create returns for it, which is the already registered artist when the MBID is known.
+ArtistUseCase.Create SHALL take an artist with a name and an MBID, look the MBID up with Artist.GetArtist and, when the catalog's name differs from the given name, register the artist with the catalog's name and MBID; otherwise with the given name. When the lookup fails, Create SHALL register the artist with the given name and activity_ended false and SHALL NOT fail. The artist is registered with Artist.Create with the MBID as both its listening MBID and its MBID, mbid_status Verified, since the caller names the MBID rather than the listening service, and the activity status the lookup returned. Create returns the artist that Artist.Create returns for it, which is the already registered artist when the MBID is known.
 
 #### Scenario: Catalog has a different name
 - **WHEN** Create is called with the name "the band" and an MBID whose catalog name is "The Band"

@@ -12,7 +12,7 @@
 
 ### Requirement: Browsing artists needs no sign-in; listing needs it
 
-ListTop, ListSimilar and Search SHALL be callable without sign-in. List SHALL require a signed-in caller and SHALL fail with Unauthenticated, before any usecase runs, when the caller is not signed in. None of these calls acts for a particular fan, so no account is looked up. The fan boundary SHALL NOT offer Create.
+ListTop, ListSimilar and Search SHALL be callable without sign-in. List SHALL require a signed-in caller and SHALL fail with Unauthenticated, before any usecase runs, when the caller is not signed in. None of these calls acts for a particular fan, so no account is looked up.
 
 #### Scenario: Guest searches
 
@@ -23,11 +23,6 @@ ListTop, ListSimilar and Search SHALL be callable without sign-in. List SHALL re
 
 - **WHEN** a caller who is not signed in calls List
 - **THEN** the call fails with Unauthenticated and no usecase runs
-
-#### Scenario: Fan cannot register an artist
-
-- **WHEN** a signed-in fan calls the Create procedure of the fan artist service
-- **THEN** it fails with Unimplemented and no artist is registered
 
 ### Requirement: Fan artist requests are validated at the boundary
 The boundary SHALL fail with InvalidArgument, before any usecase runs, when:

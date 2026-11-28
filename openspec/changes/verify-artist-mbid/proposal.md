@@ -42,7 +42,7 @@ Not in this change: a listener-count floor (a namesake's MBID comes with the rig
 - `components/usecase/artist/list-similar` (Purpose, at archive): the same, and the seed is looked up by its `listening_mbid`.
 - `components/usecase/artist/refresh`: no longer runs on registration (VerifyMBID does); the daily run is unchanged.
 - `components/usecase/artist/correct-mbid` (Purpose, at archive): reads the catalog first and stores the MBID, name and activity status with one write that marks the artist Verified; reached from the admin console.
-- `components/usecase/artist/create`: only an admin reaches it; registers the artist Verified with the catalog's activity status.
+- `components/usecase/artist/create`: registers the artist Verified, since the caller names the MBID, with the catalog's activity status.
 - `components/adapter/fan/api/rpc/artist`: Create is no longer offered.
 - `components/adapter/admin/api/rpc/artist`: Create, ListByMbidStatus and CorrectMbid.
 - `stories/discover-artists` (Purpose): only Verified artists whose activity has not ended are offered, by every discovery path; a discovered artist's MBID is verified.
