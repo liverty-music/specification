@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Discovery page debounces search with stale response guard
-The Discovery screen SHALL send an artist search 2000 ms after the fan's last input in the search bar, or at once when the fan presses Enter (the keyboard's search key) there. An Enter that confirms an input method conversion SHALL NOT send a search. The screen SHALL search the query with leading and trailing white space removed, and SHALL NOT search an empty query or a query that is a single half-width Latin letter or digit; for such a single letter or digit it SHALL show neither results, nor loading, nor the no-results message. One query SHALL NOT be sent again while it is being answered or after it has been answered, until the query changes.
+The Discovery screen SHALL send an artist search 2000 ms after the fan's last input in the search bar, or at once when the fan presses Enter (the keyboard's search key) there. An Enter that confirms an input method conversion SHALL NOT send a search. The screen SHALL search the query with leading and trailing white space removed, and SHALL NOT search an empty query or a query that is a single half-width Latin letter or digit; for such a single letter or digit it SHALL show neither results, nor loading, nor the no-results message. One query SHALL NOT be sent again while it is being answered or after it has been answered, until the query changes. A query whose search failed SHALL be sent again only when the fan presses Enter, until the query changes.
 
 When the query changes, the fan clears it or the fan leaves Discovery, the screen SHALL cancel the search being answered, and nothing that search returns or fails with SHALL change the screen.
 
@@ -87,3 +87,7 @@ The search mode, the clear button and the restored Artists view SHALL follow the
 #### Scenario: Searching again after a failure
 - **WHEN** a search has failed and the fan presses Enter on the same query
 - **THEN** the query SHALL be sent again
+
+#### Scenario: Input that keeps a failed query
+- **WHEN** a search has failed and the fan only adds a space after the query, then 2000 ms pass
+- **THEN** no search request SHALL be sent

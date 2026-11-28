@@ -24,9 +24,16 @@ See proposal.md - Why. The current frontend (`main` on 2026-11-29, Aurelia 2.0.0
 
 ### D1: Debounce with `& debounce` on the input event, not on the value binding
 
-The search bar binds `value.bind="search.searchQuery"` immediately and sends with `input.trigger="search.submit() & debounce:2000:'discovery-search'"`. On Enter the bar dispatches the `discovery-search` signal, which runs a pending debounced call at once, and then calls `submit()` itself, so Enter also resends a failed query when nothing is pending. `submit()` is idempotent for a query being answered or answered, so the two calls send one request. Enter is ignored while `event.isComposing` is true or `keyCode` is 229. The input gets `enterkeyhint="search"`.
+The search bar binds `value.bind="search.searchQuery"` immediately and sends with `input.trigger="search.submit() & debounce:2000"`. The controller has two ways in:
 
-Alternatives: `value.bind="... & debounce:2000"` delays the query itself, so search mode, the clear button and the return to the bubbles would lag by 2 s. Keeping the controller's `setTimeout` duplicates what the framework's binding behavior does, including disposal on unbind.
+| method | called by | sends in phase |
+|---|---|---|
+| `submit()` | the debounced input event | `waiting` |
+| `searchNow()` | Enter in the search bar | `waiting`, `failed` |
+
+So a failed query is sent again only on Enter, and a debounced call still pending after Enter, a failure or a clear does nothing: no flush signal is needed. Enter is ignored while `event.isComposing` is true or `keyCode` is 229. The input gets `enterkeyhint="search"`.
+
+Alternatives: `value.bind="... & debounce:2000"` delays the query itself, so search mode, the clear button and the return to the bubbles would lag by 2 s. Keeping the controller's `setTimeout` duplicates what the framework's binding behavior does, including disposal on unbind. One `submit()` for both callers, with Enter flushing the debounce through a signal, would let a debounced input resend a failed query.
 
 ### D2: The controller observes its own query and holds one state
 
@@ -40,7 +47,7 @@ Alternatives: `value.bind="... & debounce:2000"` delays the query itself, so sea
 | `answered` | response or NotFound | results, else the no-results message |
 | `failed` | any other failure | nothing |
 
-A change of the trimmed query aborts the outstanding request and moves to `idle` (clearing results) or `waiting`. A change that leaves the trimmed query as it was does nothing. The single-character rule is `/^[A-Za-z0-9]$/` on the trimmed query. `dispose()` aborts the outstanding request. An outcome is applied only when its request's signal is not aborted.
+A change of the trimmed query aborts the outstanding request and moves to `idle` (clearing results) or `waiting`. A change that leaves the trimmed query as it was does nothing. Search mode (`isSearchMode`) is on whenever the trimmed query is not empty, whatever the phase, so a single letter or digit hides the Artists view and shows an empty list. The single-character rule is `/^[A-Za-z0-9]$/` on the trimmed query. `dispose()` aborts the outstanding request. An outcome is applied only when its request's signal is not aborted.
 
 Alternative: keeping booleans (`isSearching` plus flags for failed and below-minimum) allows combinations that mean nothing; the phase makes the list's three conditions exclusive.
 
