@@ -44,7 +44,7 @@
     - retrieve the dispute first; `under_review` / `warning_under_review` records Contested, and a closed or escalated dispute returns FailedPrecondition;
     - otherwise send the text evidence of design Decision 3 with `submit=true`, with no `refund_policy` file and within 150000 characters;
   - `Order.IsCardholderAuthenticated` (design Decision 6);
-  - `Order.GetProviderRefund`: the Charge's refund carrying the metadata marker of the given purpose (`order_refund`, or `dispute_refund` with the Dispute).
+  - `Order.GetProviderRefund`: the Charge's refund whose metadata carries the given purpose (`order_refund`, or `dispute_refund` with the matching `dispute_id`); verify with the scenario Two accepted inquiries.
 
   Map Stripe errors as design Decision 4's table says: 429 and 503 to Unavailable, 5xx to Internal.
 
@@ -58,7 +58,7 @@
   - `Ticket.ListByOrder` and `Admission.CountByEvent`;
   - `ResaleListing.ListByOrder` and `ResaleListing.CancelListedByOrder` (which leaves only a listing allocated to a Won entry alone).
 
-  Make `Order.CreateRefund` take the Dispute purpose (key `dispute-refund:<dispute>`) and write each purpose into the refund's metadata. Verify with the scenarios of "Refund once per order", including Inquiry refund, then the cancellation refund. Verify with DB integration tests annotated `@spec` for every scenario of `dispute/get`, `dispute/list-by-order`, `dispute/mark-settled`, `ticket/list-by-order`, `admission/count-by-event`, `resale-listing/list-by-order` and `resale-listing/cancel-listed-by-order`.
+  Make `Order.CreateRefund` take the Dispute purpose (key `dispute-refund:<dispute>`) and write each purpose, with the listing or `dispute_id` it names, into the refund's metadata. Verify with the scenarios of "Refund once per order", including Inquiry refund, then the cancellation refund. Verify with DB integration tests annotated `@spec` for every scenario of `dispute/get`, `dispute/list-by-order`, `dispute/mark-settled`, `ticket/list-by-order`, `admission/count-by-event`, `resale-listing/list-by-order` and `resale-listing/cancel-listed-by-order`.
 - [ ] 4.4 Make event removal (`event_removal.go`) refuse while an Order of the events has an open or unsettled Dispute, and delete the Disputes of the Orders it removes. Verify with DB integration tests annotated `@spec` for the modified requirements of `concert/delete` and `organizer/delete` (Concert with a contested dispute, Refunded order with a settled dispute, Settled dispute, Contested dispute, and the unchanged scenarios).
 
 ## 5. backend: Settlement claim and serialized release (components/entity/settlement, claim, unclaim, list-releasing, give-up-disputed-share, mark-released, reverse-payout, components/usecase/settlement/release, release-due-settlements; design Decision 4)
