@@ -5,12 +5,12 @@
 
 ## 2. backend: background search (components/usecase/concert/search-new-concerts)
 
-- [x] 2.1 Add the `search-concerts` workflow `ConcertUseCase.RunSearch`, one attempt per run with the steps of design D2. Move the body of `executeSearch` into it, and make `search` return busy or failed as values so the step retry policy never runs.
+- [x] 2.1 Add the `search-concerts` workflow `ConcertUseCase.RunSearch`, one attempt per run with the steps of design D2. Move the body of `executeSearch` into it, and make `search` return busy or failed as values so the step retry policy never runs. Make ConcertSearch.UpdateStatus take the search time and change only that search, in one conditional UPDATE (design D5), and retry a transient failure of that write in `record-end`.
 
   Verify with usecase unit tests (Flow and operations mocked) for these scenarios:
   - "The search runs in the background": "Service busy for 3 hours" (the next attempt started with a 1, 2, 4 … minute delay capped at 60, then completed) and "Queued until late" (failed, and no signal on attempt 1);
   - "Each attempt checks again before searching": "Represented while waiting" and "Search replaced";
-  - "The search is recorded": "Productive search", "Nothing new", "External search fails" and "Service busy for a whole day";
+  - "The search is recorded": "Productive search", "Nothing new", "External search fails", "Status write fails for a moment", "Replaced while the last call ran" and "Service busy for a whole day", and with a repository test for "Replaced search" of components/entity/concert-search/update-status;
   - "New concerts are handed on once per search": "Two series found", "Nothing new" and "Cannot be started";
   - "Each search reports its outcome": "Nothing new", "Search failed", "Failure without a kind" and "Busy for a whole day".
 - [x] 2.2 Make SearchNewConcerts start the first attempt after the pending upsert (id `search-concerts:<artist>:<search time µs>:1`, queue `concert-search`, no deadline). It returns only an error, the previews are deleted, and `pendingTimeout` rises to 20 h (design D1, D5, D6).

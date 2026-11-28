@@ -2,14 +2,14 @@
 
 ### Requirement: Search asks for the lower-priced service level
 
-Search SHALL ask the external search model for its lower-priced service level, which may answer later and may refuse a request while it is busy, and SHALL wait up to 15 minutes for each answer. A refusal because the service is busy, and an answer not received within 15 minutes, SHALL count as transient failures. The service level SHALL be configurable per environment, so the standard level can be used without a release.
+By default Search SHALL ask the external search model for its lower-priced service level, which may answer later and may refuse a request while it is busy. The service level SHALL be configurable per environment, so the standard level can be used without a release. Search SHALL wait for each answer up to 15 minutes at the lower-priced level and up to 120 seconds at the standard level. A refusal because the service is busy, and an answer not received in that time, SHALL count as transient failures.
 
 #### Scenario: Late answer
 - **WHEN** the external service answers a request after 9 minutes
 - **THEN** Search returns the concerts of that answer
 
 #### Scenario: No answer within 15 minutes
-- **WHEN** the external service has not answered a request 15 minutes after it was sent
+- **WHEN** Search asks for the lower-priced service level and the external service has not answered a request 15 minutes after it was sent
 - **THEN** Search fails with Unavailable after that one request
 
 ### Requirement: A failed request is classified, not retried

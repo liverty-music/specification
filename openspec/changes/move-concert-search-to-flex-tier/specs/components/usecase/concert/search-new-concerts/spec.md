@@ -44,6 +44,7 @@ Before calling Concert.Search, every attempt of a background search SHALL read t
 - When the ConcertSearch is no longer pending with the search's search time, the attempt SHALL end without calling Concert.Search and without changing the ConcertSearch.
 - When the Artist's activity has ended or an active Organizer represents it, the attempt SHALL end without calling Concert.Search, and the ConcertSearch SHALL become completed without a find.
 - When the representation check itself fails, the attempt SHALL proceed, as SearchNewConcerts does.
+- When there is no ConcertSearch, the attempt SHALL end as for a replaced one. When either read fails otherwise, it SHALL be tried again if the failure is Unavailable or DeadlineExceeded; any other failure SHALL fail the background search itself, leaving the ConcertSearch unchanged, for an admin to resolve.
 
 #### Scenario: Represented while waiting
 - **WHEN** an active Organizer comes to represent the Artist while its search waits to retry
@@ -82,7 +83,7 @@ Before searching, SearchNewConcerts SHALL read the Artist's ConcertSearch and re
 ### Requirement: The search is recorded
 
 Before starting the background search, SearchNewConcerts SHALL restart the Artist's ConcertSearch as pending (ConcertSearch.Upsert), and SHALL fail without searching when that cannot be recorded. The background search SHALL set the status when it ends:
-- **failed** when Concert.Search fails with an error other than Unavailable or DeadlineExceeded, or when no further attempt may call it within 20 hours of the search time because it is still failing with one of them or has not been called yet;
+- **failed** when Concert.Search, or a read an attempt makes between the check and that call, fails with an error other than Unavailable or DeadlineExceeded; when CreateFromDiscovered cannot be started; or when no further attempt may call Concert.Search within 20 hours of the search time because it is still failing with Unavailable or DeadlineExceeded or has not been called yet;
 - **completed** otherwise.
 
 When a later search has replaced the Artist's ConcertSearch by the time the background search ends, it SHALL leave the status unchanged. When new concerts are handed on, the background search SHALL record the discovery (ConcertSearch.MarkFound). A transient failure (Unavailable or DeadlineExceeded) to update the status SHALL be tried again until the status is written, because a ConcertSearch left pending keeps the Artist from being searched. A failure to update the status or record the discovery SHALL NOT change the result.
@@ -137,7 +138,7 @@ Every background search that calls Concert.Search SHALL send one "concert search
 
 A failed search SHALL also carry the kind of error that failed it, or unknown when the error states no kind, and SHALL NOT carry the error's message. Examples of an error kind are deadline exceeded, unavailable and permission denied. A search that ended because no further attempt could start within 20 hours of the search time SHALL carry the kind of the error its last call returned.
 
-Retried attempts SHALL NOT send a signal of their own. A search that ends before any call to Concert.Search sends no signal, including a search whose first attempt could only start 20 hours or more after the search time. A failure to send the signal SHALL NOT change the outcome.
+Retried attempts SHALL NOT send a signal of their own. A search that finds itself replaced when an attempt starts sends no signal, also when an earlier attempt called Concert.Search. A search that ends before any call to Concert.Search sends no signal, including a search whose first attempt could only start 20 hours or more after the search time. A failure to send the signal SHALL NOT change the outcome.
 
 #### Scenario: Nothing new
 - **WHEN** the daily run searches an Artist and every event found is already known
