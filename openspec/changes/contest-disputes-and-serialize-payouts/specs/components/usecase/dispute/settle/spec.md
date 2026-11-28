@@ -22,8 +22,10 @@ alt Won
   end
 else Lost or Accepted
   UC->>Order: Get
-  UC->>Order: GetProviderOwnRefund
-  opt own refund made and the dispute was not an accepted inquiry
+  UC->>Order: GetEventID
+  UC->>Event: Get
+  UC->>Order: GetProviderRefund "own refund, and the inquiry's"
+  opt own refund made
     Note over UC: fan paid twice, page an admin
   end
   UC->>Settlement: GetByOrderID
@@ -79,13 +81,13 @@ For a Won Dispute, Settle SHALL read the Order with Order.Get and its Event with
 
 ### Requirement: Lost or accepted settles the Organizer's share
 
-For a Lost or Accepted Dispute, Settle SHALL read the Order with Order.Get, its own refund with Order.GetProviderOwnRefund and its Settlement with Settlement.GetByOrderID. A Releasing Settlement SHALL be read again every 10 minutes until its release ends, at most 12 hours. For a Dispute that covers the whole Order, Settle SHALL record the refund with Order.CommitRefund, with the reason Dispute, the amount and provider refund ID of the accepted inquiry's refund or 0 and none for a chargeback, and the Dispute marked settled:
+For a Lost or Accepted Dispute, Settle SHALL read the Order with Order.Get, its Event with Order.GetEventID and Event.Get, the Order's own refund and, for an accepted inquiry, the Dispute's refund with Order.GetProviderRefund, and its Settlement with Settlement.GetByOrderID. A Releasing Settlement SHALL be read again every 10 minutes until its release ends, at most 12 hours. For a Dispute that covers the whole Order, Settle SHALL record the refund with Order.CommitRefund, with the reason Dispute, the amount and provider refund ID of the accepted inquiry's refund or 0 and none for a chargeback, and the Dispute marked settled:
 
 - **Held**: with the Settlement given as Held, so it becomes Reversed and is never paid out.
 - **Released**: claw back what is left of each paid split, its amount less the claw-backs already made for partial Disputes, with Settlement.ReversePayout for the Order's refund, then record with the Settlement given as Released and the provider payout reversal IDs.
 - **Reversed**: record without a Settlement.
 
-For a partial Dispute, the Order and its Tickets stay as they are and only the Organizer's share is taken back: from a Held Settlement with Settlement.GiveUpDisputedShare, which also marks the Dispute settled; from a Released one with Settlement.ReversePayout for the Dispute and the share, spread over the paid splits, followed by Dispute.MarkSettled with the reversal IDs; from a Reversed one, which has nothing left to take back, with Dispute.MarkSettled alone. When the compare-and-set of Order.CommitRefund or Settlement.GiveUpDisputedShare fails with FailedPrecondition because the Settlement's status changed, Settle SHALL read it again and settle from its new status. When the Order's own refund had been made and the Dispute was not an accepted inquiry, the fan got the money twice: Settle SHALL still settle the Organizer's share and then end with FailedPrecondition, so an admin is paged. When a partial Dispute is settled while the Order's Event is CANCELLED and the Order is still Paid, the rest of the 中止 refund is owed: Settle SHALL end with FailedPrecondition, so an admin refunds it.
+For a partial Dispute, the Order and its Tickets stay as they are and only the Organizer's share is taken back: from a Held Settlement with Settlement.GiveUpDisputedShare, which also marks the Dispute settled; from a Released one with Settlement.ReversePayout for the Dispute and the share, spread over the paid splits, followed by Dispute.MarkSettled with the reversal IDs; from a Reversed one, which has nothing left to take back, with Dispute.MarkSettled alone. When the compare-and-set of Order.CommitRefund or Settlement.GiveUpDisputedShare fails with FailedPrecondition because the Settlement's status changed, Settle SHALL read it again and settle from its new status. When the Order's own refund had been made, the fan got the money twice: Settle SHALL still settle the Organizer's share and then end with FailedPrecondition, so an admin is paged. When a partial Dispute is settled while the Order's Event is CANCELLED and the Order is still Paid, the rest of the 中止 refund is owed: Settle SHALL end with FailedPrecondition, so an admin refunds it.
 
 #### Scenario: Lost before the payout
 - **WHEN** Settle runs with Lost for a whole-order chargeback whose Settlement is Held

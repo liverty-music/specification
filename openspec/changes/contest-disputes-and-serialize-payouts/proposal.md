@@ -68,7 +68,7 @@ The change follows one goal: each yen ends with the party entitled to it under t
 - `components/entity/dispute/submit-evidence`: hand the evidence to the payment provider and record it Contested.
 - `components/entity/dispute/mark-settled`: record that a lost or accepted dispute's money outcome was applied.
 - `components/entity/order/is-cardholder-authenticated`: whether the cardholder verified the Order's payment (card issuer authentication or a device wallet).
-- `components/entity/order/get-provider-own-refund`: the Order's own refund at the payment provider, recorded or not, told apart from resale refunds.
+- `components/entity/order/get-provider-refund`: the refund made from the Order's payment for one purpose (its own refund, or an accepted inquiry's), recorded or not, told apart from the other refunds.
 - `components/entity/admission/count-by-event`: how many Tickets of an Event were admitted.
 - `components/entity/ticket/list-by-order`: the Tickets an Order issued.
 - `components/entity/resale-listing/cancel-listed-by-order`: cancel the Listed resale listings of an Order's Tickets.

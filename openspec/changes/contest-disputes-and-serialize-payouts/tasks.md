@@ -10,7 +10,7 @@
   - a Review dispute (duplicate or not as described): answer it in the Stripe Dashboard;
   - a partial dispute after a 中止 refund, where the fan was paid twice and nothing is left to take back (partial disputes are otherwise settled automatically by `DisputeUseCase.Settle`; never reverse a transfer in the Dashboard for one, since a Dashboard reversal carries no claw-back key and would be taken twice);
   - a late win;
-  - a cancellation refund owed after a win: run the admin refund;
+  - a cancellation refund owed after a win, or after a partial dispute settled on a cancelled Event: run the admin refund for the rest (the opposite of the fan-paid-twice case below, where the 中止 refund was already made);
   - an evidence submission that missed its deadline;
   - a Releasing Settlement whose release failed after a payout;
   - a resale seller refund refused on a disputed charge.
@@ -44,14 +44,14 @@
     - retrieve the dispute first; `under_review` / `warning_under_review` records Contested, and a closed or escalated dispute returns FailedPrecondition;
     - otherwise send the text evidence of design Decision 3 with `submit=true`, with no `refund_policy` file and within 150000 characters;
   - `Order.IsCardholderAuthenticated` (design Decision 6);
-  - `Order.GetProviderOwnRefund`: the Charge's refund carrying the `order_refund` metadata marker.
+  - `Order.GetProviderRefund`: the Charge's refund carrying the metadata marker of the given purpose (`order_refund`, or `dispute_refund` with the Dispute).
 
   Map Stripe errors as design Decision 4's table says: 429 and 503 to Unavailable, 5xx to Internal.
 
   In the sandbox, find which Charge field shows that a Google Pay payment used a network token, and record it in design Decision 6. Until that is confirmed, count only Apple Pay.
 
   Verify:
-  - unit tests over a stubbed Stripe client, annotated `@spec` for every scenario of `dispute/sync`, `dispute/accept`, `dispute/submit-evidence`, `order/is-cardholder-authenticated` and `order/get-provider-own-refund`;
+  - unit tests over a stubbed Stripe client, annotated `@spec` for every scenario of `dispute/sync`, `dispute/accept`, `dispute/submit-evidence`, `order/is-cardholder-authenticated` and `order/get-provider-refund`;
   - one sandbox integration test that syncs and submits evidence for a `4000000000002685` dispute.
 - [ ] 4.3 Implement the remaining store operations in `rdb`:
   - `Dispute.Get`, `Dispute.ListByOrder` and `Dispute.MarkSettled`;
@@ -107,7 +107,7 @@
 
   Audit issuance (`issuance_repo.go`), resale sold and event removal for the same lock order (design Decision 2). Verify with DB integration tests annotated `@spec` for every scenario of "Refund recorded together", including Dispute recorded, Second dispute on a refunded order and Settlement claimed after it was read.
 - [ ] 6.2 Add `DisputeUseCase.Respond` as the workflows `dispute:<id>` and `dispute:<id>:escalated`:
-  - `Dispute.Sync`, then the decision of the entity rule from `Order.Get`, `Event.Get`, `Order.GetProviderOwnRefund`, `Admission.CountByEvent` and, for Fraud, `Order.IsCardholderAuthenticated`;
+  - `Dispute.Sync`, then the decision of the entity rule from `Order.Get`, `Event.Get`, `Order.GetProviderRefund`, `Admission.CountByEvent` and, for Fraud, `Order.IsCardholderAuthenticated`;
   - the Warn log line of design Decision 10;
   - on accept: for an inquiry, `Order.CreateRefund` first; then `Dispute.Accept`; a FailedPrecondition re-syncs and answers again; then start `dispute-settle:<id>:lost`;
   - on review: start the child workflow `dispute-review:<id>:<due time>` that ends with FailedPrecondition, then continue as for a contest;
@@ -125,7 +125,7 @@
 - [ ] 6.4 Add `DisputeUseCase.Settle` as the workflows `dispute-settle:<id>:lost|won`, with a 14-day deadline:
   - `Dispute.Sync`;
   - Won: the cancellation-refund-owed check, and a quiet end for an Accepted Dispute;
-  - Lost or Accepted: the whole and partial branches of design Decision 7, including the Releasing re-read every 10 minutes with `f.Recv` as the durable sleep, at most 72 times; the re-read after a FailedPrecondition from a compare-and-set; and the fan-paid-twice page.
+  - Lost or Accepted: read the Event and the refunds by purpose; the whole and partial branches of design Decision 7; the page for the rest of a 中止 refund owed after a partial dispute on a cancelled Event; including the Releasing re-read every 10 minutes with `f.Recv` as the durable sleep, at most 72 times; the re-read after a FailedPrecondition from a compare-and-set; and the fan-paid-twice page.
 
   Verify with usecase tests annotated `@spec` for every scenario of `usecase/dispute/settle`.
 - [ ] 6.5 Narrow `OrderUseCase.Refund` to the reason Cancellation:
@@ -173,6 +173,7 @@
   - `components/entity/order`: the refund reason Dispute, the refund amount of an accepted inquiry, and the provider refund ID row (also present for an accepted inquiry's Dispute refund);
   - `components/usecase/settlement/release-due-settlements`: the sequence diagram claims and starts SettlementUseCase.Release instead of paying;
   - `components/usecase/order/refund`: the sequence diagram drops the Dispute and Released branches;
-  - `components/adapter/fan/api/webhook/payment-events`: the Purpose says a dispute is answered, not refunded.
+  - `components/adapter/fan/api/webhook/payment-events`: the Purpose says a dispute is answered, not refunded;
+  - `components/usecase/notification/send-order-refunded`: the sequence diagram reads `ResaleListing.ListByOrder` and keys its break on every Ticket resold, not on the refund amount 0.
 
   Verify: `python3 scripts/check-diagrams.py` passes and each diagram matches its requirements.

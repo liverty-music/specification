@@ -20,7 +20,7 @@ end
 UC->>Order: Get
 UC->>Order: GetEventID
 UC->>Event: Get
-UC->>Order: GetProviderOwnRefund
+UC->>Order: GetProviderRefund
 UC->>Admission: CountByEvent
 opt reason Fraud
   UC->>Order: IsCardholderAuthenticated
@@ -62,7 +62,7 @@ Respond SHALL take an Order and a provider dispute ID and record the dispute as 
 
 ### Requirement: Answered on its merits
 
-Respond SHALL read the Order with Order.Get, its Event with Order.GetEventID and Event.Get, the Order's own refund at the payment provider with Order.GetProviderOwnRefund (so a 中止 refund made but not yet recorded counts as made), whether anyone entered the Event with Admission.CountByEvent, and, for the reason Fraud, whether the cardholder verified the payment with Order.IsCardholderAuthenticated, and answer the Dispute as the Dispute's response rule decides:
+Respond SHALL read the Order with Order.Get, its Event with Order.GetEventID and Event.Get, the Order's own refund at the payment provider with Order.GetProviderRefund (so a 中止 refund made but not yet recorded counts as made), whether anyone entered the Event with Admission.CountByEvent, and, for the reason Fraud, whether the cardholder verified the payment with Order.IsCardholderAuthenticated, and answer the Dispute as the Dispute's response rule decides:
 
 - **Accept**: for an inquiry, first refund the disputed amount, at most the fan's remaining claim, with Order.CreateRefund for the Dispute, skipping the refund when nothing is left to refund; then call Dispute.Accept, then DisputeUseCase.Settle with the outcome Accepted. When Order.CreateRefund or Dispute.Accept fails with FailedPrecondition because the inquiry escalated meanwhile, Respond SHALL sync the Dispute and answer it again.
 - **Review**: page an admin with the Dispute, without ending Respond, then do as for a contest; the admin answers it with the payment provider.

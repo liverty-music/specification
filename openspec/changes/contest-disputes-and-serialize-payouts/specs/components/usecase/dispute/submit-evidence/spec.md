@@ -23,7 +23,7 @@ end
 UC->>Order: Get
 UC->>Order: GetEventID
 UC->>Event: Get
-UC->>Order: GetProviderOwnRefund
+UC->>Order: GetProviderRefund
 UC->>Admission: CountByEvent
 opt reason Fraud
   UC->>Order: IsCardholderAuthenticated
@@ -52,7 +52,7 @@ end
 
 ### Requirement: The answer is checked again
 
-SubmitEvidence SHALL sync the Dispute with Dispute.Sync and do nothing when it is no longer Open. It SHALL then decide again as Respond does, from the Order, its Event, Order.GetProviderOwnRefund, Admission.CountByEvent and, for the reason Fraud, Order.IsCardholderAuthenticated, read at this time. When the answer is now to accept, it SHALL accept as Respond does. When the answer is to review and it is earlier than 48 hours before the evidence due time, it SHALL page an admin and schedule itself again for that time, so the admin has until then to answer; at that time a review is contested.
+SubmitEvidence SHALL sync the Dispute with Dispute.Sync and do nothing when it is no longer Open. It SHALL then decide again as Respond does, from the Order, its Event, Order.GetProviderRefund, Admission.CountByEvent and, for the reason Fraud, Order.IsCardholderAuthenticated, read at this time. When the answer is now to accept, it SHALL accept as Respond does. When the answer is to review and it is earlier than 48 hours before the evidence due time, it SHALL page an admin and schedule itself again for that time, so the admin has until then to answer; at that time a review is contested.
 
 #### Scenario: Event cancelled after the dispute opened
 - **WHEN** SubmitEvidence runs for an Open NotReceived Dispute whose Paid Order's Event became CANCELLED after the dispute opened
