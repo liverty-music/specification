@@ -871,7 +871,7 @@ footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
         <li><span class="q">ファン本人のための呼び出しは、トークンの identity から User を引く</span><span class="no">User が無い → NotFound</span></li>
         <li class="end"><span class="q">リクエストは User id を持たない</span>いつも呼び出した本人の User だけを読み書きする</li>
       </ol>
-      <p class="exc">例外:<br>公開の読み取り (Concert の <code>Get</code> と <code>ListBy…</code>、Artist の <code>ListTop</code> <code>ListSimilar</code> <code>Search</code>、TicketSale の <code>ListByEvent</code>) は、ゲストもトークンなしで呼べる。<br><code>UserService.Create</code> はトークンの identity を使うが、User はまだ無いので引かない。<br>Artist の <code>List</code> <code>Create</code> と OfficialSite の <code>Create</code> <code>Delete</code> はサインインが要るが、User は引かない。<br><code>RequestPasskeyRecovery</code> と <code>VerifyEmail</code> はトークンなしで受ける (サインインできない人のため)。代わりに送信元ごとに 60 分 10 回まで。</p>
+      <p class="exc">例外:<br>公開の読み取り (Concert の <code>Get</code> と <code>ListBy…</code>、Artist の <code>ListTop</code> <code>ListSimilar</code> <code>Search</code>、TicketSale の <code>ListByEvent</code>) は、ゲストもトークンなしで呼べる。<br><code>UserService.Create</code> はトークンの identity を使うが、User はまだ無いので引かない。<br>Artist の <code>List</code> <code>Create</code> はサインインが要るが、User は引かない。<br><code>RequestPasskeyRecovery</code> と <code>VerifyEmail</code> はトークンなしで受ける (サインインできない人のため)。代わりに送信元ごとに 60 分 10 回まで。</p>
     </div>
     <div class="gcol org">
       <h3>organizer API</h3>
@@ -889,7 +889,7 @@ footer { padding: 30px 0 40px; color: var(--muted); font-size: .82rem; }
       <ol>
         <li><span class="q">有効なトークンか</span><span class="no">いいえ → Unauthenticated</span></li>
         <li><span class="q">admin 役割があるか</span><span class="no">いいえ → PermissionDenied</span></li>
-        <li class="end"><span class="q">管理操作</span>Organizer の作成・停止・削除、ファンの検索・削除</li>
+        <li class="end"><span class="q">管理操作</span>Organizer の作成・停止・削除、ファンの検索・削除、artist の公式サイト (OfficialSite) の登録と修正</li>
       </ol>
     </div>
   </div>
