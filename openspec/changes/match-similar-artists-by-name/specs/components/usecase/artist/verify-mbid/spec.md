@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: VerifyMBID stores the verified artist's names
-For a verified MBID, ArtistUseCase.VerifyMBID SHALL give Artist.UpdateMBID the known names Artist.GetArtist returned for that MBID. An ambiguous result changes no name key.
+For a verified MBID, ArtistUseCase.VerifyMBID SHALL give Artist.UpdateMBID the known names Artist.GetArtist returned for that MBID. An ambiguous result changes no known name.
 
 #### Scenario: Namesake chosen
 - **WHEN** the artist is verified with a namesake's MBID

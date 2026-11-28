@@ -6,7 +6,7 @@ The listening service returns many similar artists without an MBID, and ArtistUs
 
 - A refresh of an artist stores the catalog's name and activity status only while the artist still has the MBID they were read for. Today (backend v1.162.0) a refresh that overlaps an MBID correction writes the namesake's name and activity status over the corrected artist until the next refresh, up to 30 days later (found in review; not observed in production).
 - An Artist gets known names: its name and the music catalog's aliases for it, normalized. They are stored whenever the catalog's identity of an artist is stored, and refreshed by the daily catalog read. No catalog call is added: aliases come with the artist read that already happens.
-- ArtistUseCase.ListSimilar looks a result without an MBID up among the registered artists by name, and includes the artist when exactly one registered artist has that name key and it is offered to fans. Such a result still registers nothing.
+- ArtistUseCase.ListSimilar looks a result without an MBID up among the registered artists by name, and includes the artist when exactly one registered artist is known by that name and it is offered to fans. Such a result still registers nothing.
 - The number of results without an MBID that were matched, matched more than one artist or matched none is logged, to decide whether a background lookup in the music catalog is worth building.
 
 Not in this change: asking the music catalog about unmatched names (in the request or in the background), registering artists from results without an MBID, and the same matching for name search and charts.

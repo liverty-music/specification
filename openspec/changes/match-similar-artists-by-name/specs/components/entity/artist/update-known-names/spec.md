@@ -5,7 +5,7 @@ Replaces the names a registered artist is found by, as the music catalog current
 ## ADDED Requirements
 
 ### Requirement: UpdateKnownNames replaces the known names
-UpdateKnownNames SHALL take an artist id, the MBID the names were read for and the known names, set the artist's known_names to the given keys, change nothing else and announce nothing. When the artist's mbid is no longer the given MBID (Artist.UpdateMBID replaced it after the names were read), it SHALL change nothing and succeed, so another person's names are never stored. It SHALL fail with NotFound when no artist has the id.
+UpdateKnownNames SHALL take an artist id, the MBID the names were read for and the known names, set the artist's known_names to the given known names, change nothing else and announce nothing. When the artist's mbid is no longer the given MBID (Artist.UpdateMBID replaced it after the names were read), it SHALL change nothing and succeed, so another person's names are never stored. It SHALL fail with NotFound when no artist has the id.
 
 #### Scenario: Names replaced
 - **WHEN** UpdateKnownNames is called with the artist's current MBID and new names
