@@ -20,7 +20,7 @@ The admin console's navigation SHALL offer `Artist MBIDs`. The screen SHALL list
 
 ### Requirement: Selecting an artist shows its namesakes
 
-Selecting a listed artist SHALL read CatalogArtistService.ListByArtist for it and show each CatalogArtist in the returned order with its name, country, life span (the begin when there is one, followed by `to` and the end when there is an end, otherwise by `ended` when activity_ended is true and `active` when it is false; with no begin, only the part after it), disambiguation and official site as a link. Each MBID SHALL link to the artist's page in the music catalog, opening in a new tab. The artist's current MBID SHALL be labelled `Current`. While the read is in progress the list shows `Loading namesakes…`; when it fails, the screen SHALL show `The music catalog could not be reached. Try again.` with a `Try again` button that reads it again.
+Selecting a listed artist SHALL read CatalogArtistService.ListByArtist for it and show each CatalogArtist in the returned order with its name, country, life span, shown as one of `<begin> to <end>`, `<begin> ended`, `<begin> active`, `to <end>`, `ended` or `active`: the begin when there is one, then `to` and the end when there is an end, otherwise `ended` when activity_ended is true and `active` when it is false, disambiguation and official site as a link. Each MBID SHALL link to the artist's page in the music catalog, opening in a new tab. The artist's current MBID SHALL be labelled `Current`. While the read is in progress the list shows `Loading namesakes…`; when it fails, the screen SHALL show `The music catalog could not be reached. Try again.` with a `Try again` button that reads it again.
 
 #### Scenario: Namesakes shown
 
@@ -36,6 +36,11 @@ Selecting a listed artist SHALL read CatalogArtistService.ListByArtist for it an
 
 - **WHEN** the artist's current MBID is listed first with no begin and no end, and the catalog marks its activity as ended
 - **THEN** it is labelled `Current` with life span `ended` alone
+
+#### Scenario: Namesake with an end and no begin
+
+- **WHEN** a namesake has no begin and an end of 2002
+- **THEN** its life span is shown as `to 2002`
 
 #### Scenario: Catalog unreachable
 
