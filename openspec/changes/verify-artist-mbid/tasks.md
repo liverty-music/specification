@@ -11,7 +11,7 @@
 ## 3. backend: entity operations (design D1, D3)
 
 - [ ] 3.1 Change `ArtistRepository.Create` and `ListByMBIDs` to match `mbid` or `listening_mbid` and store the given listening MBID and status, under the advisory lock of D1; verify one contract test per scenario of `components/entity/artist/create` and `list-by-mbids`
-- [ ] 3.2 Change `ArtistRepository.UpdateMBID` to keep `listening_mbid` and set Verified, and add `MarkMBIDAmbiguous` and `ListByMBIDStatus`; verify one contract test per scenario of `components/entity/artist/update-mbid`, `mark-mbid-ambiguous` and `list-by-mbid-status`, including the test that runs `UpdateMBID` and `Create` at the same time
+- [ ] 3.2 Change `ArtistRepository.UpdateMBID` to keep `listening_mbid` and set Verified, add `MarkMBIDAmbiguous` and `ListByMBIDStatus`, and make `ArtistRepository.UpdateFanart` take the MBID the images were resolved for and store nothing once the MBID was replaced (its caller `ArtistImageSyncUseCase.SyncArtistImage` passes it); verify one contract test per scenario of `components/entity/artist/update-mbid`, `mark-mbid-ambiguous`, `list-by-mbid-status` and `update-fanart`, including the test that runs `UpdateMBID` and `Create` at the same time
 - [ ] 3.3 Make the Last.fm client ask `artist.getsimilar` with the artist's `listening_mbid`; verify one contract test per scenario of `components/entity/artist/list-similar` against a stubbed Last.fm server
 - [ ] 3.4 Add `ListNamesakes` to the MusicBrainz client (artist search by exact name, case-insensitive filter, country, life span and disambiguation), through the existing throttle and retry; verify one contract test per scenario of `components/entity/artist/list-namesakes` against recorded MusicBrainz responses
 
@@ -19,7 +19,7 @@
 
 - [ ] 4.1 Implement `ArtistUseCase.VerifyMBID` with the decision of D3 and its ERROR log; verify one unit test per scenario of `components/usecase/artist/verify-mbid` with the operations mocked
 - [ ] 4.2 Run `VerifyMBID` instead of `Refresh` in the `refresh-artist` consumer, and make the `artist-refresh` job verify every Unverified artist before its slot of `Refresh`; verify the consumer test (announced artist, ambiguous result returns success) and the job test (Unverified first, stop after 3 consecutive failures), covering the trigger scenarios of `components/usecase/artist/verify-mbid` and the REMOVED requirement of `components/usecase/artist/refresh`
-- [ ] 4.3 Change `ArtistUseCase.Search` to decide the MBID of each new match before `Create`, and `Search`, `ListTop` and `ListSimilar` to return only artists offered to fans, also on a cache hit (the cache keeps the result before the filter); verify one unit test per scenario of `components/usecase/artist/search`, `list-top` and `list-similar` with the operations mocked
+- [ ] 4.3 Change `ArtistUseCase.Search` to decide the MBID of each new match before `Create`, within a 15-second budget (design Risks), and `Search`, `ListTop` and `ListSimilar` to return only artists offered to fans, also on a cache hit (the cache keeps the result before the filter); verify one unit test per scenario of `components/usecase/artist/search`, `list-top` and `list-similar` with the operations mocked
 - [ ] 4.4 Change `ArtistUseCase.CorrectMBID` to store the catalog's details with one `UpdateMBID` and `ArtistUseCase.Create` to register Verified with the looked-up activity status, and add `ArtistUseCase.ListByMBIDStatus` and `CatalogArtistUseCase.ListByArtist`; verify one unit test per scenario of `components/usecase/artist/correct-mbid`, `create`, `list-by-mbid-status` and `components/usecase/catalog-artist/list-by-artist`
 
 ## 5. backend: admin RPC, removals and documentation (design D6, D7; after 1.2)
@@ -40,7 +40,7 @@
 ## 8. production check and corrections
 
 - [ ] 8.1 Start the `artist-refresh` job by hand and watch it until no artist is Unverified, reading its log for stops; then list the Ambiguous artists read-only and record their count and names in the task report
-- [ ] 8.2 Measure `Search` for three names never searched before (Fan API logs or a timed request): if a first search exceeds 15 seconds, apply the fallback of design "Risks" (verify only the first matches, register the rest Unverified) in a follow-up commit of this change; record the timings in the task report
+- [ ] 8.2 Measure `Search` for three names never searched before (Fan API logs or a timed request): the 15-second decision budget of design "Risks" bounds it; record the timings and how many new matches each search left Unverified in the task report
 - [ ] 8.3 Check read-only in prod that `ListSimilar` for sumika returns similar artists, and that `ListTop` for Japan, a name search for sumika and one for Penthouse return only Verified artists whose activity has not ended
 - [ ] 8.4 The owner chooses or enters the right MBID for each Ambiguous artist on the screen (production writes the owner makes, including any of Ado, Aimer, Yama, Sumika, Saji and Penthouse still Ambiguous); then verify read-only for each: Verified, the chosen `mbid`, `listening_mbid` unchanged, and the next search for its name registers nothing
 

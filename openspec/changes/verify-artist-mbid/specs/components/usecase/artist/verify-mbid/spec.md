@@ -12,6 +12,7 @@ UC->>Artist: Get
 break mbid_status is not Unverified
   Note over UC: change nothing
 end
+UC->>Artist: GetArtist "the canonical form of its MBID"
 UC->>Artist: ListNamesakes "the artist's name"
 alt a namesake other than its MBID
   loop each namesake, its MBID included
