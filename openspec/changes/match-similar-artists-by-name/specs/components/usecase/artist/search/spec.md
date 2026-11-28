@@ -1,12 +1,8 @@
 ## ADDED Requirements
 
-### Requirement: Search registers a verified match with the catalog's names
-ArtistUseCase.Search SHALL register a match it verified with the known names Artist.GetArtist returned for its MBID, and any other new match with the match's name as its only known name.
+### Requirement: Search registers a new match under its name
+ArtistUseCase.Search SHALL register each new match with the match's name as its only known name. The music catalog's names are stored when ArtistUseCase.VerifyMBID verifies the registered artist.
 
-#### Scenario: Verified match
-- **WHEN** a new match is verified and the catalog lists an alias for its MBID
-- **THEN** the registered artist is found by that alias
-
-#### Scenario: Ambiguous match
-- **WHEN** a new match is ambiguous
-- **THEN** it is registered with the match's name as its only known name
+#### Scenario: New match registered under its name
+- **WHEN** Search registers a new match
+- **THEN** the registered artist's only known name is the match's name
