@@ -30,7 +30,7 @@ Not in this change: asking the music catalog about unmatched names (in the reque
 - `components/usecase/artist/verify-mbid`: stores the verified artist's known names.
 - `components/usecase/artist/correct-mbid`: stores the chosen artist's known names.
 - `components/usecase/artist/create`: registers with the catalog's known names.
-- `components/usecase/artist/search`: registers a verified match with the catalog's known names.
+- `components/usecase/artist/search`: registers a new match with the match's name as its only known name; VerifyMBID stores the catalog's names.
 - `stories/discover-artists`: a similar artist listed without an MBID is offered when it is registered.
 
 Entity operations used and unchanged: Artist.Get, Artist.ListSimilar, Artist.FilterArtistsByMBID, Artist.ListByMBIDs.
