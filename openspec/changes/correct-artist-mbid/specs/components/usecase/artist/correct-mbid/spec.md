@@ -19,11 +19,15 @@ sequenceDiagram
 ## ADDED Requirements
 
 ### Requirement: CorrectMBID gives the artist the right person's identity
-ArtistUseCase.CorrectMBID SHALL take an artist id and an MBID, read the artist, look the MBID up with Artist.GetArtist, replace the artist's MBID with Artist.UpdateMBID, and then adopt the catalog's name and activity status as Refresh does. It SHALL return the corrected artist. It SHALL look the MBID up before changing anything, so an MBID the catalog does not know stores nothing.
+ArtistUseCase.CorrectMBID SHALL take an artist id and an MBID, read the artist, look the MBID up with Artist.GetArtist, replace the artist's MBID with the MBID the catalog returned for it (the canonical MBID, which differs from the given one when the catalog redirects a merged MBID) with Artist.UpdateMBID, and then adopt the catalog's name and activity status as Refresh does. It SHALL return the corrected artist. It SHALL look the MBID up before changing anything, so an MBID the catalog does not know stores nothing.
 
 #### Scenario: Namesake corrected
 - **WHEN** an artist registered with a namesake's MBID is corrected with the MBID of the right person
 - **THEN** the artist has the new MBID and the catalog's name and activity status, its replaced MBID is among its other_mbids, and it keeps its id
+
+#### Scenario: Redirected MBID
+- **WHEN** the catalog answers the given MBID with another, canonical MBID
+- **THEN** the artist's MBID becomes the canonical one, and another artist having the canonical MBID fails the correction with AlreadyExists
 
 #### Scenario: Catalog does not know the MBID
 - **WHEN** Artist.GetArtist fails with NotFound for the given MBID

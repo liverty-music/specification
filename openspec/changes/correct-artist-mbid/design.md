@@ -29,7 +29,7 @@ The catalog cannot tell which same-named person a fan means, so the right MBID i
 
 ### D3. `UpdateMBID` and the lock shared with Create
 
-`ArtistRepository.UpdateMBID(ctx, id, mbid)` runs in one transaction:
+`ArtistRepository.UpdateMBID(ctx, id, mbid)` rejects an MBID that is not 36 characters (InvalidArgument) before it connects, then runs in one transaction:
 1. `pg_advisory_xact_lock(<artist-mbid key>)`, the same lock `Create` takes before its insert. Rows it protects: the set of MBIDs of all artists. `Create` is the only other path that adds an MBID to the set, so a search cannot register the replaced MBID between the check and the update.
 2. `SELECT mbid, other_mbids FROM artists WHERE id = $1 FOR UPDATE` (NotFound when absent).
 3. Unchanged when the given MBID is the artist's own.
@@ -41,13 +41,15 @@ Clearing is what makes the later jobs repair the artist: the fanart sync takes a
 
 ### D4. `CorrectMBID` order
 
-`ArtistUseCase.CorrectMBID(ctx, artistID, mbid)`: reject an MBID that is not 36 characters (InvalidArgument), read the artist (NotFound), look the MBID up in the catalog (`Artist.GetArtist`; NotFound means a typo and stops before anything is stored), `UpdateMBID`, then `refresh` with the new MBID and the artist's name so the name and `activity_ended` follow the right person. A refresh failure is returned (Unavailable) after the correction is stored; running the command again with the same MBID changes nothing and repeats the refresh, so the admin repairs it by running it again.
+`ArtistUseCase.CorrectMBID(ctx, artistID, mbid)`: reject an MBID that is not 36 characters (InvalidArgument), read the artist (NotFound), look the MBID up in the catalog (`Artist.GetArtist`; NotFound means a typo and stops before anything is stored), `UpdateMBID` with the MBID the catalog returned (its canonical MBID: the catalog answers a merged MBID with the surviving one, as `GetArtist` and the usecase `Create` already rely on, so the stored MBID is the one a later lookup returns), then `refresh` with that MBID and the artist's name so the name and `activity_ended` follow the right person. A refresh failure is returned (Unavailable) after the correction is stored; running the command again with the same MBID changes nothing and repeats the refresh, so the admin repairs it by running it again.
 
 ### D5. Entry point: a worker command, runbook in cloud-provisioning
 
 `worker artist correct-mbid <artist id> <mbid>`, run like the `workflow` commands: `kubectl exec deploy/workflow-worker -n backend -- /worker artist correct-mbid ...`, as the worker's database identity, printing the artist as JSON. DI builds only the artist repository, the MusicBrainz client and the use case (as the artist refresh job does). Alternative: an admin RPC. Rejected: it needs a proto Release and BSR generation, and a console screen to be usable, for an operation that runs a few times in total.
 
 ### D6. The audit is operational
+
+Penthouse is corrected in the same task: it was fixed by hand, so its namesake MBID is in no `other_mbids` and the next search would register a second row. After checking that no row holds the namesake MBID, the command is run twice (to the namesake MBID, then back to the right one), which records the namesake MBID and leaves the right one; if a row already holds it, the owner resolves that duplicate first.
 
 For every registered artist, read the catalog record of its MBID (name, type, country, life span, disambiguation) and the other catalog artists with exactly the same name, and list the artists whose name has another candidate. A person decides from the list (country, life span, the concerts the artist has) which MBID is right. The list and the decisions go in the task's report, not in an issue (artist names are public, but follower counts are not). Wrong artists are corrected with the command of D5; those are production writes the owner approves one by one.
 
