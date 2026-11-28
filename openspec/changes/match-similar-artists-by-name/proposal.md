@@ -4,7 +4,8 @@ The listening service returns many similar artists without an MBID, and ArtistUs
 
 ## What Changes
 
-- An Artist gets name keys: its name and the music catalog's aliases for it, normalized. They are stored whenever the catalog's identity of an artist is stored, and refreshed by the daily catalog read. No catalog call is added: aliases come with the artist read that already happens.
+- A refresh of an artist stores the catalog's name and activity status only while the artist still has the MBID they were read for. Today (backend v1.162.0) a refresh that overlaps an MBID correction writes the namesake's name and activity status over the corrected artist until the next refresh, up to 30 days later (found in review; not observed in production).
+- An Artist gets known names: its name and the music catalog's aliases for it, normalized. They are stored whenever the catalog's identity of an artist is stored, and refreshed by the daily catalog read. No catalog call is added: aliases come with the artist read that already happens.
 - ArtistUseCase.ListSimilar looks a result without an MBID up among the registered artists by name, and includes the artist when exactly one registered artist has that name key and it is offered to fans. Such a result still registers nothing.
 - The number of results without an MBID that were matched, matched more than one artist or matched none is logged, to decide whether a background lookup in the music catalog is worth building.
 
@@ -14,29 +15,30 @@ Not in this change: asking the music catalog about unmatched names (in the reque
 
 ### New Capabilities
 
-- `components/entity/artist/list-by-name-keys`: Artist.ListByNameKeys, the registered artists found under given names.
-- `components/entity/artist/update-name-keys`: Artist.UpdateNameKeys, replaces an artist's name keys.
+- `components/entity/artist/list-by-known-names`: Artist.ListByKnownNames, the registered artists found under given names.
+- `components/entity/artist/update-known-names`: Artist.UpdateKnownNames, replaces an artist's known names.
 
 ### Modified Capabilities
 
-- `components/entity/artist` (Purpose): attribute `name_keys`, and the rule that derives a name key.
+- `components/entity/artist` (Purpose): attribute `known_names`, and the rule that normalizes a known name.
 - `components/entity/artist/get-artist`: also returns the catalog's aliases.
-- `components/entity/artist/create`: stores the artist's name keys.
-- `components/entity/artist/update-mbid`: replaces the name keys with the given ones.
+- `components/entity/artist/update-name`, `components/entity/artist/update-activity-ended`: store only while the artist still has the MBID the value was read for.
+- `components/entity/artist/create`: stores the artist's known names.
+- `components/entity/artist/update-mbid`: replaces the known names with the given ones.
 - `components/usecase/artist/list-similar` (Purpose, at archive): includes registered artists for results without an MBID.
-- `components/usecase/artist/refresh`: keeps the name keys in line with the catalog.
-- `components/usecase/artist/verify-mbid`: stores the verified artist's name keys.
-- `components/usecase/artist/correct-mbid`: stores the chosen artist's name keys.
-- `components/usecase/artist/create`: registers with the catalog's name keys.
-- `components/usecase/artist/search`: registers a verified match with the catalog's name keys.
+- `components/usecase/artist/refresh`: keeps the known names in line with the catalog.
+- `components/usecase/artist/verify-mbid`: stores the verified artist's known names.
+- `components/usecase/artist/correct-mbid`: stores the chosen artist's known names.
+- `components/usecase/artist/create`: registers with the catalog's known names.
+- `components/usecase/artist/search`: registers a verified match with the catalog's known names.
 - `stories/discover-artists`: a similar artist listed without an MBID is offered when it is registered.
 
-Entity operations used and unchanged: Artist.Get, Artist.ListSimilar, Artist.FilterArtistsByMBID, Artist.ListByMBIDs, Artist.UpdateName, Artist.UpdateActivityEnded.
+Entity operations used and unchanged: Artist.Get, Artist.ListSimilar, Artist.FilterArtistsByMBID, Artist.ListByMBIDs.
 
 This change builds on change verify-artist-mbid (`mbid_status`, `listening_mbid`, ArtistUseCase.VerifyMBID): it is implemented on that backend and archived after it.
 
 ## Impact
 
-- backend: column `artists.name_keys` with a GIN index (migration with a backfill from the name); MusicBrainz artist read with `inc=aliases`; the artist repository; ArtistUseCase.
-- No proto, frontend or infrastructure change; name keys are not exposed by any API.
+- backend: column `artists.known_names` with a GIN index (migration with a backfill from the name); MusicBrainz artist read with `inc=aliases`; the artist repository; ArtistUseCase.
+- No proto, frontend or infrastructure change; known names are not exposed by any API.
 - Existing artists are found by their name at once, and by their aliases after the daily refresh has read them (every artist within 30 days).

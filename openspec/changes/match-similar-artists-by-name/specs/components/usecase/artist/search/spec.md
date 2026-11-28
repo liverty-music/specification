@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Search registers a verified match with the catalog's names
-ArtistUseCase.Search SHALL register a match it verified with the name keys Artist.GetArtist returned for its MBID, and any other new match with the key of the match's name only.
+ArtistUseCase.Search SHALL register a match it verified with the known names Artist.GetArtist returned for its MBID, and any other new match with the match's name as its only known name.
 
 #### Scenario: Verified match
 - **WHEN** a new match is verified and the catalog lists an alias for its MBID
@@ -9,4 +9,4 @@ ArtistUseCase.Search SHALL register a match it verified with the name keys Artis
 
 #### Scenario: Ambiguous match
 - **WHEN** a new match is ambiguous
-- **THEN** it is registered with the key of the match's name
+- **THEN** it is registered with the match's name as its only known name

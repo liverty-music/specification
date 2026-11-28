@@ -35,7 +35,7 @@ ArtistUseCase.ListSimilar SHALL take an artist id and a limit from 0 to 50, get 
 ## ADDED Requirements
 
 ### Requirement: ListSimilar matches results without an MBID by name
-After registering the results with an MBID, ArtistUseCase.ListSimilar SHALL look the names of all results without an MBID up with one Artist.ListByNameKeys call. A result SHALL stand for a registered artist only when exactly one of the returned artists has its name, counting artists that are not offered to fans, and that artist is not the seed. The artist takes the result's position in the catalog's order and is listed once. A result without an MBID SHALL never be registered. When there is no result without an MBID, Artist.ListByNameKeys is not called.
+After registering the results with an MBID, ArtistUseCase.ListSimilar SHALL look the names of all results without an MBID up with one Artist.ListByKnownNames call. A result SHALL stand for a registered artist only when exactly one of the returned artists has its name, counting artists that are not offered to fans, and that artist is not the seed. The artist takes the result's position in the catalog's order and is listed once. A result without an MBID SHALL never be registered. When there is no result without an MBID, Artist.ListByKnownNames is not called.
 
 #### Scenario: Registered artist listed by a romanized name
 - **WHEN** the catalog lists `Yorushika` without an MBID and exactly one registered artist, offered to fans, has that name as an alias
@@ -58,5 +58,5 @@ After registering the results with an MBID, ArtistUseCase.ListSimilar SHALL look
 - **THEN** the seed is not returned
 
 #### Scenario: Name lookup fails
-- **WHEN** Artist.ListByNameKeys fails with Unavailable
+- **WHEN** Artist.ListByKnownNames fails with Unavailable
 - **THEN** ListSimilar fails with Unavailable
