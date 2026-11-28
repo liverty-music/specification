@@ -5,7 +5,7 @@
 
 ## 2. backend: schema and entity (components/entity/artist, components/entity/catalog-artist; design D1, D2)
 
-- [ ] 2.1 In `schema.sql` add `artists.listening_mbid TEXT NOT NULL` with a unique index and `artists.mbid_status TEXT NOT NULL DEFAULT 'unverified'` with its CHECK, each with a `COMMENT ON COLUMN`, and drop `other_mbids`; generate the Atlas migration and add to it the backfill `listening_mbid = mbid`, `mbid_status = 'verified'` for every artist with `organizer_id` set (design Migration Plan step 2), and Penthouse's `listening_mbid` (design Migration Plan step 2, after a read-only prod check that no row holds `c94eaf81-baae-465d-8197-9951c2ef52cd`); verify the migration test applies it on a copy with rows and `make lint-schema` passes
+- [ ] 2.1 In `schema.sql` add `artists.listening_mbid TEXT NOT NULL` with a unique index and `artists.mbid_status TEXT NOT NULL DEFAULT 'unverified'` with its CHECK, each with a `COMMENT ON COLUMN`, and drop `other_mbids`; generate the Atlas migration and add to it the backfill `listening_mbid = mbid`, `mbid_status = 'verified'` for the existing test artists by id (design Migration Plan step 2; list read-only from prod the artists whose MBID MusicBrainz answers 404 for, and record their names and ids in the task report), and Penthouse's `listening_mbid` (design Migration Plan step 2, after a read-only prod check that no row holds `c94eaf81-baae-465d-8197-9951c2ef52cd`); verify the migration test applies it on a copy with rows and `make lint-schema` passes
 - [ ] 2.2 Add `ListeningMBID` and `MBIDStatus` to `entity.Artist` (removing `OtherMBIDs`) and the `entity.CatalogArtist` type with its validation, and the "offered to fans" check; verify one unit test per scenario of `components/entity/artist` ("A new artist starts without images", "One MBID names one artist", "Only a verified artist whose activity has not ended is offered") and `components/entity/catalog-artist`
 
 ## 3. backend: entity operations (design D1, D3)
@@ -30,7 +30,7 @@
 
 ## 6. backend: release
 
-- [ ] 6.1 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: AtlasMigration `Ready` with the new columns and `other_mbids` gone, Penthouse's `listening_mbid` set, every artist Unverified except those an Organizer represents (Verified), and the rollout of every backend workload finished
+- [ ] 6.1 Open the backend PR citing the change, merge it, cut the release, and verify read-only in prod: AtlasMigration `Ready` with the new columns and `other_mbids` gone, Penthouse's `listening_mbid` set, every artist Unverified except the test artists listed in 2.1 (Verified), and the rollout of every backend workload finished
 
 ## 7. frontend: admin console Artist MBIDs screen and test-artist Create (components/infrastructure/admin/web/route/artist-mbids; right after 6.1)
 
