@@ -9,6 +9,7 @@ An Artist is a musical performer or group that fans follow for concert news. It 
 | id | the artist's identity in Liverty Music | required; a UUID, fresh for every new artist |
 | name | display name of the performer or group | required; at least 1 character |
 | mbid | the artist's identifier in the music catalog | required; a UUID of 36 characters; one artist per MBID |
+| other_mbids | the MBIDs the artist was corrected from: the music catalog's lookup by name returned a namesake's MBID, and a search that returns one of them still finds this artist | optional; zero or more UUIDs of 36 characters, never the artist's own mbid; an MBID is the mbid or other MBID of one artist only |
 | fanart | the artist's community-curated images, grouped by kind: artist_thumb (square portrait), artist_background (wide backdrop), music_banner (wide banner) | optional; absent when the images were never checked or the last check found none; each kind holds zero or more images |
 | fanart image | one image of a kind: its catalog id, URL, like count and language | URL required; like count 0 or more |
 | fanart_sync_time | when the artist's images were last checked | optional; absent means never checked |
