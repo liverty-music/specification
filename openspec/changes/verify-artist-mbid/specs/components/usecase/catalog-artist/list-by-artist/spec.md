@@ -27,5 +27,5 @@ CatalogArtistUseCase.ListByArtist SHALL fail with NotFound when no artist has th
 - **THEN** ListByArtist fails with NotFound
 
 #### Scenario: Catalog unavailable
-- **WHEN** Artist.ListByArtist fails with Unavailable
+- **WHEN** Artist.ListNamesakes fails with Unavailable
 - **THEN** ListByArtist fails with Unavailable

@@ -66,11 +66,15 @@ For a verified MBID it SHALL read the catalog's name and activity status with Ar
 - **THEN** it looks nothing up and changes nothing
 
 ### Requirement: VerifyMBID reports failures
-ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations, Artist.GetArtist or Artist.UpdateMBID, leaving the artist Unverified and unchanged, so a retry or the next daily run verifies it again, except in two cases that make the MBID ambiguous: Artist.GetArtist fails with NotFound for the MBID to verify, or Artist.UpdateMBID fails with AlreadyExists because another artist holds it. The error logged then also names that MBID and the reason.
+ArtistUseCase.VerifyMBID SHALL fail with NotFound when no artist has the id, and with the error of Artist.ListNamesakes, Artist.ListOfficialSiteRelations, Artist.GetArtist or Artist.UpdateMBID, leaving the artist Unverified and unchanged, so a retry or the next daily run verifies it again, except in these cases: when Artist.GetArtist fails with NotFound for the artist's own mbid and the name has no namesake, the artist SHALL be Verified with its mbid, its registered name and activity_ended false (an artist the catalog has never known, such as a test artist an admin registers with a generated MBID); when Artist.GetArtist fails with NotFound for a namesake's MBID, or Artist.UpdateMBID fails with AlreadyExists because another artist holds the MBID, the MBID is ambiguous. The error logged then also names that MBID and the reason.
 
 #### Scenario: Catalog unavailable
 - **WHEN** Artist.ListNamesakes fails with Unavailable
 - **THEN** VerifyMBID fails with Unavailable and the artist stays Unverified
+
+#### Scenario: MBID the catalog has never known
+- **WHEN** an Unverified artist named "E2E Test Artist" has an MBID the catalog does not know, and the catalog has no artist of that name
+- **THEN** the artist becomes Verified with its mbid, its registered name and activity_ended false, and no error is logged
 
 #### Scenario: Catalog unavailable when reading the name
 - **WHEN** the MBID is decided and Artist.GetArtist then fails with Unavailable
