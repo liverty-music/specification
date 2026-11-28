@@ -23,7 +23,7 @@ See proposal.md for why. The code paths, verified at backend `d13fe418`:
 ### D1. Other listed venue names are a column on `events`
 `events.other_listed_venue_names TEXT[] NOT NULL DEFAULT '{}'`, holding normalized names. `entity.Event` gains `OtherListedVenueNames []string` and `ListedUnder(name string) bool` (Event, "Listed under a name"), built on `entity.SameListedVenue`, which already defines name equality. The names are read with the event by `FindEventsByArtistAndDate` and `FindEventsByVenueAndDate`.
 Alternative: a separate `event_listed_venue_names (event_id, name)` table. Rejected: a handful of names per event, always read with the event, never queried on their own.
-Alternative: suppress through RejectedConcert. Rejected: the RejectedConcert is append-only analysis data that never suppresses (entity spec), and its rows are not tied to an Event.
+Alternative: suppress through RejectedConcert. Rejected: its rows are not tied to an Event, so they cannot make a later listing under another name the same concert; D13 uses them only to leave out an identical listing.
 
 ### D2. `AddOtherListedVenueName` decides in Go under a row lock
 The repository reads the event `FOR UPDATE`, asks `ListedUnder`, and appends only when false, in one transaction. A plain `array_append ... WHERE NOT name = ANY(...)` would compare exact strings, not `SameListedVenue` keys.
